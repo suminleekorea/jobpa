@@ -189,6 +189,73 @@ export const appRouter = router({
       return db.getConsultingWaitlist();
     }),
   }),
+
+  gamification: router({
+    profile: protectedProcedure.query(async ({ ctx }) => {
+      return db.getOrCreateUserXP(ctx.user.id);
+    }),
+    awardXP: protectedProcedure.input(z.object({
+      action: z.string(),
+      description: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      return db.awardXP(ctx.user.id, input.action, input.description);
+    }),
+    history: protectedProcedure.query(async ({ ctx }) => {
+      return db.getXPHistory(ctx.user.id);
+    }),
+  }),
+
+  checklist: router({
+    get: protectedProcedure.input(z.object({
+      date: z.string(),
+    })).query(async ({ ctx, input }) => {
+      return db.getChecklistByDate(ctx.user.id, input.date);
+    }),
+    add: protectedProcedure.input(z.object({
+      date: z.string(),
+      title: z.string(),
+      category: z.string().optional(),
+      isAIGenerated: z.boolean().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      return db.addChecklistItem(ctx.user.id, input);
+    }),
+    toggle: protectedProcedure.input(z.object({
+      id: z.number(),
+      isCompleted: z.boolean(),
+    })).mutation(async ({ ctx, input }) => {
+      await db.toggleChecklistItem(input.id, ctx.user.id, input.isCompleted);
+      // Award XP when completing
+      if (input.isCompleted) {
+        await db.awardXP(ctx.user.id, "checklist", "Completed a checklist item");
+      }
+      return { success: true };
+    }),
+    remove: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+      return db.deleteChecklistItem(input.id, ctx.user.id);
+    }),
+  }),
+
+  journal: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return db.getJournalEntries(ctx.user.id);
+    }),
+    getByDate: protectedProcedure.input(z.object({
+      date: z.string(),
+    })).query(async ({ ctx, input }) => {
+      return db.getJournalByDate(ctx.user.id, input.date);
+    }),
+    save: protectedProcedure.input(z.object({
+      date: z.string(),
+      mood: z.string().optional(),
+      content: z.string().optional(),
+      highlights: z.array(z.string()).optional(),
+      goals: z.array(z.string()).optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const result = await db.saveJournalEntry(ctx.user.id, input);
+      await db.awardXP(ctx.user.id, "journal", "Wrote a journal entry");
+      return result;
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

@@ -1,6 +1,9 @@
 /**
  * Job Data Fetcher
- * Fetches real job listings from Career@Gov (CSV) and MCF (API)
+ * Fetches real job listings from:
+ *  1. Career@Gov (CSV) — Singapore Government
+ *  2. MCF (API) — MyCareersFuture Singapore
+ *  3. JSearch (RapidAPI) — LinkedIn, Indeed, Glassdoor, Google Jobs, etc.
  * Caches results in memory with TTL to avoid excessive API calls
  */
 import axios from "axios";
@@ -14,7 +17,7 @@ export interface JobListing {
   agency?: string;
   location: string;
   salary?: string;
-  source: "careergov" | "mcf";
+  source: "careergov" | "mcf" | "linkedin" | "indeed" | "glassdoor" | "google" | "ziprecruiter" | "monster" | "jobstreet" | "other";
   applyUrl: string;
   visa: boolean;
   type: string;
@@ -26,6 +29,7 @@ export interface JobListing {
   closingDate?: string;
   employmentType?: string;
   skills?: string[];
+  companyLogo?: string;
 }
 
 // ─── Cache ──────────────────────────────────────────────────────
@@ -37,6 +41,7 @@ interface CacheEntry {
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 let careerGovCache: CacheEntry | null = null;
 let mcfCache: Map<string, CacheEntry> = new Map();
+let jsearchCache: Map<string, CacheEntry> = new Map();
 
 // ─── Helpers ────────────────────────────────────────────────────
 function stripHtml(html: string): string {
@@ -61,7 +66,7 @@ function daysAgo(timestamp: number): number {
   return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
 }
 
-function mapExperienceLevel(expText: string, minYears?: number, maxYears?: number): string {
+function mapExperienceLevel(_expText: string, minYears?: number, _maxYears?: number): string {
   const min = minYears ?? 0;
   if (min <= 1) return "entry";
   if (min <= 3) return "junior";
@@ -82,15 +87,26 @@ function mapEmploymentType(empType: string): string {
 function mapIndustryFromField(field: string): string {
   if (!field) return "government";
   const lower = field.toLowerCase();
-  if (lower.includes("tech") || lower.includes("info") || lower.includes("digital") || lower.includes("data")) return "tech";
-  if (lower.includes("financ") || lower.includes("account")) return "finance";
+  if (lower.includes("tech") || lower.includes("info") || lower.includes("digital") || lower.includes("data") || lower.includes("software")) return "tech";
+  if (lower.includes("financ") || lower.includes("account") || lower.includes("bank")) return "finance";
   if (lower.includes("health") || lower.includes("medical") || lower.includes("pharma")) return "healthcare";
   if (lower.includes("educ") || lower.includes("train")) return "education";
   if (lower.includes("engineer")) return "tech";
   if (lower.includes("legal") || lower.includes("law")) return "legal";
   if (lower.includes("market") || lower.includes("commun") || lower.includes("media")) return "marketing";
+  if (lower.includes("hotel") || lower.includes("food") || lower.includes("hospitality")) return "hospitality";
+  if (lower.includes("logist") || lower.includes("transport") || lower.includes("supply")) return "logistics";
   return "government";
 }
+
+// ─── Location Mapping ───────────────────────────────────────────
+const LOCATION_QUERIES: Record<string, string> = {
+  singapore: "in Singapore",
+  hongkong: "in Hong Kong",
+  dubai: "in Dubai UAE",
+  korea: "in South Korea",
+  remote: "remote",
+};
 
 // ─── Career@Gov CSV ─────────────────────────────────────────────
 const CAREERGOV_CSV_URL = "https://raw.githubusercontent.com/opengovsg/careersgovsg-jobs-data/main/data/job-listings.csv";
@@ -149,7 +165,6 @@ export async function fetchCareerGovJobs(): Promise<JobListing[]> {
     }
 
     const jobs: JobListing[] = [];
-    // Process up to 500 most recent rows
     const rows = parsed.data.slice(0, 500);
 
     for (const row of rows) {
@@ -160,18 +175,12 @@ export async function fetchCareerGovJobs(): Promise<JobListing[]> {
 
       if (!title || !agency || !jobId) continue;
 
-      // Construct URL: https://jobs.careers.gov.sg/jobs/hrp/{jobId}/{postingNo}
       const applyUrl = `https://jobs.careers.gov.sg/jobs/hrp/${jobId}/${postingNo}`;
-
-      // Parse dates
       const startDateMs = parseInt(row.startDate) || 0;
       const closingDateText = row.closingDateText || "";
-
-      // Build description from separate fields
       const descParts = [row.jobDescription, row.jobResponsibilities, row.jobRequirements].filter(Boolean);
       const fullDesc = stripHtml(descParts.join(" "));
       const shortDesc = fullDesc.slice(0, 300) + (fullDesc.length > 300 ? "..." : "");
-
       const minYears = parseInt(row.experienceYearsMin) || 0;
       const maxYears = parseInt(row.experienceYearsMax) || 0;
 
@@ -306,7 +315,7 @@ export async function fetchMCFJobs(search?: string, limit: number = 50): Promise
     const data = response.data;
     if (!data || !data.results) return [];
 
-    const jobs: JobListing[] = data.results.map((job: MCFJob) => {
+    const jobs: JobListing[] = (data.results as MCFJob[]).map((job) => {
       const postDate = job.metadata?.newPostingDate || job.metadata?.createdAt;
       const daysPosted = postDate ? daysAgo(new Date(postDate).getTime()) : 0;
       const position = job.positionLevels?.[0]?.position || "";
@@ -341,47 +350,288 @@ export async function fetchMCFJobs(search?: string, limit: number = 50): Promise
   }
 }
 
+// ─── JSearch API (RapidAPI) ─────────────────────────────────────
+const JSEARCH_API_URL = "https://jsearch.p.rapidapi.com/search";
+
+interface JSearchJob {
+  job_id: string;
+  employer_name: string;
+  employer_logo: string | null;
+  employer_website: string | null;
+  job_employment_type: string;
+  job_title: string;
+  job_apply_link: string;
+  job_description: string;
+  job_is_remote: boolean;
+  job_posted_at_timestamp: number;
+  job_posted_at_datetime_utc: string;
+  job_city: string;
+  job_state: string;
+  job_country: string;
+  job_min_salary: number | null;
+  job_max_salary: number | null;
+  job_salary_currency: string | null;
+  job_salary_period: string | null;
+  job_required_experience: {
+    no_experience_required: boolean;
+    required_experience_in_months: number | null;
+    experience_mentioned: boolean;
+    experience_preferred: boolean;
+  };
+  job_required_skills: string[] | null;
+  job_google_link: string;
+  job_publisher: string;
+  job_highlights?: {
+    Qualifications?: string[];
+    Responsibilities?: string[];
+    Benefits?: string[];
+  };
+  job_onet_soc?: string;
+  job_naics_code?: string;
+  job_naics_name?: string;
+}
+
+function mapJSearchSource(publisher: string): JobListing["source"] {
+  if (!publisher) return "other";
+  const lower = publisher.toLowerCase();
+  if (lower.includes("linkedin")) return "linkedin";
+  if (lower.includes("indeed")) return "indeed";
+  if (lower.includes("glassdoor")) return "glassdoor";
+  if (lower.includes("ziprecruiter")) return "ziprecruiter";
+  if (lower.includes("monster")) return "monster";
+  if (lower.includes("jobstreet")) return "jobstreet";
+  if (lower.includes("google")) return "google";
+  return "other";
+}
+
+function mapJSearchExperience(exp: JSearchJob["job_required_experience"]): string {
+  if (!exp) return "mid";
+  if (exp.no_experience_required) return "entry";
+  const months = exp.required_experience_in_months;
+  if (months === null || months === undefined) return "mid";
+  if (months <= 12) return "entry";
+  if (months <= 36) return "junior";
+  if (months <= 84) return "mid";
+  return "senior";
+}
+
+function mapJSearchEmploymentType(type: string): string {
+  if (!type) return "fulltime";
+  const lower = type.toLowerCase();
+  if (lower.includes("full")) return "fulltime";
+  if (lower.includes("contract") || lower.includes("temp")) return "contract";
+  if (lower.includes("intern")) return "internship";
+  if (lower.includes("part")) return "parttime";
+  return "fulltime";
+}
+
+function mapJSearchIndustry(naicsName: string | undefined, title: string): string {
+  const text = ((naicsName || "") + " " + (title || "")).toLowerCase();
+  if (text.includes("tech") || text.includes("software") || text.includes("developer") || text.includes("engineer") || text.includes("data") || text.includes("cloud") || text.includes("cyber")) return "tech";
+  if (text.includes("financ") || text.includes("bank") || text.includes("account") || text.includes("invest")) return "finance";
+  if (text.includes("health") || text.includes("medical") || text.includes("pharma") || text.includes("nurs")) return "healthcare";
+  if (text.includes("educ") || text.includes("teach") || text.includes("professor")) return "education";
+  if (text.includes("market") || text.includes("sales") || text.includes("brand")) return "marketing";
+  if (text.includes("hotel") || text.includes("food") || text.includes("hospitality") || text.includes("chef")) return "hospitality";
+  if (text.includes("logist") || text.includes("supply") || text.includes("warehouse")) return "logistics";
+  if (text.includes("legal") || text.includes("law") || text.includes("compliance")) return "legal";
+  return "others";
+}
+
+function formatJSearchSalary(job: JSearchJob): string | undefined {
+  if (!job.job_min_salary && !job.job_max_salary) return undefined;
+  const currency = job.job_salary_currency || "USD";
+  const period = job.job_salary_period === "YEAR" ? "/yr" : job.job_salary_period === "MONTH" ? "/mo" : job.job_salary_period === "HOUR" ? "/hr" : "";
+  const min = job.job_min_salary;
+  const max = job.job_max_salary;
+  if (min && max) return `${currency} ${min.toLocaleString()}-${max.toLocaleString()}${period}`;
+  if (min) return `${currency} ${min.toLocaleString()}+${period}`;
+  if (max) return `Up to ${currency} ${max.toLocaleString()}${period}`;
+  return undefined;
+}
+
+function mapLocationFromJSearch(job: JSearchJob, queryLocation: string): string {
+  // Map back to our location keys
+  const country = (job.job_country || "").toLowerCase();
+  const city = (job.job_city || "").toLowerCase();
+  const state = (job.job_state || "").toLowerCase();
+
+  if (job.job_is_remote) return "remote";
+  if (country.includes("singapore") || city.includes("singapore")) return "singapore";
+  if (country.includes("hong kong") || city.includes("hong kong")) return "hongkong";
+  if (country.includes("united arab") || city.includes("dubai") || city.includes("abu dhabi")) return "dubai";
+  if (country.includes("korea") || city.includes("seoul") || city.includes("busan")) return "korea";
+
+  // Fallback to the query location
+  return queryLocation || "remote";
+}
+
+export async function fetchJSearchJobs(
+  search?: string,
+  location: string = "singapore",
+  limit: number = 30
+): Promise<JobListing[]> {
+  const rapidApiKey = process.env.RAPIDAPI_KEY;
+  if (!rapidApiKey) {
+    console.log("[JobFetcher] JSearch: No RAPIDAPI_KEY, skipping");
+    return [];
+  }
+
+  const cacheKey = `jsearch-${search || "all"}-${location}-${limit}`;
+  const cached = jsearchCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+
+  try {
+    const locationSuffix = LOCATION_QUERIES[location] || LOCATION_QUERIES["singapore"];
+    const query = search ? `${search} ${locationSuffix}` : `jobs ${locationSuffix}`;
+
+    console.log(`[JobFetcher] Fetching JSearch jobs (query="${query}", limit=${limit})...`);
+
+    const response = await axios.get(JSEARCH_API_URL, {
+      params: {
+        query,
+        page: 1,
+        num_pages: Math.ceil(limit / 10),
+        date_posted: "month",
+      },
+      headers: {
+        "X-RapidAPI-Host": "jsearch.p.rapidapi.com",
+        "X-RapidAPI-Key": rapidApiKey,
+      },
+      timeout: 15000,
+    });
+
+    const data = response.data;
+    if (!data || data.status !== "OK" || !data.data) {
+      console.warn("[JobFetcher] JSearch: Unexpected response", data?.status);
+      return [];
+    }
+
+    const jobs: JobListing[] = (data.data as JSearchJob[]).slice(0, limit).map((job) => {
+      const daysPosted = job.job_posted_at_timestamp
+        ? daysAgo(job.job_posted_at_timestamp * 1000)
+        : 0;
+
+      return {
+        id: `js-${job.job_id?.slice(0, 20) || Math.random().toString(36).slice(2)}`,
+        title: job.job_title || "Untitled",
+        company: job.employer_name || "Unknown",
+        location: mapLocationFromJSearch(job, location),
+        salary: formatJSearchSalary(job),
+        source: mapJSearchSource(job.job_publisher),
+        applyUrl: job.job_apply_link || job.job_google_link || "#",
+        visa: location === "singapore" || location === "dubai",
+        type: mapJSearchEmploymentType(job.job_employment_type),
+        experience: mapJSearchExperience(job.job_required_experience),
+        industry: mapJSearchIndustry(job.job_naics_name, job.job_title),
+        posted: daysPosted,
+        remote: job.job_is_remote || false,
+        description: stripHtml(job.job_description || "").slice(0, 300) + "...",
+        skills: job.job_required_skills?.slice(0, 5) || [],
+        companyLogo: job.employer_logo || undefined,
+      };
+    });
+
+    const uniqueSources = Array.from(new Set(jobs.map(j => j.source)));
+    console.log(`[JobFetcher] JSearch: ${jobs.length} jobs loaded (sources: ${uniqueSources.join(", ")})`);
+    jsearchCache.set(cacheKey, { data: jobs, timestamp: Date.now() });
+    return jobs;
+  } catch (error: any) {
+    if (error?.response?.status === 429) {
+      console.warn("[JobFetcher] JSearch: Rate limited (429). Using cache or skipping.");
+    } else {
+      console.error("[JobFetcher] JSearch fetch error:", error?.message || error);
+    }
+    const cached = jsearchCache.get(cacheKey);
+    return cached?.data || [];
+  }
+}
+
 // ─── Combined Fetch ─────────────────────────────────────────────
 export async function fetchAllJobs(options?: {
   search?: string;
   location?: string;
   limit?: number;
-}): Promise<{ jobs: JobListing[]; total: number; sources: { careergov: number; mcf: number } }> {
-  const { search, location, limit = 100 } = options || {};
+}): Promise<{
+  jobs: JobListing[];
+  total: number;
+  sources: Record<string, number>;
+}> {
+  const { search, location = "all", limit = 100 } = options || {};
 
-  // For non-Singapore locations, return empty (future: add other APIs)
-  if (location && location !== "all" && location !== "singapore") {
-    return { jobs: [], total: 0, sources: { careergov: 0, mcf: 0 } };
+  const fetchers: Promise<JobListing[]>[] = [];
+  const isSingapore = location === "all" || location === "singapore";
+
+  // Career@Gov + MCF only for Singapore
+  if (isSingapore) {
+    fetchers.push(fetchCareerGovJobs());
+    fetchers.push(fetchMCFJobs(search, 50));
   }
 
-  const [careerGovJobs, mcfJobs] = await Promise.all([
-    fetchCareerGovJobs(),
-    fetchMCFJobs(search, Math.min(limit, 100)),
-  ]);
+  // JSearch for ALL locations (including Singapore for LinkedIn/Indeed/Glassdoor coverage)
+  if (location === "all") {
+    // Fetch for each location
+    fetchers.push(fetchJSearchJobs(search, "singapore", 20));
+    fetchers.push(fetchJSearchJobs(search, "hongkong", 20));
+    fetchers.push(fetchJSearchJobs(search, "dubai", 20));
+    fetchers.push(fetchJSearchJobs(search, "korea", 20));
+    fetchers.push(fetchJSearchJobs(search, "remote", 20));
+  } else {
+    fetchers.push(fetchJSearchJobs(search, location, 40));
+  }
 
-  let allJobs = [...careerGovJobs, ...mcfJobs];
+  const results = await Promise.allSettled(fetchers);
+  let allJobs: JobListing[] = [];
 
-  // Apply search filter to Career@Gov jobs (MCF already filtered by API)
-  if (search) {
+  for (const result of results) {
+    if (result.status === "fulfilled") {
+      allJobs.push(...result.value);
+    }
+  }
+
+  // Apply search filter to Career@Gov jobs (MCF and JSearch already filtered by API)
+  if (search && isSingapore) {
     const searchLower = search.toLowerCase();
-    allJobs = allJobs.filter(job =>
-      (job.title || "").toLowerCase().includes(searchLower) ||
-      (job.company || "").toLowerCase().includes(searchLower) ||
-      (job.description || "").toLowerCase().includes(searchLower)
-    );
+    allJobs = allJobs.filter(job => {
+      if (job.source === "mcf" || !["careergov"].includes(job.source)) return true;
+      return (
+        (job.title || "").toLowerCase().includes(searchLower) ||
+        (job.company || "").toLowerCase().includes(searchLower) ||
+        (job.description || "").toLowerCase().includes(searchLower)
+      );
+    });
   }
+
+  // Filter by location if specific
+  if (location && location !== "all") {
+    allJobs = allJobs.filter(j => j.location === location || j.remote);
+  }
+
+  // Deduplicate by title + company (rough)
+  const seen = new Set<string>();
+  allJobs = allJobs.filter(job => {
+    const key = `${(job.title || "").toLowerCase().trim()}|${(job.company || "").toLowerCase().trim()}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 
   // Sort by posted date (newest first)
   allJobs.sort((a, b) => a.posted - b.posted);
 
   const limited = allJobs.slice(0, limit);
 
+  // Count by source
+  const sources: Record<string, number> = {};
+  for (const job of limited) {
+    sources[job.source] = (sources[job.source] || 0) + 1;
+  }
+
   return {
     jobs: limited,
     total: allJobs.length,
-    sources: {
-      careergov: limited.filter(j => j.source === "careergov").length,
-      mcf: limited.filter(j => j.source === "mcf").length,
-    },
+    sources,
   };
 }

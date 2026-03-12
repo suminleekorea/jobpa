@@ -137,3 +137,64 @@ export const consultingWaitlist = mysqlTable("consultingWaitlist", {
 });
 
 export type ConsultingWaitlist = typeof consultingWaitlist.$inferSelect;
+
+// ─── Gamification ───────────────────────────────────────────────
+export const userXP = mysqlTable("userXP", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  totalXP: int("totalXP").default(0).notNull(),
+  level: int("level").default(1).notNull(),
+  currentStreak: int("currentStreak").default(0).notNull(),
+  longestStreak: int("longestStreak").default(0).notNull(),
+  lastActiveDate: varchar("lastActiveDate", { length: 10 }), // YYYY-MM-DD
+  badges: json("badges").$type<string[]>(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserXP = typeof userXP.$inferSelect;
+export type InsertUserXP = typeof userXP.$inferInsert;
+
+export const xpEvents = mysqlTable("xpEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  action: varchar("action", { length: 64 }).notNull(), // apply, checklist, journal, resume, fit, login
+  xpAmount: int("xpAmount").notNull(),
+  description: varchar("description", { length: 512 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type XPEvent = typeof xpEvents.$inferSelect;
+
+// ─── Daily Checklist ────────────────────────────────────────────
+export const dailyChecklist = mysqlTable("dailyChecklist", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
+  title: varchar("title", { length: 512 }).notNull(),
+  isAIGenerated: boolean("isAIGenerated").default(false),
+  isCompleted: boolean("isCompleted").default(false),
+  category: varchar("category", { length: 64 }), // apply, research, network, skill, prep
+  sortOrder: int("sortOrder").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DailyChecklistItem = typeof dailyChecklist.$inferSelect;
+export type InsertDailyChecklistItem = typeof dailyChecklist.$inferInsert;
+
+// ─── Journal ────────────────────────────────────────────────────
+export const journal = mysqlTable("journal", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
+  mood: varchar("mood", { length: 32 }), // great, good, okay, tough, frustrated
+  content: text("content"),
+  highlights: json("highlights").$type<string[]>(),
+  goals: json("goals").$type<string[]>(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type JournalEntry = typeof journal.$inferSelect;
+export type InsertJournalEntry = typeof journal.$inferInsert;

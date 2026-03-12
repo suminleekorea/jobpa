@@ -215,17 +215,23 @@ export default function Jobs() {
         {jobsData && (
           <div className="text-right hidden sm:block">
             <div className="text-sm font-medium">{filteredJobs.length} jobs</div>
-            <div className="text-xs text-muted-foreground flex items-center gap-2 justify-end">
-              {jobsData.sources.careergov > 0 && (
+            <div className="text-xs text-muted-foreground flex items-center gap-2 justify-end flex-wrap">
+              {(jobsData.sources as any).careergov > 0 && (
                 <span className="inline-flex items-center gap-1">
                   <span className="h-2 w-2 rounded-full bg-blue-500" />
-                  Career@Gov: {jobsData.sources.careergov}
+                  Career@Gov: {(jobsData.sources as any).careergov}
                 </span>
               )}
-              {jobsData.sources.mcf > 0 && (
+              {(jobsData.sources as any).mcf > 0 && (
                 <span className="inline-flex items-center gap-1">
                   <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                  MCF: {jobsData.sources.mcf}
+                  MCF: {(jobsData.sources as any).mcf}
+                </span>
+              )}
+              {(jobsData.sources as any).jsearch > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-purple-500" />
+                  JSearch: {(jobsData.sources as any).jsearch}
                 </span>
               )}
             </div>
@@ -367,7 +373,7 @@ export default function Jobs() {
         <div className="text-center py-16">
           <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
           <h3 className="font-medium">Loading real job listings...</h3>
-          <p className="text-sm text-muted-foreground mt-1">Fetching from Career@Gov and MyCareersFuture</p>
+          <p className="text-sm text-muted-foreground mt-1">Fetching from Career@Gov, MCF, LinkedIn, Indeed, Glassdoor & more</p>
         </div>
       )}
 
@@ -384,22 +390,8 @@ export default function Jobs() {
         </div>
       )}
 
-      {/* Non-Singapore location notice */}
-      {!isLoading && !isError && selectedLocation !== "all" && selectedLocation !== "singapore" && (
-        <div className="text-center py-16">
-          <Globe className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-          <h3 className="font-medium">{(t.locations as any)[selectedLocation]} Jobs Coming Soon</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            We're working on integrating job sources for this location. Currently, Singapore jobs from Career@Gov and MCF are available.
-          </p>
-          <Button variant="outline" onClick={() => setSelectedLocation("singapore")} className="mt-4">
-            View Singapore Jobs
-          </Button>
-        </div>
-      )}
-
       {/* Job Listings */}
-      {!isLoading && !isError && (selectedLocation === "all" || selectedLocation === "singapore") && (
+      {!isLoading && !isError && (
         <>
           {filteredJobs.length === 0 ? (
             <div className="text-center py-16">

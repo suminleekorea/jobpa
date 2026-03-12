@@ -35,3 +35,19 @@
 - [x] AI career chatbot for guidance and Q&A
 - [ ] IR Deck (investor pitch slides) for LinkedIn sharing
 - [ ] Dashboard home page with summary view (resume, applications, trends at a glance)
+- [x] 1-minute demo video with feature description overlays
+- [x] LinkedIn post (EN+KR mixed) about JobPA update with story (why built, visa sponsorship, etc.)
+- [x] Integrate LinkedIn Jobs data source (via JSearch API)
+- [x] Integrate JobStreet data source (via JSearch API)
+- [x] Integrate Monster Jobs data source (via JSearch API)
+- [x] Integrate Google Jobs data source (via JSearch API)
+- [x] Integrate Indeed Jobs data source (via JSearch API)
+- [x] Research and integrate any other available free job APIs (Adzuna, JSearch, etc.)
+- [x] Update frontend job source badges for all new sources
+- [x] Gamification: XP system, levels, streaks, badges for job search activities
+- [x] Daily goals & AI-recommended action items (based on user profile & target role)
+- [x] Custom checklist creation by user
+- [x] Job search journal / daily diary feature
+- [x] Data isolation audit - ensure no user data leaks between accounts (resume skills, etc.)
+- [x] Fun/differentiated UI - gamification, journal, mood tracking, XP badges
+- [x] JSearch API integration for LinkedIn, Indeed, Glassdoor, Google Jobs aggregation

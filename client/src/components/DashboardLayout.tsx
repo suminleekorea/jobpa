@@ -13,7 +13,7 @@ import { useI18n } from "@/contexts/i18nContext";
 import {
   Briefcase, FileText, Target, BarChart3, Bookmark, Settings,
   LogOut, PanelLeft, Bot, Users, Sparkles, Shield, Languages,
-  TrendingUp, MessageCircle,
+  TrendingUp, MessageCircle, Trophy, CheckSquare, BookOpen,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -73,12 +73,15 @@ function DashboardLayoutContent({ children, setSidebarWidth }: { children: React
   const menuItems = [
     { icon: Briefcase, label: t.nav.jobs, path: "/dashboard" },
     { icon: Bookmark, label: t.nav.applications, path: "/dashboard/applications" },
+    { icon: CheckSquare, label: t.checklist.title, path: "/dashboard/checklist" },
+    { icon: BookOpen, label: t.journal.title, path: "/dashboard/journal" },
+    { icon: Trophy, label: t.gamification.title, path: "/dashboard/level" },
     { icon: FileText, label: t.nav.resume, path: "/dashboard/resume" },
     { icon: Target, label: t.nav.fit, path: "/dashboard/fit" },
     { icon: BarChart3, label: t.nav.reports, path: "/dashboard/reports" },
+    { icon: TrendingUp, label: t.trends.title, path: "/dashboard/trends" },
+    { icon: MessageCircle, label: t.chatbot.title, path: "/dashboard/chat" },
     { icon: Sparkles, label: t.nav.consulting, path: "/dashboard/consulting" },
-    { icon: TrendingUp, label: language === "ko" ? "산업 트렌드" : "Industry Trends", path: "/dashboard/trends" },
-    { icon: MessageCircle, label: language === "ko" ? "AI 챗봇" : "AI Chat", path: "/dashboard/chat" },
   ];
 
   const adminItems = user?.role === "admin" ? [

@@ -3,7 +3,9 @@ import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, surveys, applications, resumes, fitEvaluations,
   reports, goals, emailAlerts, consultingWaitlist,
+  userXP, xpEvents, dailyChecklist, journal,
   type InsertSurvey, type InsertApplication, type Survey, type Application,
+  type InsertUserXP, type InsertDailyChecklistItem, type InsertJournalEntry,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -210,4 +212,155 @@ export async function getAllUsers() {
     createdAt: users.createdAt,
     lastSignedIn: users.lastSignedIn,
   }).from(users).orderBy(desc(users.createdAt));
+}
+
+// ─── Gamification helpers ───────────────────────────────────────
+const XP_ACTIONS: Record<string, number> = {
+  apply: 50,
+  checklist: 10,
+  journal: 20,
+  resume: 30,
+  fit: 25,
+  login: 5,
+  streak_bonus: 15,
+};
+
+const LEVEL_THRESHOLDS = [0, 100, 300, 600, 1000, 1500, 2200, 3000, 4000, 5500, 7500, 10000];
+
+function calculateLevel(xp: number): number {
+  for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (xp >= LEVEL_THRESHOLDS[i]) return i + 1;
+  }
+  return 1;
+}
+
+const BADGES: Record<string, { name: string; condition: (stats: any) => boolean }> = {
+  first_apply: { name: "First Application", condition: (s) => s.totalApply >= 1 },
+  apply_10: { name: "Job Hunter", condition: (s) => s.totalApply >= 10 },
+  apply_50: { name: "Application Machine", condition: (s) => s.totalApply >= 50 },
+  streak_3: { name: "3-Day Streak", condition: (s) => s.longestStreak >= 3 },
+  streak_7: { name: "Week Warrior", condition: (s) => s.longestStreak >= 7 },
+  streak_30: { name: "Monthly Master", condition: (s) => s.longestStreak >= 30 },
+  journal_5: { name: "Reflective Mind", condition: (s) => s.totalJournal >= 5 },
+  checklist_20: { name: "Task Crusher", condition: (s) => s.totalChecklist >= 20 },
+  level_5: { name: "Rising Star", condition: (s) => s.level >= 5 },
+  level_10: { name: "Career Pro", condition: (s) => s.level >= 10 },
+};
+
+export async function getOrCreateUserXP(userId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const existing = await db.select().from(userXP).where(eq(userXP.userId, userId)).limit(1);
+  if (existing.length > 0) return existing[0];
+  await db.insert(userXP).values({ userId, totalXP: 0, level: 1, currentStreak: 0, longestStreak: 0, badges: [] });
+  const created = await db.select().from(userXP).where(eq(userXP.userId, userId)).limit(1);
+  return created[0];
+}
+
+export async function awardXP(userId: number, action: string, description?: string) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const xpAmount = XP_ACTIONS[action] || 5;
+
+  // Record event
+  await db.insert(xpEvents).values({ userId, action, xpAmount, description });
+
+  // Update user XP
+  const profile = await getOrCreateUserXP(userId);
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+  let newStreak = profile.currentStreak;
+  let newLongest = profile.longestStreak;
+
+  if (profile.lastActiveDate !== today) {
+    if (profile.lastActiveDate === yesterday) {
+      newStreak = profile.currentStreak + 1;
+    } else {
+      newStreak = 1;
+    }
+    newLongest = Math.max(newLongest, newStreak);
+  }
+
+  const newXP = profile.totalXP + xpAmount;
+  const newLevel = calculateLevel(newXP);
+
+  // Check badges
+  const stats = {
+    totalApply: 0, totalJournal: 0, totalChecklist: 0,
+    longestStreak: newLongest, level: newLevel,
+  };
+  const [applyCount] = await db.select({ count: sql<number>`count(*)` }).from(xpEvents).where(and(eq(xpEvents.userId, userId), eq(xpEvents.action, "apply")));
+  const [journalCount] = await db.select({ count: sql<number>`count(*)` }).from(xpEvents).where(and(eq(xpEvents.userId, userId), eq(xpEvents.action, "journal")));
+  const [checklistCount] = await db.select({ count: sql<number>`count(*)` }).from(xpEvents).where(and(eq(xpEvents.userId, userId), eq(xpEvents.action, "checklist")));
+  stats.totalApply = applyCount.count;
+  stats.totalJournal = journalCount.count;
+  stats.totalChecklist = checklistCount.count;
+
+  const currentBadges = (profile.badges || []) as string[];
+  const newBadges = [...currentBadges];
+  for (const [key, badge] of Object.entries(BADGES)) {
+    if (!newBadges.includes(key) && badge.condition(stats)) {
+      newBadges.push(key);
+    }
+  }
+
+  await db.update(userXP).set({
+    totalXP: newXP,
+    level: newLevel,
+    currentStreak: newStreak,
+    longestStreak: newLongest,
+    lastActiveDate: today,
+    badges: newBadges,
+  }).where(eq(userXP.userId, userId));
+
+  return { totalXP: newXP, level: newLevel, xpGained: xpAmount, currentStreak: newStreak, badges: newBadges };
+}
+
+export async function getXPHistory(userId: number, limit: number = 20) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(xpEvents).where(eq(xpEvents.userId, userId)).orderBy(desc(xpEvents.createdAt)).limit(limit);
+}
+
+// ─── Daily Checklist helpers ────────────────────────────────────
+export async function getChecklistByDate(userId: number, date: string) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(dailyChecklist).where(and(eq(dailyChecklist.userId, userId), eq(dailyChecklist.date, date))).orderBy(dailyChecklist.sortOrder);
+}
+
+export async function addChecklistItem(userId: number, data: { date: string; title: string; category?: string; isAIGenerated?: boolean }) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(dailyChecklist).values({ userId, ...data }).$returningId();
+  return result;
+}
+
+export async function toggleChecklistItem(id: number, userId: number, isCompleted: boolean) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.update(dailyChecklist).set({ isCompleted }).where(and(eq(dailyChecklist.id, id), eq(dailyChecklist.userId, userId)));
+}
+
+export async function deleteChecklistItem(id: number, userId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.delete(dailyChecklist).where(and(eq(dailyChecklist.id, id), eq(dailyChecklist.userId, userId)));
+}
+
+// ─── Journal helpers ────────────────────────────────────────────
+export async function getJournalEntries(userId: number, limit: number = 30) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(journal).where(eq(journal.userId, userId)).orderBy(desc(journal.date)).limit(limit);
+}
+
+export async function getJournalByDate(userId: number, date: string) {
+  const db = await getDb(); if (!db) return undefined;
+  const result = await db.select().from(journal).where(and(eq(journal.userId, userId), eq(journal.date, date))).limit(1);
+  return result[0];
+}
+
+export async function saveJournalEntry(userId: number, data: { date: string; mood?: string; content?: string; highlights?: string[]; goals?: string[] }) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const existing = await db.select().from(journal).where(and(eq(journal.userId, userId), eq(journal.date, data.date))).limit(1);
+  if (existing.length > 0) {
+    await db.update(journal).set(data).where(and(eq(journal.userId, userId), eq(journal.date, data.date)));
+    return existing[0];
+  }
+  const [result] = await db.insert(journal).values({ userId, ...data }).$returningId();
+  return result;
 }

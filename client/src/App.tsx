@@ -16,6 +16,10 @@ import Admin from "./pages/Admin";
 import Trends from "./pages/Trends";
 import ChatBot from "./pages/ChatBot";
 import DashboardLayout from "./components/DashboardLayout";
+import { lazy, Suspense } from "react";
+const Checklist = lazy(() => import("./pages/Checklist"));
+const Journal = lazy(() => import("./pages/Journal"));
+const Level = lazy(() => import("./pages/Level"));
 
 function DashboardPage({ children }: { children: React.ReactNode }) {
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -49,6 +53,15 @@ function Router() {
       </Route>
       <Route path="/dashboard/chat">
         <DashboardPage><ChatBot /></DashboardPage>
+      </Route>
+      <Route path="/dashboard/checklist">
+        <DashboardPage><Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading...</div>}><Checklist /></Suspense></DashboardPage>
+      </Route>
+      <Route path="/dashboard/journal">
+        <DashboardPage><Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading...</div>}><Journal /></Suspense></DashboardPage>
+      </Route>
+      <Route path="/dashboard/level">
+        <DashboardPage><Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading...</div>}><Level /></Suspense></DashboardPage>
       </Route>
       <Route path="/dashboard/admin">
         <DashboardPage><Admin /></DashboardPage>
