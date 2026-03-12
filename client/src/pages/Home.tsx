@@ -6,7 +6,7 @@ import { getLoginUrl } from "@/const";
 import {
   TrendingUp, FileText, Target, BarChart3, Bookmark,
   ArrowRight, ChevronDown, ChevronUp, Globe, Sparkles, Zap,
-  Bot, Users, Languages, DollarSign
+  Bot, Users, Languages, DollarSign, MessageCircle, Newspaper
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -122,13 +122,15 @@ function HeroSection() {
 }
 
 function FeaturesSection() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const features = [
     { icon: TrendingUp, ...t.features.market, color: "text-blue-600 bg-blue-50" },
     { icon: FileText, ...t.features.resume, color: "text-emerald-600 bg-emerald-50" },
     { icon: Target, ...t.features.fit, color: "text-violet-600 bg-violet-50" },
     { icon: BarChart3, ...t.features.reports, color: "text-amber-600 bg-amber-50" },
     { icon: Bookmark, ...t.features.tracking, color: "text-rose-600 bg-rose-50" },
+    { icon: Newspaper, title: language === "ko" ? "산업 트렌드" : "Industry Trends", desc: language === "ko" ? "IT, 금융, 헬스케어, 에너지 등 다양한 산업의 채용 트렌드를 확인하세요." : "Stay updated with hiring trends across IT, finance, healthcare, energy, and more.", color: "text-cyan-600 bg-cyan-50" },
+    { icon: MessageCircle, title: language === "ko" ? "AI 커리어 챗봇" : "AI Career Chat", desc: language === "ko" ? "취업 전략, 비자 정보, 연봉 협상 등 무엇이든 AI에게 물어보세요." : "Chat with our AI assistant about job strategy, visa info, salary benchmarks, and more.", color: "text-indigo-600 bg-indigo-50" },
   ];
 
   return (
@@ -138,7 +140,7 @@ function FeaturesSection() {
           <h2 className="text-3xl font-bold tracking-tight">{t.features.title}</h2>
           <p className="mt-3 text-muted-foreground max-w-xl mx-auto">{t.features.subtitle}</p>
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto">
           {features.map((f, i) => (
             <Card key={i} className="border-0 shadow-sm hover:shadow-md transition-shadow bg-card">
               <CardContent className="p-6">

@@ -4,30 +4,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useI18n } from "@/contexts/i18nContext";
 import { trpc } from "@/lib/trpc";
 import {
   Search, MapPin, Building2, Clock, ExternalLink, Filter, X,
-  Briefcase, Bookmark, Check, ChevronDown, ChevronUp, Globe, BadgeCheck
+  Briefcase, Bookmark, Check, Globe, BadgeCheck, Loader2, RefreshCw
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 
 // Source badge colors
 const SOURCE_BADGES: Record<string, { label: string; color: string }> = {
-  "careergov": { label: "Career@Gov", color: "bg-blue-100 text-blue-800" },
-  "mcf": { label: "MCF", color: "bg-emerald-100 text-emerald-800" },
-  "linkedin": { label: "LinkedIn", color: "bg-sky-100 text-sky-800" },
-  "indeed": { label: "Indeed", color: "bg-purple-100 text-purple-800" },
-  "glassdoor": { label: "Glassdoor", color: "bg-green-100 text-green-800" },
-  "jobsdb": { label: "JobsDB", color: "bg-orange-100 text-orange-800" },
-  "bayt": { label: "Bayt", color: "bg-red-100 text-red-800" },
-  "gulftalent": { label: "GulfTalent", color: "bg-amber-100 text-amber-800" },
-  "saramin": { label: "사람인", color: "bg-indigo-100 text-indigo-800" },
-  "jobkorea": { label: "잡코리아", color: "bg-rose-100 text-rose-800" },
-  "google": { label: "Google Jobs", color: "bg-gray-100 text-gray-800" },
+  careergov: { label: "Career@Gov", color: "bg-blue-100 text-blue-800" },
+  mcf: { label: "MCF", color: "bg-emerald-100 text-emerald-800" },
+  linkedin: { label: "LinkedIn", color: "bg-sky-100 text-sky-800" },
+  indeed: { label: "Indeed", color: "bg-purple-100 text-purple-800" },
+  glassdoor: { label: "Glassdoor", color: "bg-green-100 text-green-800" },
+  jobsdb: { label: "JobsDB", color: "bg-orange-100 text-orange-800" },
+  bayt: { label: "Bayt", color: "bg-red-100 text-red-800" },
+  gulftalent: { label: "GulfTalent", color: "bg-amber-100 text-amber-800" },
+  saramin: { label: "사람인", color: "bg-indigo-100 text-indigo-800" },
+  jobkorea: { label: "잡코리아", color: "bg-rose-100 text-rose-800" },
+  google: { label: "Google Jobs", color: "bg-gray-100 text-gray-800" },
 };
 
 function getSourceBadge(source?: string) {
@@ -36,24 +35,29 @@ function getSourceBadge(source?: string) {
   return SOURCE_BADGES[key] || { label: source, color: "bg-gray-100 text-gray-800" };
 }
 
-// Demo job data (in production this would come from JSearch API)
-const DEMO_JOBS = [
-  { id: 1, title: "AI Engineer", company: "GovTech Singapore", location: "singapore", salary: "S$8,000-12,000/mo", source: "careergov", applyUrl: "https://careers.gov.sg", visa: true, type: "fulltime", experience: "mid", industry: "government", posted: 1, remote: false, description: "Design and implement AI/ML solutions for government digital services." },
-  { id: 2, title: "Senior Backend Developer", company: "Grab", location: "singapore", salary: "S$10,000-15,000/mo", source: "linkedin", applyUrl: "https://linkedin.com/jobs", visa: true, type: "fulltime", experience: "senior", industry: "tech", posted: 2, remote: false, description: "Build scalable backend services for ride-hailing and delivery platform." },
-  { id: 3, title: "Full Stack Developer", company: "Crypto.com", location: "hongkong", salary: "HK$50,000-80,000/mo", source: "jobsdb", applyUrl: "https://jobsdb.com", visa: true, type: "fulltime", experience: "mid", industry: "finance", posted: 3, remote: false, description: "Develop and maintain crypto exchange platform features." },
-  { id: 4, title: "DevOps Engineer", company: "Emirates NBD", location: "dubai", salary: "AED 25,000-40,000/mo", source: "bayt", applyUrl: "https://bayt.com", visa: true, type: "fulltime", experience: "mid", industry: "finance", posted: 1, remote: false, description: "Manage cloud infrastructure and CI/CD pipelines for banking services." },
-  { id: 5, title: "Data Scientist", company: "Coupang", location: "korea", salary: "₩6,000,000-9,000,000/mo", source: "saramin", applyUrl: "https://saramin.co.kr", visa: true, type: "fulltime", experience: "mid", industry: "ecommerce", posted: 5, remote: false, description: "Apply ML models to optimize e-commerce recommendation systems." },
-  { id: 6, title: "Frontend Engineer (Remote)", company: "Vercel", location: "remote", salary: "$120,000-180,000/yr", source: "linkedin", applyUrl: "https://vercel.com/careers", visa: false, type: "fulltime", experience: "senior", industry: "tech", posted: 2, remote: true, description: "Build the future of web development tools and frameworks." },
-  { id: 7, title: "ML Engineer Intern", company: "HSBC", location: "hongkong", salary: "HK$20,000/mo", source: "jobsdb", applyUrl: "https://hsbc.com/careers", visa: true, type: "internship", experience: "entry", industry: "finance", posted: 7, remote: false, description: "Support ML team in developing fraud detection models." },
-  { id: 8, title: "Cloud Architect", company: "Careem", location: "dubai", salary: "AED 35,000-50,000/mo", source: "gulftalent", applyUrl: "https://gulftalent.com", visa: true, type: "fulltime", experience: "senior", industry: "tech", posted: 4, remote: false, description: "Design and implement cloud-native architecture for ride-hailing platform." },
-  { id: 9, title: "Software Engineer", company: "MOM Singapore", location: "singapore", salary: "S$6,000-9,000/mo", source: "mcf", applyUrl: "https://www.mycareersfuture.gov.sg", visa: true, type: "contract", experience: "junior", industry: "government", posted: 1, remote: false, description: "Develop digital services for Ministry of Manpower." },
-  { id: 10, title: "Product Manager", company: "Sea Group", location: "singapore", salary: "S$12,000-18,000/mo", source: "linkedin", applyUrl: "https://linkedin.com/jobs", visa: true, type: "fulltime", experience: "senior", industry: "tech", posted: 3, remote: false, description: "Lead product strategy for Shopee's AI features." },
-];
+interface JobItem {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  salary?: string;
+  source: string;
+  applyUrl: string;
+  visa: boolean;
+  type: string;
+  experience: string;
+  industry: string;
+  posted: number;
+  remote: boolean;
+  description: string;
+  closingDate?: string;
+  skills?: string[];
+}
 
 interface ApplyModalProps {
   open: boolean;
   onClose: () => void;
-  job: typeof DEMO_JOBS[0] | null;
+  job: JobItem | null;
 }
 
 function ApplyConfirmModal({ open, onClose, job }: ApplyModalProps) {
@@ -62,6 +66,9 @@ function ApplyConfirmModal({ open, onClose, job }: ApplyModalProps) {
     onSuccess: () => {
       toast.success(t.applyModal.saved);
       onClose();
+    },
+    onError: () => {
+      toast.error("Failed to save. Please try again.");
     },
   });
 
@@ -89,8 +96,6 @@ function ApplyConfirmModal({ open, onClose, job }: ApplyModalProps) {
       status: "bookmarked",
       salary: job.salary,
     });
-    toast.success(t.applyModal.bookmarked);
-    onClose();
   };
 
   return (
@@ -126,6 +131,7 @@ function ApplyConfirmModal({ open, onClose, job }: ApplyModalProps) {
 
 export default function Jobs() {
   const { t } = useI18n();
+  const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
@@ -135,10 +141,24 @@ export default function Jobs() {
   const [selectedPosted, setSelectedPosted] = useState<string>("all");
   const [visaOnly, setVisaOnly] = useState(false);
   const [remoteOnly, setRemoteOnly] = useState(false);
-  const [salaryRange, setSalaryRange] = useState([0]);
 
   const [applyModalOpen, setApplyModalOpen] = useState(false);
-  const [selectedJob, setSelectedJob] = useState<typeof DEMO_JOBS[0] | null>(null);
+  const [selectedJob, setSelectedJob] = useState<JobItem | null>(null);
+
+  // Fetch real jobs from server
+  const { data: jobsData, isLoading, isError, refetch, isFetching } = trpc.jobs.list.useQuery(
+    {
+      search: searchQuery || undefined,
+      location: selectedLocation !== "all" ? selectedLocation : undefined,
+      limit: 200,
+    },
+    {
+      staleTime: 5 * 60 * 1000, // 5 min
+      refetchOnWindowFocus: false,
+    }
+  );
+
+  const allJobs: JobItem[] = (jobsData?.jobs as JobItem[]) || [];
 
   const locations = [
     { id: "all", label: t.applications.all },
@@ -150,14 +170,13 @@ export default function Jobs() {
   ];
 
   const activeFilterCount = [
-    selectedLocation !== "all", selectedJobType !== "all", selectedExperience !== "all",
+    selectedJobType !== "all", selectedExperience !== "all",
     selectedIndustry !== "all", selectedPosted !== "all", visaOnly, remoteOnly,
   ].filter(Boolean).length;
 
+  // Client-side filtering for type/experience/industry/posted/visa/remote
   const filteredJobs = useMemo(() => {
-    return DEMO_JOBS.filter(job => {
-      if (searchQuery && !job.title.toLowerCase().includes(searchQuery.toLowerCase()) && !job.company.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-      if (selectedLocation !== "all" && job.location !== selectedLocation) return false;
+    return allJobs.filter(job => {
       if (selectedJobType !== "all" && job.type !== selectedJobType) return false;
       if (selectedExperience !== "all" && job.experience !== selectedExperience) return false;
       if (selectedIndustry !== "all" && job.industry !== selectedIndustry) return false;
@@ -169,24 +188,49 @@ export default function Jobs() {
       if (remoteOnly && !job.remote) return false;
       return true;
     });
-  }, [searchQuery, selectedLocation, selectedJobType, selectedExperience, selectedIndustry, selectedPosted, visaOnly, remoteOnly]);
+  }, [allJobs, selectedJobType, selectedExperience, selectedIndustry, selectedPosted, visaOnly, remoteOnly]);
 
-  const handleApplyClick = (job: typeof DEMO_JOBS[0]) => {
+  const handleSearch = useCallback(() => {
+    setSearchQuery(searchInput);
+  }, [searchInput]);
+
+  const handleApplyClick = (job: JobItem) => {
     window.open(job.applyUrl, "_blank");
     setSelectedJob(job);
     setApplyModalOpen(true);
   };
 
   const clearFilters = () => {
-    setSelectedLocation("all"); setSelectedJobType("all"); setSelectedExperience("all");
+    setSelectedJobType("all"); setSelectedExperience("all");
     setSelectedIndustry("all"); setSelectedPosted("all"); setVisaOnly(false); setRemoteOnly(false);
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t.jobs.title}</h1>
-        <p className="text-muted-foreground mt-1">{t.jobs.subtitle}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{t.jobs.title}</h1>
+          <p className="text-muted-foreground mt-1">{t.jobs.subtitle}</p>
+        </div>
+        {jobsData && (
+          <div className="text-right hidden sm:block">
+            <div className="text-sm font-medium">{filteredJobs.length} jobs</div>
+            <div className="text-xs text-muted-foreground flex items-center gap-2 justify-end">
+              {jobsData.sources.careergov > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-blue-500" />
+                  Career@Gov: {jobsData.sources.careergov}
+                </span>
+              )}
+              {jobsData.sources.mcf > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  MCF: {jobsData.sources.mcf}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Search & Filter Bar */}
@@ -194,43 +238,53 @@ export default function Jobs() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             placeholder={t.jobs.searchPlaceholder}
             className="pl-10"
           />
         </div>
         <div className="flex gap-2">
-          {/* Location quick filter */}
-          <div className="flex gap-1 overflow-x-auto">
-            {locations.map(loc => (
-              <button
-                key={loc.id}
-                onClick={() => setSelectedLocation(loc.id)}
-                className={`px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap border transition-all ${
-                  selectedLocation === loc.id
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border hover:border-primary/30"
-                }`}
-              >
-                {loc.label}
-              </button>
-            ))}
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-            className="gap-2 shrink-0"
-          >
-            <Filter className="h-4 w-4" />
-            {t.jobs.filters}
-            {activeFilterCount > 0 && (
-              <span className="ml-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
-                {activeFilterCount}
-              </span>
-            )}
+          <Button onClick={handleSearch} disabled={isFetching} className="gap-2 shrink-0">
+            {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+            {t.jobs.search || "Search"}
+          </Button>
+          <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching} className="shrink-0">
+            <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
           </Button>
         </div>
+      </div>
+
+      {/* Location quick filter */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1">
+        {locations.map(loc => (
+          <button
+            key={loc.id}
+            onClick={() => setSelectedLocation(loc.id)}
+            className={`px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap border transition-all ${
+              selectedLocation === loc.id
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border hover:border-primary/30"
+            }`}
+          >
+            {loc.label}
+          </button>
+        ))}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowFilters(!showFilters)}
+          className="gap-1.5 shrink-0 ml-auto"
+        >
+          <Filter className="h-3.5 w-3.5" />
+          {t.jobs.filters}
+          {activeFilterCount > 0 && (
+            <span className="ml-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
+              {activeFilterCount}
+            </span>
+          )}
+        </Button>
       </div>
 
       {/* Detailed Filter Panel */}
@@ -308,81 +362,125 @@ export default function Jobs() {
         </Card>
       )}
 
-      {/* Job Listings */}
-      {filteredJobs.length === 0 ? (
+      {/* Loading State */}
+      {isLoading && (
         <div className="text-center py-16">
-          <Briefcase className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-          <h3 className="font-medium">{t.jobs.noResults}</h3>
-          <p className="text-sm text-muted-foreground mt-1">{t.jobs.noResultsDesc}</p>
+          <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
+          <h3 className="font-medium">Loading real job listings...</h3>
+          <p className="text-sm text-muted-foreground mt-1">Fetching from Career@Gov and MyCareersFuture</p>
         </div>
-      ) : (
-        <div className="grid gap-3">
-          {filteredJobs.map(job => {
-            const badge = getSourceBadge(job.source);
-            return (
-              <Card key={job.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <h3 className="font-semibold text-base">{job.title}</h3>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>
-                          {badge.label}
-                        </span>
-                        {job.visa && (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 flex items-center gap-1">
-                            <BadgeCheck className="h-3 w-3" />
-                            {t.jobs.visaYes}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1 flex-wrap">
-                        <span className="flex items-center gap-1">
-                          <Building2 className="h-3.5 w-3.5" />
-                          {job.company}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-3.5 w-3.5" />
-                          {(t.locations as any)[job.location]?.replace(/^.\s/, "") || job.location}
-                        </span>
-                        {job.salary && (
-                          <span className="text-foreground font-medium">{job.salary}</span>
-                        )}
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5" />
-                          {job.posted} {t.jobs.postedDaysAgo}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{job.description}</p>
-                      <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <span className="px-2 py-0.5 rounded text-xs bg-secondary text-secondary-foreground">
-                          {(t.jobs.jobTypes as any)[job.type] || job.type}
-                        </span>
-                        <span className="px-2 py-0.5 rounded text-xs bg-secondary text-secondary-foreground">
-                          {(t.jobs.experienceLevels as any)[job.experience] || job.experience}
-                        </span>
-                        {job.remote && (
-                          <span className="px-2 py-0.5 rounded text-xs bg-violet-100 text-violet-800 flex items-center gap-1">
-                            <Globe className="h-3 w-3" />
-                            Remote
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <Button
-                      onClick={() => handleApplyClick(job)}
-                      className="gap-2 shrink-0"
-                      size="sm"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                      {t.jobs.applyExternal}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="text-center py-16">
+          <Briefcase className="h-12 w-12 text-destructive/30 mx-auto mb-4" />
+          <h3 className="font-medium text-destructive">Failed to load jobs</h3>
+          <p className="text-sm text-muted-foreground mt-1">Please try again later</p>
+          <Button variant="outline" onClick={() => refetch()} className="mt-4 gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </Button>
         </div>
+      )}
+
+      {/* Non-Singapore location notice */}
+      {!isLoading && !isError && selectedLocation !== "all" && selectedLocation !== "singapore" && (
+        <div className="text-center py-16">
+          <Globe className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+          <h3 className="font-medium">{(t.locations as any)[selectedLocation]} Jobs Coming Soon</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            We're working on integrating job sources for this location. Currently, Singapore jobs from Career@Gov and MCF are available.
+          </p>
+          <Button variant="outline" onClick={() => setSelectedLocation("singapore")} className="mt-4">
+            View Singapore Jobs
+          </Button>
+        </div>
+      )}
+
+      {/* Job Listings */}
+      {!isLoading && !isError && (selectedLocation === "all" || selectedLocation === "singapore") && (
+        <>
+          {filteredJobs.length === 0 ? (
+            <div className="text-center py-16">
+              <Briefcase className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+              <h3 className="font-medium">{t.jobs.noResults}</h3>
+              <p className="text-sm text-muted-foreground mt-1">{t.jobs.noResultsDesc}</p>
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {filteredJobs.map(job => {
+                const badge = getSourceBadge(job.source);
+                return (
+                  <Card key={job.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <h3 className="font-semibold text-base">{job.title}</h3>
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>
+                              {badge.label}
+                            </span>
+                            {job.visa && (
+                              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 flex items-center gap-1">
+                                <BadgeCheck className="h-3 w-3" />
+                                Visa
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1 flex-wrap">
+                            <span className="flex items-center gap-1">
+                              <Building2 className="h-3.5 w-3.5" />
+                              {job.company}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <MapPin className="h-3.5 w-3.5" />
+                              {(t.locations as any)[job.location]?.replace(/^.\s/, "") || job.location}
+                            </span>
+                            {job.salary && (
+                              <span className="text-foreground font-medium">{job.salary}</span>
+                            )}
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3.5 w-3.5" />
+                              {job.posted === 0 ? "Today" : `${job.posted}d ago`}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{job.description}</p>
+                          <div className="flex items-center gap-2 mt-2 flex-wrap">
+                            <span className="px-2 py-0.5 rounded text-xs bg-secondary text-secondary-foreground">
+                              {(t.jobs.jobTypes as any)[job.type] || job.type}
+                            </span>
+                            <span className="px-2 py-0.5 rounded text-xs bg-secondary text-secondary-foreground">
+                              {(t.jobs.experienceLevels as any)[job.experience] || job.experience}
+                            </span>
+                            {job.skills && job.skills.length > 0 && job.skills.slice(0, 3).map(skill => (
+                              <span key={skill} className="px-2 py-0.5 rounded text-xs bg-violet-50 text-violet-700 border border-violet-200">
+                                {skill}
+                              </span>
+                            ))}
+                            {job.closingDate && (
+                              <span className="text-xs text-muted-foreground">
+                                Closes: {job.closingDate}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => handleApplyClick(job)}
+                          className="gap-2 shrink-0"
+                          size="sm"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          {t.jobs.applyExternal}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
 
       <ApplyConfirmModal

@@ -13,6 +13,8 @@ import JobFit from "./pages/JobFit";
 import Reports from "./pages/Reports";
 import Consulting from "./pages/Consulting";
 import Admin from "./pages/Admin";
+import Trends from "./pages/Trends";
+import ChatBot from "./pages/ChatBot";
 import DashboardLayout from "./components/DashboardLayout";
 
 function DashboardPage({ children }: { children: React.ReactNode }) {
@@ -41,6 +43,12 @@ function Router() {
       </Route>
       <Route path="/dashboard/consulting">
         <DashboardPage><Consulting /></DashboardPage>
+      </Route>
+      <Route path="/dashboard/trends">
+        <DashboardPage><Trends /></DashboardPage>
+      </Route>
+      <Route path="/dashboard/chat">
+        <DashboardPage><ChatBot /></DashboardPage>
       </Route>
       <Route path="/dashboard/admin">
         <DashboardPage><Admin /></DashboardPage>

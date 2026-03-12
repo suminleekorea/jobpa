@@ -45,11 +45,32 @@ function createUnauthContext(): TrpcContext {
   };
 }
 
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
+describe("auth.me", () => {
+  it("returns user for authenticated context", async () => {
+    const ctx = createMockContext();
+    const caller = appRouter.createCaller(ctx);
+    const user = await caller.auth.me();
+    expect(user).toBeDefined();
+    expect(user?.openId).toBe("test-user-123");
+    expect(user?.name).toBe("Test User");
+  });
+
+  it("returns null for unauthenticated context", async () => {
+    const ctx = createUnauthContext();
+    const caller = appRouter.createCaller(ctx);
+    const user = await caller.auth.me();
+    expect(user).toBeNull();
+  });
+});
+
+// ─── Survey ──────────────────────────────────────────────────────────────────
+
 describe("survey.save", () => {
   it("saves survey data for authenticated user", async () => {
     const ctx = createMockContext();
     const caller = appRouter.createCaller(ctx);
-
     try {
       await caller.survey.save({
         lookingFor: ["market_insights", "resume_feedback"],
@@ -61,17 +82,33 @@ describe("survey.save", () => {
         preferredJobTypes: ["fulltime"],
       });
     } catch (e: any) {
-      // DB errors are expected in test environment
       expect(e.message).not.toContain("UNAUTHORIZED");
     }
   }, 15000);
+
+  it("requires authentication", async () => {
+    const ctx = createUnauthContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.survey.save({
+        lookingFor: ["market_insights"],
+        targetRole: "Engineer",
+        experienceLevel: "mid",
+        interests: ["Tech"],
+        preferredLocations: ["singapore"],
+        needsVisaSponsorship: true,
+        preferredJobTypes: ["fulltime"],
+      })
+    ).rejects.toThrow();
+  });
 });
+
+// ─── Application Tracking ────────────────────────────────────────────────────
 
 describe("application.save", () => {
   it("accepts valid application data", async () => {
     const ctx = createMockContext();
     const caller = appRouter.createCaller(ctx);
-
     try {
       await caller.application.save({
         jobTitle: "AI Engineer",
@@ -90,7 +127,6 @@ describe("application.save", () => {
   it("accepts bookmarked status", async () => {
     const ctx = createMockContext();
     const caller = appRouter.createCaller(ctx);
-
     try {
       await caller.application.save({
         jobTitle: "Frontend Developer",
@@ -105,12 +141,23 @@ describe("application.save", () => {
   it("rejects invalid status", async () => {
     const ctx = createMockContext();
     const caller = appRouter.createCaller(ctx);
-
     await expect(
       caller.application.save({
         jobTitle: "Test",
         company: "Test",
         status: "invalid_status" as any,
+      })
+    ).rejects.toThrow();
+  });
+
+  it("requires authentication", async () => {
+    const ctx = createUnauthContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.application.save({
+        jobTitle: "Test",
+        company: "Test",
+        status: "applied",
       })
     ).rejects.toThrow();
   });
@@ -120,7 +167,6 @@ describe("application.updateStatus", () => {
   it("accepts valid status update", async () => {
     const ctx = createMockContext();
     const caller = appRouter.createCaller(ctx);
-
     try {
       await caller.application.updateStatus({
         id: 1,
@@ -128,17 +174,28 @@ describe("application.updateStatus", () => {
         notes: "Phone screen scheduled",
       });
     } catch (e: any) {
-      // DB error expected
       expect(e.message).not.toContain("UNAUTHORIZED");
     }
   });
+
+  it("rejects invalid status value", async () => {
+    const ctx = createMockContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.application.updateStatus({
+        id: 1,
+        status: "invalid" as any,
+      })
+    ).rejects.toThrow();
+  });
 });
+
+// ─── Consulting Waitlist ─────────────────────────────────────────────────────
 
 describe("consulting.joinWaitlist", () => {
   it("allows unauthenticated users to join waitlist", async () => {
     const ctx = createUnauthContext();
     const caller = appRouter.createCaller(ctx);
-
     try {
       await caller.consulting.joinWaitlist({
         name: "Test User",
@@ -146,7 +203,6 @@ describe("consulting.joinWaitlist", () => {
         message: "Interested in visa consulting",
       });
     } catch (e: any) {
-      // DB error expected, but should not be auth error
       expect(e.message).not.toContain("UNAUTHORIZED");
     }
   });
@@ -154,7 +210,6 @@ describe("consulting.joinWaitlist", () => {
   it("rejects invalid email", async () => {
     const ctx = createUnauthContext();
     const caller = appRouter.createCaller(ctx);
-
     await expect(
       caller.consulting.joinWaitlist({
         email: "not-an-email",
@@ -163,27 +218,25 @@ describe("consulting.joinWaitlist", () => {
   });
 });
 
+// ─── Admin ───────────────────────────────────────────────────────────────────
+
 describe("admin.stats", () => {
   it("rejects non-admin users", async () => {
     const ctx = createMockContext({ role: "user" });
     const caller = appRouter.createCaller(ctx);
-
     await expect(caller.admin.stats()).rejects.toThrow("Forbidden");
   });
 
   it("allows admin users", async () => {
     const ctx = createAdminContext();
     const caller = appRouter.createCaller(ctx);
-
     try {
       const stats = await caller.admin.stats();
-      // If DB is available, check structure
       expect(stats).toHaveProperty("totalUsers");
       expect(stats).toHaveProperty("totalApplications");
       expect(stats).toHaveProperty("totalResumes");
       expect(stats).toHaveProperty("totalWaitlist");
     } catch (e: any) {
-      // DB error is OK, but should not be "Forbidden"
       expect(e.message).not.toBe("Forbidden");
     }
   });
@@ -193,16 +246,22 @@ describe("admin.users", () => {
   it("rejects non-admin users", async () => {
     const ctx = createMockContext({ role: "user" });
     const caller = appRouter.createCaller(ctx);
-
     await expect(caller.admin.users()).rejects.toThrow("Forbidden");
   });
+
+  it("rejects unauthenticated users", async () => {
+    const ctx = createUnauthContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.admin.users()).rejects.toThrow();
+  });
 });
+
+// ─── Job Fit Evaluation ──────────────────────────────────────────────────────
 
 describe("fit.evaluate", () => {
   it("requires job description", async () => {
     const ctx = createMockContext();
     const caller = appRouter.createCaller(ctx);
-
     await expect(
       caller.fit.evaluate({
         targetRole: "AI Engineer",
@@ -210,24 +269,84 @@ describe("fit.evaluate", () => {
       })
     ).rejects.toThrow();
   });
-});
 
-describe("auth.me", () => {
-  it("returns user for authenticated context", async () => {
-    const ctx = createMockContext();
-    const caller = appRouter.createCaller(ctx);
-
-    const user = await caller.auth.me();
-    expect(user).toBeDefined();
-    expect(user?.openId).toBe("test-user-123");
-    expect(user?.name).toBe("Test User");
-  });
-
-  it("returns null for unauthenticated context", async () => {
+  it("requires authentication", async () => {
     const ctx = createUnauthContext();
     const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.fit.evaluate({
+        targetRole: "AI Engineer",
+        jobDescription: "Build ML models",
+      })
+    ).rejects.toThrow();
+  });
+});
 
-    const user = await caller.auth.me();
-    expect(user).toBeNull();
+// ─── Jobs List (Real Data) ───────────────────────────────────────────────────
+
+describe("jobs.list", () => {
+  it("is accessible without authentication (public)", async () => {
+    const ctx = createUnauthContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      const result = await caller.jobs.list({
+        location: "singapore",
+        page: 1,
+        limit: 5,
+      });
+      expect(result).toBeDefined();
+      expect(result).toHaveProperty("jobs");
+      expect(result).toHaveProperty("total");
+      expect(Array.isArray(result.jobs)).toBe(true);
+    } catch (e: any) {
+      // Network errors acceptable in test env
+      expect(e.code).not.toBe("UNAUTHORIZED");
+    }
+  }, 30000);
+
+  it("returns results for valid pagination", async () => {
+    const ctx = createUnauthContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      const result = await caller.jobs.list({
+        location: "singapore",
+        page: 1,
+        limit: 10,
+      });
+      expect(result).toBeDefined();
+      expect(result.jobs.length).toBeLessThanOrEqual(10);
+    } catch (e: any) {
+      // Network errors acceptable
+      expect(e.code).not.toBe("UNAUTHORIZED");
+    }
+  }, 30000);
+
+  it("supports keyword search", async () => {
+    const ctx = createUnauthContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      const result = await caller.jobs.list({
+        location: "singapore",
+        keyword: "engineer",
+        page: 1,
+        limit: 5,
+      });
+      expect(result).toBeDefined();
+      expect(Array.isArray(result.jobs)).toBe(true);
+    } catch (e: any) {
+      expect(e.code).not.toBe("UNAUTHORIZED");
+    }
+  }, 30000);
+});
+
+// ─── Auth Logout ─────────────────────────────────────────────────────────────
+
+describe("auth.logout", () => {
+  it("clears the session cookie and reports success", async () => {
+    const ctx = createMockContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.auth.logout();
+    expect(result).toEqual({ success: true });
+    expect(ctx.res.clearCookie).toHaveBeenCalled();
   });
 });

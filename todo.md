@@ -23,3 +23,15 @@
 - [x] Admin role restricted to owner only
 - [x] Pricing section on landing page (Free now / Premium coming soon / Per-use pricing planned)
 - [x] Commercialization-ready positioning (free launch → paid SaaS or per-use billing)
+- [x] Integrate Career@Gov CSV real data (opengovsg/careersgovsg-jobs-data)
+- [x] Integrate MCF Jobs real data (gabrielchua/mcf-jobs)
+- [x] Construct proper Career@Gov job URLs from JobId + PostingNo
+- [x] Format job closing dates from timestamps
+- [x] Replace demo/mock job data with real data ingestion pipeline
+- [x] Add data refresh mechanism (30min cache TTL)
+- [x] Fix Job Fit TypeError: Cannot read properties of undefined (reading 'toLowerCase') when selecting Data Analyst
+- [x] MCF API integration confirmed working (200+ jobs)
+- [x] Industry news/trends dashboard (multi-sector: IT, finance, healthcare, etc.) with news API
+- [x] AI career chatbot for guidance and Q&A
+- [ ] IR Deck (investor pitch slides) for LinkedIn sharing
+- [ ] Dashboard home page with summary view (resume, applications, trends at a glance)

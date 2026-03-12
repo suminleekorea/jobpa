@@ -4,6 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
+import { fetchAllJobs } from "./jobFetcher";
 
 export const appRouter = router({
   system: systemRouter,
@@ -155,6 +156,21 @@ export const appRouter = router({
     users: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== "admin") throw new Error("Forbidden");
       return db.getAllUsers();
+    }),
+  }),
+
+  jobs: router({
+    list: publicProcedure.input(z.object({
+      search: z.string().optional(),
+      location: z.string().optional(),
+      limit: z.number().optional(),
+    }).optional()).query(async ({ input }) => {
+      const result = await fetchAllJobs({
+        search: input?.search,
+        location: input?.location,
+        limit: input?.limit || 100,
+      });
+      return result;
     }),
   }),
 
