@@ -1,0 +1,25 @@
+# JobPA 취업비서 - Project TODO
+
+- [x] Brand rename to JobPA 취업비서 (logo, title, positioning)
+- [x] Database schema (surveys, applications, jobs, goals, reports, email_alerts, consulting_waitlist)
+- [x] i18n system with KO/EN translations
+- [x] tRPC routers for all features
+- [x] Landing page (hero, features, how it works, FAQ, consulting teaser, CTA)
+- [x] Enhanced onboarding with Step 0 "What are you looking for?"
+- [x] Job listings page with multi-location filtering
+- [x] Detailed filter panel (job type, experience, industry, salary, visa, date, remote)
+- [x] External apply link tracking with confirmation modal
+- [x] Application tracking dashboard with status management
+- [x] Job Fit Evaluation with bug fixes (validation, error handling, loading states)
+- [x] Resume Analysis page
+- [x] Market Trends page
+- [x] Daily Reports page
+- [x] Job consulting coming soon section + waitlist
+- [x] Dashboard layout with sidebar navigation
+- [x] Job source badges (Career@Gov, MCF, LinkedIn, JobsDB, Bayt)
+- [x] Bilingual KO/EN for all new features
+- [x] Vitest tests for key features
+- [x] Admin dashboard (owner-only) with user stats, signup count, waitlist count
+- [x] Admin role restricted to owner only
+- [x] Pricing section on landing page (Free now / Premium coming soon / Per-use pricing planned)
+- [x] Commercialization-ready positioning (free launch → paid SaaS or per-use billing)

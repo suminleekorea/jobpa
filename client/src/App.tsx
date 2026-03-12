@@ -5,31 +5,56 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import Onboarding from "./pages/Onboarding";
+import Jobs from "./pages/Jobs";
+import Applications from "./pages/Applications";
+import ResumeAnalysis from "./pages/ResumeAnalysis";
+import JobFit from "./pages/JobFit";
+import Reports from "./pages/Reports";
+import Consulting from "./pages/Consulting";
+import Admin from "./pages/Admin";
+import DashboardLayout from "./components/DashboardLayout";
+
+function DashboardPage({ children }: { children: React.ReactNode }) {
+  return <DashboardLayout>{children}</DashboardLayout>;
+}
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
+      <Route path="/" component={Home} />
+      <Route path="/onboarding" component={Onboarding} />
+      <Route path="/dashboard">
+        <DashboardPage><Jobs /></DashboardPage>
+      </Route>
+      <Route path="/dashboard/applications">
+        <DashboardPage><Applications /></DashboardPage>
+      </Route>
+      <Route path="/dashboard/resume">
+        <DashboardPage><ResumeAnalysis /></DashboardPage>
+      </Route>
+      <Route path="/dashboard/fit">
+        <DashboardPage><JobFit /></DashboardPage>
+      </Route>
+      <Route path="/dashboard/reports">
+        <DashboardPage><Reports /></DashboardPage>
+      </Route>
+      <Route path="/dashboard/consulting">
+        <DashboardPage><Consulting /></DashboardPage>
+      </Route>
+      <Route path="/dashboard/admin">
+        <DashboardPage><Admin /></DashboardPage>
+      </Route>
+      <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
+      <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster />
           <Router />
