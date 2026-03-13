@@ -4,6 +4,7 @@
  *  1. Career@Gov (CSV) — Singapore Government
  *  2. MCF (API) — MyCareersFuture Singapore
  *  3. JSearch (RapidAPI) — LinkedIn, Indeed, Glassdoor, Google Jobs, etc.
+ *  4. Saramin (API) — 사람인, Korea's largest job portal (requires SARAMIN_API_KEY)
  * Caches results in memory with TTL to avoid excessive API calls
  */
 import axios from "axios";
@@ -17,7 +18,7 @@ export interface JobListing {
   agency?: string;
   location: string;
   salary?: string;
-  source: "careergov" | "mcf" | "linkedin" | "indeed" | "glassdoor" | "google" | "ziprecruiter" | "monster" | "jobstreet" | "other";
+  source: "careergov" | "mcf" | "linkedin" | "indeed" | "glassdoor" | "google" | "ziprecruiter" | "monster" | "jobstreet" | "saramin" | "other";
   applyUrl: string;
   visa: boolean;
   type: string;
@@ -42,6 +43,7 @@ const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 let careerGovCache: CacheEntry | null = null;
 let mcfCache: Map<string, CacheEntry> = new Map();
 let jsearchCache: Map<string, CacheEntry> = new Map();
+let saraminCache: Map<string, CacheEntry> = new Map();
 
 // ─── Helpers ────────────────────────────────────────────────────
 function stripHtml(html: string): string {
@@ -77,25 +79,25 @@ function mapExperienceLevel(_expText: string, minYears?: number, _maxYears?: num
 function mapEmploymentType(empType: string): string {
   if (!empType) return "fulltime";
   const lower = empType.toLowerCase();
-  if (lower.includes("permanent") || lower.includes("full")) return "fulltime";
-  if (lower.includes("contract") || lower.includes("fixed")) return "contract";
-  if (lower.includes("intern")) return "internship";
-  if (lower.includes("part") || lower.includes("flexi")) return "parttime";
+  if (lower.includes("permanent") || lower.includes("full") || lower.includes("정규")) return "fulltime";
+  if (lower.includes("contract") || lower.includes("fixed") || lower.includes("계약")) return "contract";
+  if (lower.includes("intern") || lower.includes("인턴")) return "internship";
+  if (lower.includes("part") || lower.includes("flexi") || lower.includes("파트")) return "parttime";
   return "fulltime";
 }
 
 function mapIndustryFromField(field: string): string {
   if (!field) return "government";
   const lower = field.toLowerCase();
-  if (lower.includes("tech") || lower.includes("info") || lower.includes("digital") || lower.includes("data") || lower.includes("software")) return "tech";
-  if (lower.includes("financ") || lower.includes("account") || lower.includes("bank")) return "finance";
-  if (lower.includes("health") || lower.includes("medical") || lower.includes("pharma")) return "healthcare";
-  if (lower.includes("educ") || lower.includes("train")) return "education";
-  if (lower.includes("engineer")) return "tech";
-  if (lower.includes("legal") || lower.includes("law")) return "legal";
-  if (lower.includes("market") || lower.includes("commun") || lower.includes("media")) return "marketing";
-  if (lower.includes("hotel") || lower.includes("food") || lower.includes("hospitality")) return "hospitality";
-  if (lower.includes("logist") || lower.includes("transport") || lower.includes("supply")) return "logistics";
+  if (lower.includes("tech") || lower.includes("info") || lower.includes("digital") || lower.includes("data") || lower.includes("software") || lower.includes("it") || lower.includes("게임") || lower.includes("소프트웨어")) return "tech";
+  if (lower.includes("financ") || lower.includes("account") || lower.includes("bank") || lower.includes("금융") || lower.includes("회계")) return "finance";
+  if (lower.includes("health") || lower.includes("medical") || lower.includes("pharma") || lower.includes("의료") || lower.includes("제약")) return "healthcare";
+  if (lower.includes("educ") || lower.includes("train") || lower.includes("교육")) return "education";
+  if (lower.includes("engineer") || lower.includes("엔지니어")) return "tech";
+  if (lower.includes("legal") || lower.includes("law") || lower.includes("법")) return "legal";
+  if (lower.includes("market") || lower.includes("commun") || lower.includes("media") || lower.includes("마케팅") || lower.includes("광고")) return "marketing";
+  if (lower.includes("hotel") || lower.includes("food") || lower.includes("hospitality") || lower.includes("식품") || lower.includes("호텔")) return "hospitality";
+  if (lower.includes("logist") || lower.includes("transport") || lower.includes("supply") || lower.includes("물류") || lower.includes("유통")) return "logistics";
   return "government";
 }
 
@@ -282,7 +284,7 @@ function formatSalary(salary: MCFJob["salary"]): string | undefined {
 function mapMCFIndustry(categories: Array<{ category: string }>): string {
   if (!categories || categories.length === 0) return "others";
   const cat = (categories[0]?.category || "").toLowerCase();
-  if (cat.includes("tech") || cat.includes("info") || cat.includes("software") || cat.includes("engineering")) return "tech";
+  if (cat.includes("tech") || cat.includes("info") || cat.includes("software") || cat.includes("data")) return "tech";
   if (cat.includes("financ") || cat.includes("bank") || cat.includes("account") || cat.includes("insurance")) return "finance";
   if (cat.includes("health") || cat.includes("medical") || cat.includes("pharma")) return "healthcare";
   if (cat.includes("educ") || cat.includes("train")) return "education";
@@ -454,7 +456,6 @@ function mapLocationFromJSearch(job: JSearchJob, queryLocation: string): string 
   // Map back to our location keys
   const country = (job.job_country || "").toLowerCase();
   const city = (job.job_city || "").toLowerCase();
-  const state = (job.job_state || "").toLowerCase();
 
   if (job.job_is_remote) return "remote";
   if (country.includes("singapore") || city.includes("singapore")) return "singapore";
@@ -549,6 +550,198 @@ export async function fetchJSearchJobs(
   }
 }
 
+// ─── Saramin API (사람인) ────────────────────────────────────────
+// Korea's largest job portal. Requires SARAMIN_API_KEY env variable.
+// Apply for API key at: https://oapi.saramin.co.kr/guide/job-search
+const SARAMIN_API_URL = "https://oapi.saramin.co.kr/job-search";
+
+interface SaraminJob {
+  id: string;
+  url: string;
+  active: string;
+  "posting-timestamp": string;
+  "expiration-timestamp": string;
+  "expiration-date"?: string;
+  "close-type": { "@code": string; "#text": string } | string;
+  company: {
+    name: { "@href"?: string; "#text": string } | string;
+  };
+  position: {
+    title: string;
+    location: { "@code": string; "#text": string } | string;
+    "job-type": { "@code": string; "#text": string } | string;
+    industry: { "@code": string; "#text": string } | string;
+    "job-mid-code": { "@code": string; "#text": string } | string;
+    "job-code": { "@code": string; "#text": string } | string;
+    "experience-level": { "@code": string; "@min": string; "@max": string; "#text": string } | string;
+    "required-education-level": { "@code": string; "#text": string } | string;
+  };
+  keyword?: string;
+  salary?: { "@code": string; "#text": string } | string;
+}
+
+function parseSaraminText(field: any): string {
+  if (!field) return "";
+  if (typeof field === "string") return field;
+  if (typeof field === "object") {
+    return field["#text"] || field["_"] || "";
+  }
+  return String(field);
+}
+
+function mapSaraminExperience(expLevel: any): string {
+  if (!expLevel) return "mid";
+  const code = typeof expLevel === "object" ? expLevel["@code"] : "";
+  const min = typeof expLevel === "object" ? parseInt(expLevel["@min"] || "0") : 0;
+  if (code === "1") return "entry"; // 신입
+  if (min <= 2) return "junior";
+  if (min <= 5) return "mid";
+  if (min > 5) return "senior";
+  return "mid";
+}
+
+function mapSaraminJobType(jobType: any): string {
+  const text = parseSaraminText(jobType).toLowerCase();
+  if (text.includes("정규")) return "fulltime";
+  if (text.includes("계약")) return "contract";
+  if (text.includes("인턴")) return "internship";
+  if (text.includes("파트") || text.includes("아르바이트")) return "parttime";
+  return "fulltime";
+}
+
+function mapSaraminIndustry(industry: any, jobMidCode: any): string {
+  const industryText = parseSaraminText(industry).toLowerCase();
+  const jobText = parseSaraminText(jobMidCode).toLowerCase();
+  const combined = industryText + " " + jobText;
+  if (combined.includes("it") || combined.includes("소프트웨어") || combined.includes("게임") || combined.includes("인터넷") || combined.includes("데이터")) return "tech";
+  if (combined.includes("금융") || combined.includes("은행") || combined.includes("보험") || combined.includes("회계")) return "finance";
+  if (combined.includes("의료") || combined.includes("제약") || combined.includes("바이오") || combined.includes("병원")) return "healthcare";
+  if (combined.includes("교육") || combined.includes("학원")) return "education";
+  if (combined.includes("마케팅") || combined.includes("광고") || combined.includes("홍보") || combined.includes("미디어")) return "marketing";
+  if (combined.includes("물류") || combined.includes("유통") || combined.includes("운송")) return "logistics";
+  if (combined.includes("식품") || combined.includes("호텔") || combined.includes("외식")) return "hospitality";
+  if (combined.includes("법") || combined.includes("법률")) return "legal";
+  if (combined.includes("영업") || combined.includes("판매")) return "sales";
+  return "others";
+}
+
+function formatSaraminSalary(salary: any): string | undefined {
+  const text = parseSaraminText(salary);
+  if (!text || text === "회사내규에 따름") return undefined;
+  return text;
+}
+
+export async function fetchSaraminJobs(
+  search?: string,
+  limit: number = 40
+): Promise<JobListing[]> {
+  const saraminApiKey = process.env.SARAMIN_API_KEY;
+  if (!saraminApiKey) {
+    console.log("[JobFetcher] Saramin: No SARAMIN_API_KEY, skipping (add key to enable Korean job listings from 사람인)");
+    return [];
+  }
+
+  const cacheKey = `saramin-${search || "all"}-${limit}`;
+  const cached = saraminCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+
+  try {
+    console.log(`[JobFetcher] Fetching Saramin jobs (search=${search || "all"}, limit=${limit})...`);
+
+    const params: Record<string, string | number> = {
+      "access-key": saraminApiKey,
+      count: Math.min(limit, 110),
+      sort: "pd", // 게시일 역순 (newest first)
+    };
+    if (search) params.keywords = search;
+
+    const response = await axios.get(SARAMIN_API_URL, {
+      params,
+      timeout: 15000,
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "JobPA/1.0",
+      },
+    });
+
+    const data = response.data;
+    // Saramin JSON response structure: { "jobs": { "count": N, "start": 0, "total": N, "job": [...] } }
+    const jobsData = data?.["job-search"]?.jobs || data?.jobs;
+    if (!jobsData) {
+      console.warn("[JobFetcher] Saramin: Unexpected response structure", JSON.stringify(data).slice(0, 200));
+      return [];
+    }
+
+    const jobArray: SaraminJob[] = Array.isArray(jobsData.job)
+      ? jobsData.job
+      : jobsData.job
+        ? [jobsData.job]
+        : [];
+
+    const jobs: JobListing[] = jobArray.slice(0, limit).map((job) => {
+      const postingTimestamp = parseInt(job["posting-timestamp"] || "0") * 1000;
+      const expirationTimestamp = parseInt(job["expiration-timestamp"] || "0") * 1000;
+      const daysPosted = postingTimestamp ? daysAgo(postingTimestamp) : 0;
+
+      const companyName = typeof job.company?.name === "object"
+        ? (job.company.name["#text"] || "")
+        : (job.company?.name || "Unknown");
+
+      const title = parseSaraminText(job.position?.title) || "Untitled";
+      const locationText = parseSaraminText(job.position?.location);
+      const jobType = job.position?.["job-type"];
+      const industry = job.position?.industry;
+      const jobMidCode = job.position?.["job-mid-code"];
+      const expLevel = job.position?.["experience-level"];
+
+      // Format closing date
+      let closingDate: string | undefined;
+      if (expirationTimestamp) {
+        closingDate = new Date(expirationTimestamp).toLocaleDateString("ko-KR", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+      }
+
+      return {
+        id: `saramin-${job.id}`,
+        title,
+        company: companyName.trim(),
+        location: "korea",
+        salary: formatSaraminSalary(job.salary),
+        source: "saramin" as const,
+        applyUrl: job.url || `https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=${job.id}`,
+        visa: false, // Korean domestic jobs
+        type: mapSaraminJobType(jobType),
+        experience: mapSaraminExperience(expLevel),
+        industry: mapSaraminIndustry(industry, jobMidCode),
+        posted: daysPosted,
+        remote: locationText.includes("재택") || locationText.includes("원격"),
+        description: `${locationText} | ${parseSaraminText(jobType)} | ${parseSaraminText(expLevel)}`,
+        closingDate,
+        skills: job.keyword ? job.keyword.split(",").map(k => k.trim()).filter(Boolean).slice(0, 5) : [],
+      };
+    });
+
+    console.log(`[JobFetcher] Saramin: ${jobs.length} jobs loaded`);
+    saraminCache.set(cacheKey, { data: jobs, timestamp: Date.now() });
+    return jobs;
+  } catch (error: any) {
+    if (error?.response?.status === 403 || error?.response?.status === 401) {
+      console.warn("[JobFetcher] Saramin: Invalid API key (403/401). Check SARAMIN_API_KEY.");
+    } else if (error?.response?.status === 429) {
+      console.warn("[JobFetcher] Saramin: Rate limited (429). Using cache or skipping.");
+    } else {
+      console.error("[JobFetcher] Saramin fetch error:", error?.message || error);
+    }
+    const cached = saraminCache.get(cacheKey);
+    return cached?.data || [];
+  }
+}
+
 // ─── Combined Fetch ─────────────────────────────────────────────
 export async function fetchAllJobs(options?: {
   search?: string;
@@ -563,11 +756,17 @@ export async function fetchAllJobs(options?: {
 
   const fetchers: Promise<JobListing[]>[] = [];
   const isSingapore = location === "all" || location === "singapore";
+  const isKorea = location === "all" || location === "korea";
 
   // Career@Gov + MCF only for Singapore
   if (isSingapore) {
     fetchers.push(fetchCareerGovJobs());
     fetchers.push(fetchMCFJobs(search, 50));
+  }
+
+  // Saramin for Korea
+  if (isKorea) {
+    fetchers.push(fetchSaraminJobs(search, 40));
   }
 
   // JSearch for ALL locations (including Singapore for LinkedIn/Indeed/Glassdoor coverage)

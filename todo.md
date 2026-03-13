@@ -51,3 +51,9 @@
 - [x] Data isolation audit - ensure no user data leaks between accounts (resume skills, etc.)
 - [x] Fun/differentiated UI - gamification, journal, mood tracking, XP badges
 - [x] JSearch API integration for LinkedIn, Indeed, Glassdoor, Google Jobs aggregation
+- [x] Integrate Saramin API (사람인) for Korean domestic jobs
+- [x] Integrate JobKorea (잡코리아) — API requires approval (email inquiry draft written); added as external resource link in Korea filter
+- [x] Integrate Incruit (인크루트) — No public API; added as external resource link in Korea filter
+- [x] Integrate PeopleNJob (피플앤잡) — No public API; added as external resource link in Korea filter
+- [ ] Add "Korea (귀국)" tab/filter for domestic returnee job seekers
+- [x] Korean platform source badges in job cards (사람인 indigo, 잡코리아 rose)

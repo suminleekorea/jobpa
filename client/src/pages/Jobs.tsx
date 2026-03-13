@@ -234,6 +234,12 @@ export default function Jobs() {
                   JSearch: {(jobsData.sources as any).jsearch}
                 </span>
               )}
+              {(jobsData.sources as any).saramin > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                  사람인: {(jobsData.sources as any).saramin}
+                </span>
+              )}
             </div>
           </div>
         )}
@@ -473,6 +479,65 @@ export default function Jobs() {
             </div>
           )}
         </>
+      )}
+
+      {/* Korean Platform External Resources — shown when Korea filter is active */}
+      {selectedLocation === "korea" && (
+        <div className="rounded-xl border bg-gradient-to-br from-rose-50/60 to-indigo-50/60 dark:from-rose-950/20 dark:to-indigo-950/20 p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">🇰🇷</span>
+            <h3 className="font-semibold text-sm">한국 전문 잡지 직접 검색</h3>
+            <span className="text-xs text-muted-foreground">(API 미제공 플랫폼)</span>
+          </div>
+          <p className="text-xs text-muted-foreground mb-4">아래 플랫폼은 공식 API를 제공하지 않아 직접 연동이 어렵습니다. 아래 링크를 통해 직접 검색하세요.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <a
+              href="https://www.jobkorea.co.kr"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 rounded-lg border bg-white dark:bg-card p-3 hover:shadow-md transition-all hover:border-rose-300 group"
+            >
+              <div className="h-9 w-9 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
+                <span className="text-white text-xs font-bold">JK</span>
+              </div>
+              <div className="min-w-0">
+                <div className="font-medium text-sm group-hover:text-rose-600 transition-colors">잡코리아</div>
+                <div className="text-xs text-muted-foreground truncate">신입·경력 국내 최대 잡지</div>
+              </div>
+              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground ml-auto shrink-0" />
+            </a>
+            <a
+              href="https://www.incruit.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 rounded-lg border bg-white dark:bg-card p-3 hover:shadow-md transition-all hover:border-orange-300 group"
+            >
+              <div className="h-9 w-9 rounded-lg bg-orange-500 flex items-center justify-center shrink-0">
+                <span className="text-white text-xs font-bold">IN</span>
+              </div>
+              <div className="min-w-0">
+                <div className="font-medium text-sm group-hover:text-orange-600 transition-colors">인크루트</div>
+                <div className="text-xs text-muted-foreground truncate">신입·인턴 특화 잡지</div>
+              </div>
+              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground ml-auto shrink-0" />
+            </a>
+            <a
+              href="https://www.peoplenjob.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 rounded-lg border bg-white dark:bg-card p-3 hover:shadow-md transition-all hover:border-indigo-300 group"
+            >
+              <div className="h-9 w-9 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
+                <span className="text-white text-xs font-bold">PJ</span>
+              </div>
+              <div className="min-w-0">
+                <div className="font-medium text-sm group-hover:text-indigo-600 transition-colors">피플앤잡</div>
+                <div className="text-xs text-muted-foreground truncate">외국계 기업 전문 잡지</div>
+              </div>
+              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground ml-auto shrink-0" />
+            </a>
+          </div>
+        </div>
       )}
 
       <ApplyConfirmModal
