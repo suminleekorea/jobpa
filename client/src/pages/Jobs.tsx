@@ -141,6 +141,7 @@ export default function Jobs() {
   const [selectedPosted, setSelectedPosted] = useState<string>("all");
   const [visaOnly, setVisaOnly] = useState(false);
   const [remoteOnly, setRemoteOnly] = useState(false);
+  const [selectedSource, setSelectedSource] = useState<string>("all");
 
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<JobItem | null>(null);
@@ -172,9 +173,10 @@ export default function Jobs() {
   const activeFilterCount = [
     selectedJobType !== "all", selectedExperience !== "all",
     selectedIndustry !== "all", selectedPosted !== "all", visaOnly, remoteOnly,
+    selectedSource !== "all",
   ].filter(Boolean).length;
 
-  // Client-side filtering for type/experience/industry/posted/visa/remote
+  // Client-side filtering for type/experience/industry/posted/visa/remote/source
   const filteredJobs = useMemo(() => {
     return allJobs.filter(job => {
       if (selectedJobType !== "all" && job.type !== selectedJobType) return false;
@@ -186,9 +188,13 @@ export default function Jobs() {
       }
       if (visaOnly && !job.visa) return false;
       if (remoteOnly && !job.remote) return false;
+      if (selectedSource !== "all") {
+        const jobSource = (job.source || "").toLowerCase().replace(/[^a-z]/g, "");
+        if (jobSource !== selectedSource) return false;
+      }
       return true;
     });
-  }, [allJobs, selectedJobType, selectedExperience, selectedIndustry, selectedPosted, visaOnly, remoteOnly]);
+  }, [allJobs, selectedJobType, selectedExperience, selectedIndustry, selectedPosted, visaOnly, remoteOnly, selectedSource]);
 
   const handleSearch = useCallback(() => {
     setSearchQuery(searchInput);
@@ -203,6 +209,7 @@ export default function Jobs() {
   const clearFilters = () => {
     setSelectedJobType("all"); setSelectedExperience("all");
     setSelectedIndustry("all"); setSelectedPosted("all"); setVisaOnly(false); setRemoteOnly(false);
+    setSelectedSource("all");
   };
 
   return (
@@ -303,7 +310,7 @@ export default function Jobs() {
       {showFilters && (
         <Card className="border-dashed">
           <CardContent className="p-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
               <div>
                 <Label className="text-xs font-medium mb-1.5 block">{t.jobs.filterLabels.jobType}</Label>
                 <Select value={selectedJobType} onValueChange={setSelectedJobType}>
@@ -352,6 +359,18 @@ export default function Jobs() {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label className="text-xs font-medium mb-1.5 block">{(t.jobs.filterLabels as any).source}</Label>
+                <Select value={selectedSource} onValueChange={setSelectedSource}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t.applications.all}</SelectItem>
+                    {Object.entries((t.jobs as any).sources || {}).map(([k, v]) => (
+                      <SelectItem key={k} value={k}>{v as string}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex items-center justify-between col-span-1">
                 <Label className="text-xs font-medium">{t.jobs.filterLabels.visa}</Label>
                 <Switch checked={visaOnly} onCheckedChange={setVisaOnly} />
@@ -372,6 +391,57 @@ export default function Jobs() {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Active Filter Chips */}
+      {activeFilterCount > 0 && !showFilters && (
+        <div className="flex flex-wrap gap-2">
+          {selectedJobType !== "all" && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+              {(t.jobs.jobTypes as any)[selectedJobType] || selectedJobType}
+              <button onClick={() => setSelectedJobType("all")} className="hover:opacity-70"><X className="h-3 w-3" /></button>
+            </span>
+          )}
+          {selectedExperience !== "all" && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+              {(t.jobs.experienceLevels as any)[selectedExperience] || selectedExperience}
+              <button onClick={() => setSelectedExperience("all")} className="hover:opacity-70"><X className="h-3 w-3" /></button>
+            </span>
+          )}
+          {selectedIndustry !== "all" && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+              {(t.jobs.industries as any)[selectedIndustry] || selectedIndustry}
+              <button onClick={() => setSelectedIndustry("all")} className="hover:opacity-70"><X className="h-3 w-3" /></button>
+            </span>
+          )}
+          {selectedPosted !== "all" && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+              {(t.jobs.postedOptions as any)[selectedPosted] || selectedPosted}
+              <button onClick={() => setSelectedPosted("all")} className="hover:opacity-70"><X className="h-3 w-3" /></button>
+            </span>
+          )}
+          {selectedSource !== "all" && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+              {((t.jobs as any).sources || {})[selectedSource] || selectedSource}
+              <button onClick={() => setSelectedSource("all")} className="hover:opacity-70"><X className="h-3 w-3" /></button>
+            </span>
+          )}
+          {visaOnly && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+              {t.jobs.filterLabels.visa}
+              <button onClick={() => setVisaOnly(false)} className="hover:opacity-70"><X className="h-3 w-3" /></button>
+            </span>
+          )}
+          {remoteOnly && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+              {t.jobs.filterLabels.remote}
+              <button onClick={() => setRemoteOnly(false)} className="hover:opacity-70"><X className="h-3 w-3" /></button>
+            </span>
+          )}
+          <button onClick={clearFilters} className="text-xs text-muted-foreground hover:text-foreground underline">
+            {t.jobs.clearFilters}
+          </button>
+        </div>
       )}
 
       {/* Loading State */}

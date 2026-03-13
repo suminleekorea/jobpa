@@ -57,3 +57,6 @@
 - [x] Integrate PeopleNJob (피플앤잡) — No public API; added as external resource link in Korea filter
 - [ ] Add "Korea (귀국)" tab/filter for domestic returnee job seekers
 - [x] Korean platform source badges in job cards (사람인 indigo, 잡코리아 rose)
+- [x] Add job portal (source) filter — filter by 사람인/잡코리아/LinkedIn/Indeed/Glassdoor/Career@Gov/MCF etc.
+- [x] Expand experience level filter — 인턴/신입/주니어/미들/시니어/임원직 (6 levels)
+- [x] Update i18n KO/EN for new filter labels
