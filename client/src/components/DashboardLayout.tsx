@@ -118,31 +118,40 @@ function DashboardLayoutContent({ children, setSidebarWidth }: { children: React
   return (
     <>
       <div className="relative" ref={sidebarRef}>
-        <Sidebar collapsible="icon" className="border-r-0" disableTransition={isResizing}>
-          <SidebarHeader className="h-16 justify-center">
+        <Sidebar collapsible="icon" className="border-r border-border/50" disableTransition={isResizing}>
+          <SidebarHeader className="h-14 justify-center border-b border-border/50">
             <div className="flex items-center gap-3 px-2 transition-all w-full">
-              <button onClick={toggleSidebar} className="h-8 w-8 flex items-center justify-center hover:bg-accent rounded-lg transition-colors shrink-0" aria-label="Toggle navigation">
+              <button onClick={toggleSidebar} className="h-8 w-8 flex items-center justify-center hover:bg-accent/50 rounded-md transition-colors shrink-0" aria-label="Toggle navigation">
                 <PanelLeft className="h-4 w-4 text-muted-foreground" />
               </button>
               {!isCollapsed && (
                 <div className="flex items-center gap-2 min-w-0">
-                  <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center shrink-0">
-                    <Bot className="h-4 w-4 text-primary-foreground" />
+                  <div className="h-6 w-6 rounded-md bg-primary flex items-center justify-center shrink-0">
+                    <Bot className="h-3.5 w-3.5 text-primary-foreground" />
                   </div>
-                  <span className="font-bold tracking-tight truncate">{t.brand.name}</span>
+                  <span className="text-sm font-semibold tracking-tight truncate">{t.brand.name}</span>
                 </div>
               )}
             </div>
           </SidebarHeader>
 
           <SidebarContent className="gap-0">
-            <SidebarMenu className="px-2 py-1">
+            <SidebarMenu className="px-2 py-2">
               {allItems.map(item => {
                 const isActive = location === item.path;
                 return (
                   <SidebarMenuItem key={item.path}>
-                    <SidebarMenuButton isActive={isActive} onClick={() => setLocation(item.path)} tooltip={item.label} className="h-10 transition-all font-normal">
-                      <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
+                    <SidebarMenuButton
+                      isActive={isActive}
+                      onClick={() => setLocation(item.path)}
+                      tooltip={item.label}
+                      className={`h-8 text-[13px] transition-all font-medium ${
+                        isActive
+                          ? "bg-primary/8 text-primary border border-primary/15"
+                          : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                      }`}
+                    >
+                      <item.icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? "text-primary" : ""}`} />
                       <span>{item.label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -151,11 +160,11 @@ function DashboardLayoutContent({ children, setSidebarWidth }: { children: React
             </SidebarMenu>
           </SidebarContent>
 
-          <SidebarFooter className="p-3 space-y-2">
+          <SidebarFooter className="p-2 space-y-1 border-t border-border/50">
             {!isCollapsed && (
               <button
                 onClick={() => setLanguage(language === "ko" ? "en" : "ko")}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-accent/50 transition-colors text-sm text-muted-foreground w-full"
+                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors text-[13px] text-muted-foreground w-full"
               >
                 <Languages className="h-4 w-4" />
                 <span>{language === "ko" ? "English" : "한국어"}</span>

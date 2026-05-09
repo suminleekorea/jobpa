@@ -74,9 +74,8 @@ function HeroSection() {
 
   return (
     <section className="pt-32 pb-20 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/10" />
-      <div className="absolute top-20 right-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
-      <div className="absolute bottom-10 left-10 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
+      {/* Subtle dot grid texture */}
+      <div className="absolute inset-0 opacity-[0.4]" style={{ backgroundImage: "radial-gradient(circle, #e5e7eb 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
       <div className="container relative">
         <div className="max-w-3xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
@@ -89,7 +88,7 @@ function HeroSection() {
           <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto whitespace-pre-line leading-relaxed">
             {t.hero.subtitle}
           </p>
-          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-sm">
             <Zap className="h-4 w-4 shrink-0" />
             <span>{t.hero.note}</span>
           </div>
@@ -134,7 +133,7 @@ function FeaturesSection() {
   ];
 
   return (
-    <section className="py-20 bg-secondary/30">
+    <section className="py-20 bg-card/50">
       <div className="container">
         <div className="text-center mb-14">
           <h2 className="text-3xl font-bold tracking-tight">{t.features.title}</h2>
@@ -185,10 +184,10 @@ function HowItWorksSection() {
 function ConsultingTeaser() {
   const { t } = useI18n();
   return (
-    <section className="py-20 bg-gradient-to-br from-primary/5 via-transparent to-accent/5">
+    <section className="py-20">
       <div className="container">
         <div className="max-w-3xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-sm font-medium mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-sm font-medium mb-4">
             <Sparkles className="h-3.5 w-3.5" />
             {t.consulting.badge}
           </div>
@@ -258,7 +257,7 @@ function CTASection() {
   const [, setLocation] = useLocation();
 
   return (
-    <section className="py-20 bg-primary text-primary-foreground">
+    <section className="py-20 bg-primary/90 text-primary-foreground">
       <div className="container text-center">
         <h2 className="text-3xl font-bold tracking-tight">{t.cta.title}</h2>
         <p className="mt-3 text-primary-foreground/80 max-w-lg mx-auto">{t.cta.subtitle}</p>
