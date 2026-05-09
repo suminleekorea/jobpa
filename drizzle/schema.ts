@@ -198,3 +198,84 @@ export const journal = mysqlTable("journal", {
 
 export type JournalEntry = typeof journal.$inferSelect;
 export type InsertJournalEntry = typeof journal.$inferInsert;
+
+// ─── Consulting Marketplace ──────────────────────────────────────
+import { bigint } from "drizzle-orm/mysql-core";
+
+export const consultants = mysqlTable("consultants", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  displayName: varchar("displayName", { length: 255 }).notNull(),
+  title: varchar("title", { length: 255 }),
+  bio: text("bio"),
+  specialties: json("specialties").$type<string[]>(),
+  targetRegions: json("targetRegions").$type<string[]>(),
+  languages: json("languages").$type<string[]>(),
+  yearsExperience: int("yearsExperience").default(0),
+  sessionPriceCredits: int("sessionPriceCredits").default(10),
+  avatarUrl: text("avatarUrl"),
+  linkedinUrl: text("linkedinUrl"),
+  isApproved: boolean("isApproved").default(false),
+  isActive: boolean("isActive").default(true),
+  totalSessions: int("totalSessions").default(0),
+  avgRating: int("avgRating").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Consultant = typeof consultants.$inferSelect;
+
+export const consultingApplications = mysqlTable("consultingApplications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  displayName: varchar("displayName", { length: 255 }).notNull(),
+  title: varchar("title", { length: 255 }),
+  bio: text("bio"),
+  specialties: json("specialties").$type<string[]>(),
+  targetRegions: json("targetRegions").$type<string[]>(),
+  languages: json("languages").$type<string[]>(),
+  yearsExperience: int("yearsExperience").default(0),
+  linkedinUrl: text("linkedinUrl"),
+  motivation: text("motivation"),
+  status: varchar("status", { length: 32 }).default("pending"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ConsultingApplication = typeof consultingApplications.$inferSelect;
+
+export const consultingSessions = mysqlTable("consultingSessions", {
+  id: int("id").autoincrement().primaryKey(),
+  consultantId: int("consultantId").notNull(),
+  clientUserId: int("clientUserId").notNull(),
+  status: varchar("status", { length: 32 }).default("pending"),
+  scheduledAt: bigint("scheduledAt", { mode: "number" }),
+  durationMinutes: int("durationMinutes").default(60),
+  creditsCharged: int("creditsCharged").notNull(),
+  topic: varchar("topic", { length: 512 }),
+  notes: text("notes"),
+  meetingUrl: text("meetingUrl"),
+  rating: int("rating"),
+  review: text("review"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ConsultingSession = typeof consultingSessions.$inferSelect;
+
+export const userCredits = mysqlTable("userCredits", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  balance: int("balance").default(0).notNull(),
+  totalEarned: int("totalEarned").default(0).notNull(),
+  totalSpent: int("totalSpent").default(0).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type UserCredits = typeof userCredits.$inferSelect;
+
+export const creditTransactions = mysqlTable("creditTransactions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  amount: int("amount").notNull(),
+  type: varchar("type", { length: 64 }).notNull(),
+  description: varchar("description", { length: 512 }),
+  referenceId: int("referenceId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type CreditTransaction = typeof creditTransactions.$inferSelect;

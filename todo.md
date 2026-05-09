@@ -60,3 +60,11 @@
 - [x] Add job portal (source) filter — filter by 사람인/잡코리아/LinkedIn/Indeed/Glassdoor/Career@Gov/MCF etc.
 - [x] Expand experience level filter — 인턴/신입/주니어/미들/시니어/임원직 (6 levels)
 - [x] Update i18n KO/EN for new filter labels
+- [ ] Landing page hero dashboard preview screenshot/mockup
+- [x] Interview probability engine (resume vs job description → interview likelihood %)
+- [x] Region-aware resume feedback (different advice for SG/KR/UAE/AU/US markets)
+- [x] Resume-to-Daily-Action-Plan auto-generation (checklist tasks from resume insights)
+- [x] Consulting Marketplace (consultant profiles, session booking, credit system)
+- [ ] Disable Saramin API gracefully (반려됨 — skip if no key, no UI error)
+- [ ] MCF MCP server integration (mcpmarket.com/server/mycareersfuture)
+- [ ] jobscrapers (pwaaron/jobscrapers) integration for additional SG job sources

@@ -175,6 +175,7 @@ export const appRouter = router({
   }),
 
   consulting: router({
+    // Legacy waitlist (keep for backwards compat)
     joinWaitlist: publicProcedure.input(z.object({
       name: z.string().optional(),
       email: z.string().email(),
@@ -187,6 +188,64 @@ export const appRouter = router({
     getWaitlist: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== "admin") throw new Error("Forbidden");
       return db.getConsultingWaitlist();
+    }),
+    // Marketplace: list approved consultants
+    list: publicProcedure.query(async () => {
+      return db.getApprovedConsultants();
+    }),
+    myProfile: protectedProcedure.query(async ({ ctx }) => {
+      return db.getConsultantByUserId(ctx.user.id);
+    }),
+    myApplication: protectedProcedure.query(async ({ ctx }) => {
+      return db.getConsultingApplicationByUserId(ctx.user.id);
+    }),
+    applyConsultant: protectedProcedure.input(z.object({
+      displayName: z.string().min(2),
+      title: z.string().optional(),
+      bio: z.string().optional(),
+      specialties: z.array(z.string()).optional(),
+      targetRegions: z.array(z.string()).optional(),
+      languages: z.array(z.string()).optional(),
+      yearsExperience: z.number().optional(),
+      linkedinUrl: z.string().optional(),
+      motivation: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      return db.applyToBeConsultant(ctx.user.id, input);
+    }),
+    allApplications: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new Error('Forbidden');
+      return db.getAllConsultingApplications();
+    }),
+    approveApplication: protectedProcedure.input(z.object({
+      applicationId: z.number(),
+      userId: z.number(),
+    })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new Error('Forbidden');
+      return db.approveConsultantApplication(input.applicationId, input.userId);
+    }),
+    myCredits: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUserCredits(ctx.user.id);
+    }),
+    creditHistory: protectedProcedure.query(async ({ ctx }) => {
+      return db.getCreditTransactions(ctx.user.id);
+    }),
+    bookSession: protectedProcedure.input(z.object({
+      consultantId: z.number(),
+      topic: z.string().optional(),
+      scheduledAt: z.number().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const consultantList = await db.getApprovedConsultants();
+      const c = consultantList.find(c => c.id === input.consultantId);
+      if (!c) throw new Error('Consultant not found');
+      return db.bookConsultingSession(ctx.user.id, {
+        consultantId: input.consultantId,
+        creditsCharged: c.sessionPriceCredits ?? 10,
+        topic: input.topic,
+        scheduledAt: input.scheduledAt,
+      });
+    }),
+    mySessions: protectedProcedure.query(async ({ ctx }) => {
+      return db.getSessionsByUser(ctx.user.id);
     }),
   }),
 

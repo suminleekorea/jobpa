@@ -4,6 +4,7 @@ import {
   InsertUser, users, surveys, applications, resumes, fitEvaluations,
   reports, goals, emailAlerts, consultingWaitlist,
   userXP, xpEvents, dailyChecklist, journal,
+  consultants, consultingApplications, consultingSessions, userCredits, creditTransactions,
   type InsertSurvey, type InsertApplication, type Survey, type Application,
   type InsertUserXP, type InsertDailyChecklistItem, type InsertJournalEntry,
 } from "../drizzle/schema";
@@ -363,4 +364,135 @@ export async function saveJournalEntry(userId: number, data: { date: string; moo
   }
   const [result] = await db.insert(journal).values({ userId, ...data }).$returningId();
   return result;
+}
+
+// ─── Consulting Marketplace helpers ────────────────────────────
+export async function getApprovedConsultants() {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(consultants)
+    .where(and(eq(consultants.isApproved, true), eq(consultants.isActive, true)))
+    .orderBy(desc(consultants.totalSessions));
+}
+
+export async function getConsultantByUserId(userId: number) {
+  const db = await getDb(); if (!db) return undefined;
+  const result = await db.select().from(consultants).where(eq(consultants.userId, userId)).limit(1);
+  return result[0];
+}
+
+export async function applyToBeConsultant(userId: number, data: {
+  displayName: string; title?: string; bio?: string; specialties?: string[];
+  targetRegions?: string[]; languages?: string[]; yearsExperience?: number;
+  linkedinUrl?: string; motivation?: string;
+}) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(consultingApplications).values({ userId, ...data }).$returningId();
+  return result;
+}
+
+export async function getConsultingApplicationByUserId(userId: number) {
+  const db = await getDb(); if (!db) return undefined;
+  const result = await db.select().from(consultingApplications)
+    .where(eq(consultingApplications.userId, userId))
+    .orderBy(desc(consultingApplications.createdAt)).limit(1);
+  return result[0];
+}
+
+export async function getAllConsultingApplications() {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(consultingApplications).orderBy(desc(consultingApplications.createdAt));
+}
+
+export async function approveConsultantApplication(applicationId: number, userId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  // Update application status
+  const [app] = await db.select().from(consultingApplications)
+    .where(eq(consultingApplications.id, applicationId)).limit(1);
+  if (!app) throw new Error("Application not found");
+  await db.update(consultingApplications)
+    .set({ status: "approved" })
+    .where(eq(consultingApplications.id, applicationId));
+  // Create consultant profile
+  await db.insert(consultants).values({
+    userId: app.userId,
+    displayName: app.displayName,
+    title: app.title ?? undefined,
+    bio: app.bio ?? undefined,
+    specialties: app.specialties ?? [],
+    targetRegions: app.targetRegions ?? [],
+    languages: app.languages ?? [],
+    yearsExperience: app.yearsExperience ?? 0,
+    linkedinUrl: app.linkedinUrl ?? undefined,
+    isApproved: true,
+    isActive: true,
+  }).onDuplicateKeyUpdate({ set: { isApproved: true, isActive: true } });
+  return { success: true };
+}
+
+// ─── Credits helpers ────────────────────────────────────────────
+export async function getUserCredits(userId: number) {
+  const db = await getDb(); if (!db) return { balance: 0, totalEarned: 0, totalSpent: 0 };
+  const result = await db.select().from(userCredits).where(eq(userCredits.userId, userId)).limit(1);
+  if (result.length > 0) return result[0];
+  // Auto-create with welcome bonus
+  await db.insert(userCredits).values({ userId, balance: 5, totalEarned: 5, totalSpent: 0 });
+  await db.insert(creditTransactions).values({
+    userId, amount: 5, type: "welcome_bonus", description: "Welcome bonus credits",
+  });
+  const created = await db.select().from(userCredits).where(eq(userCredits.userId, userId)).limit(1);
+  return created[0];
+}
+
+export async function getCreditTransactions(userId: number, limit = 20) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(creditTransactions)
+    .where(eq(creditTransactions.userId, userId))
+    .orderBy(desc(creditTransactions.createdAt)).limit(limit);
+}
+
+export async function bookConsultingSession(clientUserId: number, data: {
+  consultantId: number; creditsCharged: number; topic?: string; scheduledAt?: number;
+}) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  // Check balance
+  const credits = await getUserCredits(clientUserId);
+  if (credits.balance < data.creditsCharged) {
+    throw new Error("Insufficient credits");
+  }
+  // Deduct credits
+  await db.update(userCredits).set({
+    balance: credits.balance - data.creditsCharged,
+    totalSpent: credits.totalSpent + data.creditsCharged,
+  }).where(eq(userCredits.userId, clientUserId));
+  // Record transaction
+  await db.insert(creditTransactions).values({
+    userId: clientUserId, amount: -data.creditsCharged,
+    type: "session_payment",
+    description: `Consulting session booking`,
+    referenceId: data.consultantId,
+  });
+  // Create session
+  const [session] = await db.insert(consultingSessions).values({
+    consultantId: data.consultantId,
+    clientUserId,
+    creditsCharged: data.creditsCharged,
+    topic: data.topic,
+    scheduledAt: data.scheduledAt,
+    status: "pending",
+  }).$returningId();
+  return session;
+}
+
+export async function getSessionsByUser(userId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(consultingSessions)
+    .where(eq(consultingSessions.clientUserId, userId))
+    .orderBy(desc(consultingSessions.createdAt));
+}
+
+export async function getSessionsByConsultant(consultantId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(consultingSessions)
+    .where(eq(consultingSessions.consultantId, consultantId))
+    .orderBy(desc(consultingSessions.createdAt));
 }
