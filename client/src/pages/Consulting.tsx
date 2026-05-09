@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
@@ -496,10 +499,49 @@ export default function Consulting() {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [bookingSession, setBookingSession] = useState<SessionType | null>(null);
   const [showBookModal, setShowBookModal] = useState(false);
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [applyForm, setApplyForm] = useState({
+    displayName: "",
+    title: "",
+    bio: "",
+    specialties: "",
+    targetRegions: "",
+    languages: "",
+    yearsExperience: "",
+    linkedinUrl: "",
+    motivation: "",
+  });
 
   const { data: consultants = [], isLoading } = trpc.consulting.list.useQuery();
   const { data: credits } = trpc.consulting.myCredits.useQuery(undefined, { enabled: !!user });
   const utils = trpc.useUtils();
+
+  const applyMutation = trpc.consulting.applyConsultant.useMutation({
+    onSuccess: () => {
+      toast.success("컨설턴트 신청이 접수되었습니다! 검토 후 연락드리겠습니다 🌱");
+      setShowApplyModal(false);
+      setApplyForm({ displayName: "", title: "", bio: "", specialties: "", targetRegions: "", languages: "", yearsExperience: "", linkedinUrl: "", motivation: "" });
+    },
+    onError: (err) => {
+      toast.error(err.message || "신청 중 오류가 발생했습니다.");
+    },
+  });
+
+  const handleApplySubmit = () => {
+    if (!user) { toast.error("로그인 후 신청할 수 있습니다."); return; }
+    if (!applyForm.displayName.trim()) { toast.error("이름을 입력해주세요."); return; }
+    applyMutation.mutate({
+      displayName: applyForm.displayName.trim(),
+      title: applyForm.title.trim() || undefined,
+      bio: applyForm.bio.trim() || undefined,
+      specialties: applyForm.specialties ? applyForm.specialties.split(",").map(s => s.trim()).filter(Boolean) : undefined,
+      targetRegions: applyForm.targetRegions ? applyForm.targetRegions.split(",").map(s => s.trim()).filter(Boolean) : undefined,
+      languages: applyForm.languages ? applyForm.languages.split(",").map(s => s.trim()).filter(Boolean) : undefined,
+      yearsExperience: applyForm.yearsExperience ? parseInt(applyForm.yearsExperience) : undefined,
+      linkedinUrl: applyForm.linkedinUrl.trim() || undefined,
+      motivation: applyForm.motivation.trim() || undefined,
+    });
+  };
 
   const bookSessionMutation = trpc.consulting.bookSession.useMutation({
     onSuccess: () => {
@@ -662,13 +704,133 @@ export default function Consulting() {
             size="sm"
             variant="outline"
             className="shrink-0 text-xs"
-            onClick={() => toast.info("컨설턴트 신청 기능이 곧 오픈됩니다! 관심 있으시면 contact@jobpa.io로 연락주세요.")}
+            onClick={() => {
+              if (!user) { toast.error("로그인 후 신청할 수 있습니다."); return; }
+              setShowApplyModal(true);
+            }}
           >
             신청하기
             <ChevronRight className="w-3.5 h-3.5 ml-1" />
           </Button>
         </CardContent>
       </Card>
+
+      {/* Consultant Application Dialog */}
+      <Dialog open={showApplyModal} onOpenChange={setShowApplyModal}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>컨설턴트 파트너 신청</DialogTitle>
+            <DialogDescription>
+              JobPA 파트너 컨설턴트로 활동하고 싶으신 분들의 신청을 받습니다.
+              검토 후 1-3 영업일 내 연락드립니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="apply-name" className="text-xs font-medium">이름 <span className="text-destructive">*</span></Label>
+              <Input
+                id="apply-name"
+                placeholder="홍길동"
+                value={applyForm.displayName}
+                onChange={e => setApplyForm(f => ({ ...f, displayName: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="apply-title" className="text-xs font-medium">직함 / 현재 포지션</Label>
+              <Input
+                id="apply-title"
+                placeholder="예: Senior Product Manager @ Google Singapore"
+                value={applyForm.title}
+                onChange={e => setApplyForm(f => ({ ...f, title: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="apply-linkedin" className="text-xs font-medium">LinkedIn URL</Label>
+              <Input
+                id="apply-linkedin"
+                placeholder="linkedin.com/in/yourprofile"
+                value={applyForm.linkedinUrl}
+                onChange={e => setApplyForm(f => ({ ...f, linkedinUrl: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="apply-years" className="text-xs font-medium">경력 (년)</Label>
+                <Input
+                  id="apply-years"
+                  type="number"
+                  placeholder="5"
+                  value={applyForm.yearsExperience}
+                  onChange={e => setApplyForm(f => ({ ...f, yearsExperience: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="apply-langs" className="text-xs font-medium">사용 언어 (쉼표 구분)</Label>
+                <Input
+                  id="apply-langs"
+                  placeholder="한국어, 영어"
+                  value={applyForm.languages}
+                  onChange={e => setApplyForm(f => ({ ...f, languages: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="apply-specialties" className="text-xs font-medium">전문 분야 (쉼표 구분)</Label>
+              <Input
+                id="apply-specialties"
+                placeholder="예: 싱가포르 취업, EP 비자, 테크 이직, 이력서 작성"
+                value={applyForm.specialties}
+                onChange={e => setApplyForm(f => ({ ...f, specialties: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="apply-regions" className="text-xs font-medium">담당 지역 (쉼표 구분)</Label>
+              <Input
+                id="apply-regions"
+                placeholder="예: Singapore, Korea, UAE"
+                value={applyForm.targetRegions}
+                onChange={e => setApplyForm(f => ({ ...f, targetRegions: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="apply-bio" className="text-xs font-medium">자기소개</Label>
+              <Textarea
+                id="apply-bio"
+                placeholder="간단한 경력 소개와 컨설팅 경험을 작성해주세요"
+                rows={3}
+                value={applyForm.bio}
+                onChange={e => setApplyForm(f => ({ ...f, bio: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="apply-motivation" className="text-xs font-medium">지원 동기</Label>
+              <Textarea
+                id="apply-motivation"
+                placeholder="JobPA 컨설턴트로 활동하고 싶은 이유를 알려주세요"
+                rows={3}
+                value={applyForm.motivation}
+                onChange={e => setApplyForm(f => ({ ...f, motivation: e.target.value }))}
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowApplyModal(false)}
+              >
+                취소
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleApplySubmit}
+                disabled={applyMutation.isPending}
+              >
+                {applyMutation.isPending ? "신청 중..." : "신청 제출"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <SproutsPurchaseModal open={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
     </div>

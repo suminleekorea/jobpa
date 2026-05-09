@@ -68,10 +68,11 @@
 - [ ] Disable Saramin API gracefully (반려됨 — skip if no key, no UI error)
 - [ ] MCF MCP server integration (mcpmarket.com/server/mycareersfuture)
 - [ ] jobscrapers (pwaaron/jobscrapers) integration for additional SG job sources
+- [ ] Consultant application form — activate real DB submission + owner notification
 
 ## Consulting Marketplace Rebuild
-- [ ] Add linkedinUrl, photoUrl, industry, specialties fields to consultants table
-- [ ] Seed Sumin Lee as first consultant with full profile
-- [ ] Consulting directory: industry/role filter grid + consultant cards
-- [ ] Consultant detail page: LinkedIn, photo, career, Sprouts purchase flow
+- [x] Add linkedinUrl, photoUrl, industry, specialties fields to consultants table
+- [x] Seed Sumin Lee as first consultant with full profile
+- [x] Consulting directory: industry/role filter grid + consultant cards
+- [x] Consultant detail page: LinkedIn, photo, career, Sprouts purchase flow
 - [ ] Replace Home.tsx with pitch-structured landing page

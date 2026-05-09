@@ -293,29 +293,55 @@ function mapMCFIndustry(categories: Array<{ category: string }>): string {
   return "others";
 }
 
-export async function fetchMCFJobs(search?: string, limit: number = 50): Promise<JobListing[]> {
-  const cacheKey = `mcf-${search || "all"}-${limit}`;
+export async function fetchMCFJobs(
+  search?: string,
+  limit: number = 50,
+  filters?: {
+    salaryMin?: number;
+    salaryMax?: number;
+    categories?: string;
+    employmentTypes?: string;
+    positionLevels?: string;
+  }
+): Promise<JobListing[]> {
+  const filterKey = filters ? JSON.stringify(filters) : "";
+  const cacheKey = `mcf-${search || "all"}-${limit}-${filterKey}`;
   const cached = mcfCache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return cached.data;
   }
 
   try {
-    console.log(`[JobFetcher] Fetching MCF jobs (search=${search || "all"}, limit=${limit})...`);
-    const params: Record<string, string | number> = {
-      limit: Math.min(limit, 100),
-      page: 0,
+    const pageSize = Math.min(limit, 100);
+    const pages = limit > 100 ? Math.ceil(limit / 100) : 1;
+    console.log(`[JobFetcher] Fetching MCF jobs (search=${search || "all"}, limit=${limit}, pages=${pages})...`);
+    const baseParams: Record<string, string | number> = {
+      limit: pageSize,
     };
-    if (search) params.search = search;
+    if (search) baseParams.search = search;
+    if (filters?.salaryMin) baseParams.salaryMin = filters.salaryMin;
+    if (filters?.salaryMax) baseParams.salaryMax = filters.salaryMax;
+    if (filters?.categories) baseParams.categories = filters.categories;
+    if (filters?.employmentTypes) baseParams.employmentTypes = filters.employmentTypes;
+    if (filters?.positionLevels) baseParams.positionLevels = filters.positionLevels;
 
-    const response = await axios.get(MCF_API_URL, {
-      params,
-      timeout: 15000,
-      headers: { "User-Agent": "JobPA/1.0" },
-    });
-
-    const data = response.data;
-    if (!data || !data.results) return [];
+    // Fetch multiple pages in parallel if needed
+    const pageRequests = Array.from({ length: pages }, (_, i) =>
+      axios.get(MCF_API_URL, {
+        params: { ...baseParams, page: i },
+        timeout: 15000,
+        headers: { "User-Agent": "JobPA/1.0" },
+      })
+    );
+    const responses = await Promise.allSettled(pageRequests);
+    const allResults: MCFJob[] = [];
+    for (const res of responses) {
+      if (res.status === "fulfilled" && res.value.data?.results) {
+        allResults.push(...res.value.data.results);
+      }
+    }
+    const data = { results: allResults };
+    if (!data || !data.results || data.results.length === 0) return [];
 
     const jobs: JobListing[] = (data.results as MCFJob[]).map((job) => {
       const postDate = job.metadata?.newPostingDate || job.metadata?.createdAt;
