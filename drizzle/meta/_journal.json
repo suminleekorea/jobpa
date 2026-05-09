@@ -29,6 +29,13 @@
       "when": 1778340957292,
       "tag": "0003_plain_molten_man",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1778341849194,
+      "tag": "0004_awesome_gorilla_man",
+      "breakpoints": true
     }
   ]
 }

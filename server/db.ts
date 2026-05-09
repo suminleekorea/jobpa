@@ -379,6 +379,11 @@ export async function getConsultantByUserId(userId: number) {
   const result = await db.select().from(consultants).where(eq(consultants.userId, userId)).limit(1);
   return result[0];
 }
+export async function getConsultantById(id: number) {
+  const db = await getDb(); if (!db) return undefined;
+  const result = await db.select().from(consultants).where(eq(consultants.id, id)).limit(1);
+  return result[0];
+}
 
 export async function applyToBeConsultant(userId: number, data: {
   displayName: string; title?: string; bio?: string; specialties?: string[];

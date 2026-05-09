@@ -193,6 +193,9 @@ export const appRouter = router({
     list: publicProcedure.query(async () => {
       return db.getApprovedConsultants();
     }),
+    getById: publicProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {
+      return db.getConsultantById(input.id);
+    }),
     myProfile: protectedProcedure.query(async ({ ctx }) => {
       return db.getConsultantByUserId(ctx.user.id);
     }),
