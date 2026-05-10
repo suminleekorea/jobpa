@@ -18,6 +18,7 @@ import Trends from "./pages/Trends";
 import ChatBot from "./pages/ChatBot";
 import DashboardLayout from "./components/DashboardLayout";
 import FloatingChatButton from "./components/FloatingChatButton";
+import DailyGoalNudge from "./components/DailyGoalNudge";
 import { lazy, Suspense } from "react";
 const Checklist = lazy(() => import("./pages/Checklist"));
 const Journal = lazy(() => import("./pages/Journal"));
@@ -85,6 +86,7 @@ function App() {
           <Toaster />
           <Router />
           <FloatingChatButton />
+          <DailyGoalNudge />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

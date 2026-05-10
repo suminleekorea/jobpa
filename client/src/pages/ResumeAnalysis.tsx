@@ -6,14 +6,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useI18n } from "@/contexts/i18nContext";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import {
   FileText, Upload, Loader2, AlertCircle, CheckCircle2, XCircle,
   TrendingUp, Target, Lightbulb, Globe, RefreshCw, ChevronDown, ChevronUp,
-  Zap, ArrowUp, Sparkles, MapPin, Tag
+  Zap, ArrowUp, ArrowRight, Sparkles, MapPin, Tag
 } from "lucide-react";
 import { toast } from "sonner";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Improvement {
@@ -149,6 +150,7 @@ function UploadZone({ onFile, file, isDragging, onDragOver, onDragLeave, onDrop 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function ResumeAnalysis() {
   const { t, language } = useI18n();
+  const [, setLocation] = useLocation();
   const { data: savedResume, refetch } = trpc.resume.get.useQuery();
   const utils = trpc.useUtils();
 
@@ -158,9 +160,14 @@ export default function ResumeAnalysis() {
   const [jobDescription, setJobDescription] = useState("");
   const [showJD, setShowJD] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [result, setResult] = useState<AnalysisResult | null>(
-    savedResume?.analysisResult ? (savedResume.analysisResult as AnalysisResult) : null
-  );
+  const [result, setResult] = useState<AnalysisResult | null>(null);
+
+  // Sync savedResume to result state once data loads (fixes "load failed" issue)
+  useEffect(() => {
+    if (savedResume?.analysisResult && !result) {
+      setResult(savedResume.analysisResult as AnalysisResult);
+    }
+  }, [savedResume]);
   const [showAllImprovements, setShowAllImprovements] = useState(false);
 
   const addChecklistItem = trpc.checklist.add.useMutation({
@@ -525,6 +532,60 @@ export default function ResumeAnalysis() {
               </CardContent>
             </Card>
           )}
+          {/* Next Step Suggestions */}
+          <Card className="border-emerald-200 bg-emerald-50/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base text-emerald-800">
+                <ArrowRight className="h-5 w-5 text-emerald-600" />
+                {language === "ko" ? "다음 단계 추천" : "Recommended Next Steps"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {[
+                {
+                  icon: "💬",
+                  titleKo: "AI 커리어 챗봇에게 물어보기",
+                  titleEn: "Ask AI Career Chatbot",
+                  descKo: "이력서 분석 결과를 바탕으로 맞춤형 커리어 조언을 받아보세요.",
+                  descEn: "Get personalized career advice based on your resume analysis.",
+                  href: "/dashboard/chat",
+                },
+                {
+                  icon: "👥",
+                  titleKo: "전문 컨설턴트 상담 예약",
+                  titleEn: "Book a Career Consultant",
+                  descKo: "싱가포르 취업 전문가와 1:1 세션으로 더 구체적인 전략을 세워보세요.",
+                  descEn: "Book a 1:1 session with a Singapore career expert for a concrete strategy.",
+                  href: "/dashboard/consulting",
+                },
+                {
+                  icon: "🔍",
+                  titleKo: "맞춤 채용 공고 찾기",
+                  titleEn: "Find Matching Job Listings",
+                  descKo: "분석된 스킬과 목표 직무에 맞는 채용 공고를 검색해보세요.",
+                  descEn: "Search for job listings matching your analyzed skills and target role.",
+                  href: "/dashboard/jobs",
+                },
+              ].map((step, i) => (
+                <button
+                  key={i}
+                  onClick={() => setLocation(step.href)}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg bg-white border border-emerald-100 hover:border-emerald-300 hover:shadow-sm transition-all text-left"
+                >
+                  <span className="text-xl">{step.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-emerald-900">
+                      {language === "ko" ? step.titleKo : step.titleEn}
+                    </p>
+                    <p className="text-xs text-emerald-700/70 truncate">
+                      {language === "ko" ? step.descKo : step.descEn}
+                    </p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-emerald-400 shrink-0" />
+                </button>
+              ))}
+            </CardContent>
+          </Card>
         </>
       )}
     </div>

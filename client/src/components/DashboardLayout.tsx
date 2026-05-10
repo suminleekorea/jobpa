@@ -164,11 +164,15 @@ function DashboardLayoutContent({ children, setSidebarWidth }: { children: React
           <SidebarFooter className="p-2 space-y-1 border-t border-border/50">
             {!isCollapsed && (
               <button
-                onClick={() => setLanguage(language === "ko" ? "en" : "ko")}
+                onClick={() => {
+                  const langs = ["ko", "en", "ja", "zh"] as const;
+                  const idx = langs.indexOf(language as any);
+                  setLanguage(langs[(idx + 1) % langs.length]);
+                }}
                 className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors text-[13px] text-muted-foreground w-full"
               >
                 <Languages className="h-4 w-4" />
-                <span>{language === "ko" ? "English" : "한국어"}</span>
+                <span>{language === "ko" ? "English" : language === "en" ? "日本語" : language === "ja" ? "中文" : "한국어"}</span>
               </button>
             )}
             <DropdownMenu>

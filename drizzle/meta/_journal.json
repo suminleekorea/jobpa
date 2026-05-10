@@ -43,6 +43,13 @@
       "when": 1778380151102,
       "tag": "0005_sudden_captain_stacy",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1778387427705,
+      "tag": "0006_naive_scalphunter",
+      "breakpoints": true
     }
   ]
 }

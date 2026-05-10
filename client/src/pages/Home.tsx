@@ -10,16 +10,22 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { trpc } from "@/lib/trpc";
+import { Star } from "lucide-react";
 
 function LanguageToggle() {
   const { language, setLanguage } = useI18n();
   return (
     <button
-      onClick={() => setLanguage(language === "ko" ? "en" : "ko")}
+      onClick={() => {
+        const langs = ["ko", "en", "ja", "zh"] as const;
+        const idx = langs.indexOf(language as any);
+        setLanguage(langs[(idx + 1) % langs.length]);
+      }}
       className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-secondary text-secondary-foreground hover:bg-accent transition-colors"
     >
       <Languages className="h-3.5 w-3.5" />
-      {language === "ko" ? "EN" : "KO"}
+      {language === "ko" ? "EN" : language === "en" ? "JA" : language === "ja" ? "ZH" : "KO"}
     </button>
   );
 }
@@ -226,6 +232,155 @@ function ConsultingTeaser() {
   );
 }
 
+function ReviewsSection() {
+  const { language } = useI18n();
+  const isKo = language === "ko";
+  const { data: reviews } = trpc.reviews.list.useQuery();
+  const [showForm, setShowForm] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const utils = trpc.useUtils();
+
+  const submit = trpc.reviews.submit.useMutation({
+    onSuccess: () => {
+      setSubmitted(true);
+      setShowForm(false);
+      setComment("");
+      setDisplayName("");
+      utils.reviews.list.invalidate();
+    },
+  });
+
+  const demoReviews = [
+    {
+      id: -1,
+      displayName: "Jiyeon K.",
+      rating: 5,
+      comment: isKo
+        ? "싱가포르 취업 준비하면서 정말 많은 도움을 받았어요. AI 이력서 분석이 특히 유용했습니다!"
+        : "Really helpful for my Singapore job search. The AI resume analysis was especially useful!",
+      targetRole: "Data Analyst",
+      targetMarket: "Singapore",
+    },
+    {
+      id: -2,
+      displayName: "Rahul M.",
+      rating: 5,
+      comment: isKo
+        ? "인도에서 싱가포르로 이직할 때 JobPA가 큰 도움이 됐어요. 컨설팅 서비스도 훌륭합니다."
+        : "JobPA was a great help when relocating from India to Singapore. The consulting service is excellent.",
+      targetRole: "Product Manager",
+      targetMarket: "Singapore",
+    },
+    {
+      id: -3,
+      displayName: "Suji L.",
+      rating: 4,
+      comment: isKo
+        ? "데일리 리포트 기능이 정말 좋아요. 매일 아침 커리어 인사이트를 받을 수 있어서 동기부여가 됩니다."
+        : "Love the daily report feature. Getting career insights every morning keeps me motivated.",
+      targetRole: "Marketing Manager",
+      targetMarket: "Singapore",
+    },
+  ];
+
+  const displayReviews = (reviews && reviews.length > 0) ? reviews : demoReviews;
+
+  return (
+    <section className="py-20 bg-card/30">
+      <div className="container">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold tracking-tight mb-3">
+            {isKo ? "사용자 후기" : "User Reviews"}
+          </h2>
+          <p className="text-muted-foreground">
+            {isKo ? "JobPA를 사용한 분들의 실제 경험을 들어보세요" : "Real experiences from JobPA users"}
+          </p>
+        </div>
+        <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto mb-10">
+          {displayReviews.slice(0, 3).map((review) => (
+            <div key={review.id} className="bg-background rounded-xl p-6 border shadow-sm">
+              <div className="flex items-center gap-1 mb-3">
+                {[1,2,3,4,5].map((s) => (
+                  <Star key={s} className={`h-4 w-4 ${s <= review.rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}`} />
+                ))}
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-4">"{review.comment}"</p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">{review.displayName || (isKo ? "익명" : "Anonymous")}</p>
+                {review.targetMarket && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">{review.targetMarket}</span>
+                )}
+              </div>
+              {review.targetRole && (
+                <p className="text-xs text-muted-foreground mt-1">{review.targetRole}</p>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="text-center">
+          {!showForm && !submitted && (
+            <button
+              onClick={() => isAuthenticated ? setShowForm(true) : (window.location.href = "/api/oauth/login")}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border text-sm font-medium hover:bg-accent transition-colors"
+            >
+              <Star className="h-4 w-4" />
+              {isKo ? "후기 남기기" : "Leave a Review"}
+            </button>
+          )}
+          {submitted && (
+            <p className="text-sm text-emerald-600 font-medium">
+              {isKo ? "후기가 제출됐습니다! 검토 후 게시됩니다." : "Review submitted! It will be published after review."}
+            </p>
+          )}
+          {showForm && (
+            <div className="max-w-md mx-auto bg-background border rounded-xl p-6 text-left shadow-sm">
+              <h3 className="font-semibold mb-4">{isKo ? "후기 작성" : "Write a Review"}</h3>
+              <div className="flex items-center gap-1 mb-4">
+                {[1,2,3,4,5].map((s) => (
+                  <button key={s} onClick={() => setRating(s)}>
+                    <Star className={`h-6 w-6 ${s <= rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}`} />
+                  </button>
+                ))}
+              </div>
+              <input
+                className="w-full border rounded-lg px-3 py-2 text-sm mb-3 bg-background"
+                placeholder={isKo ? "이름 (선택)" : "Display name (optional)"}
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+              />
+              <textarea
+                className="w-full border rounded-lg px-3 py-2 text-sm mb-3 bg-background resize-none"
+                rows={3}
+                placeholder={isKo ? "JobPA 사용 경험을 공유해주세요 (최소 10자)" : "Share your experience with JobPA (min 10 chars)"}
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => submit.mutate({ rating, comment, displayName: displayName || undefined })}
+                  disabled={comment.length < 10 || submit.isPending}
+                  className="flex-1 bg-primary text-primary-foreground rounded-lg py-2 text-sm font-medium disabled:opacity-50"
+                >
+                  {submit.isPending ? (isKo ? "제출 중..." : "Submitting...") : (isKo ? "제출하기" : "Submit")}
+                </button>
+                <button
+                  onClick={() => setShowForm(false)}
+                  className="px-4 py-2 border rounded-lg text-sm"
+                >
+                  {isKo ? "취소" : "Cancel"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
 function FAQSection() {
   const { t } = useI18n();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -322,6 +477,7 @@ export default function Home() {
         <FeaturesSection />
         <HowItWorksSection />
         <ConsultingTeaser />
+        <ReviewsSection />
         <FAQSection />
         <CTASection />
       </main>

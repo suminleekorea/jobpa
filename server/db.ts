@@ -5,7 +5,7 @@ import {
   reports, goals, emailAlerts, consultingWaitlist,
   userXP, xpEvents, dailyChecklist, journal,
   consultants, consultingApplications, consultingSessions, userCredits, creditTransactions,
-  chatSessions, chatMessages, resumeAnalysisResults,
+  chatSessions, chatMessages, resumeAnalysisResults, reviews,
   type InsertSurvey, type InsertApplication, type Survey, type Application,
   type InsertUserXP, type InsertDailyChecklistItem, type InsertJournalEntry,
 } from "../drizzle/schema";
@@ -569,4 +569,34 @@ export async function getLatestResumeAnalysis(userId: number) {
     .orderBy(desc(resumeAnalysisResults.createdAt))
     .limit(1);
   return result[0];
+}
+
+// ─── Reviews / Testimonials ───────────────────────────────────────
+export async function submitReview(userId: number, data: {
+  rating: number; comment: string; displayName?: string;
+  targetRole?: string; targetMarket?: string; isAnonymous?: boolean;
+}) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(reviews).values({ userId, ...data }).$returningId();
+  return result;
+}
+
+export async function getApprovedReviews(limit = 20) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(reviews)
+    .where(eq(reviews.isApproved, true))
+    .orderBy(desc(reviews.createdAt))
+    .limit(limit);
+}
+
+export async function getUserReviews(userId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(reviews)
+    .where(eq(reviews.userId, userId))
+    .orderBy(desc(reviews.createdAt));
+}
+
+export async function approveReview(id: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.update(reviews).set({ isApproved: true }).where(eq(reviews.id, id));
 }

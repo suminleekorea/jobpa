@@ -13,8 +13,11 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("jobpa-lang");
-      if (saved === "ko" || saved === "en") return saved;
-      return navigator.language.startsWith("ko") ? "ko" : "en";
+      if (saved === "ko" || saved === "en" || saved === "ja" || saved === "zh") return saved as Language;
+      if (navigator.language.startsWith("ko")) return "ko";
+      if (navigator.language.startsWith("ja")) return "ja";
+      if (navigator.language.startsWith("zh")) return "zh";
+      return "en";
     }
     return "en";
   });

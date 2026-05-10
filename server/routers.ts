@@ -1,4 +1,8 @@
 import { COOKIE_NAME } from "@shared/const";
+import { createOpenAI } from "@ai-sdk/openai";
+import { generateText } from "ai";
+import { createPatchedFetch } from "./_core/patchedFetch";
+import { ENV } from "./_core/env";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
@@ -33,7 +37,8 @@ export const appRouter = router({
       return db.saveSurvey({ userId: ctx.user.id, ...input });
     }),
     get: protectedProcedure.query(async ({ ctx }) => {
-      return db.getSurveyByUserId(ctx.user.id);
+      const survey = await db.getSurveyByUserId(ctx.user.id);
+      return survey ?? null;
     }),
   }),
 
@@ -68,7 +73,8 @@ export const appRouter = router({
 
   resume: router({
     get: protectedProcedure.query(async ({ ctx }) => {
-      return db.getResumeByUserId(ctx.user.id);
+      const resume = await db.getResumeByUserId(ctx.user.id);
+      return resume ?? null;
     }),
     save: protectedProcedure.input(z.object({
       fileName: z.string().optional(),
@@ -109,17 +115,68 @@ export const appRouter = router({
       return db.getReportsByUserId(ctx.user.id);
     }),
     generate: protectedProcedure.mutation(async ({ ctx }) => {
-      return db.saveReport(ctx.user.id, {
-        title: `Daily Report - ${new Date().toLocaleDateString()}`,
-        content: "Report generation in progress...",
-        reportType: "daily",
+      // Gather user data for personalized report
+      const [applications, latestResume, goal, checklist] = await Promise.all([
+        db.getApplicationsByUserId(ctx.user.id),
+        db.getLatestResumeAnalysis(ctx.user.id),
+        db.getGoalByUserId(ctx.user.id),
+        db.getChecklistByDate(ctx.user.id, new Date().toISOString().split("T")[0]),
+      ]);
+
+      const openai = createOpenAI({
+        apiKey: ENV.forgeApiKey,
+        baseURL: `${ENV.forgeApiUrl}/v1`,
+        fetch: createPatchedFetch(fetch),
       });
+
+      const appSummary = applications?.slice(0, 5).map((a: any) => `${a.company} - ${a.position} (${a.status})`).join(", ") || "No applications yet";
+      const resumeScore = latestResume?.overallScore ? `${latestResume.overallScore}/100` : "Not analyzed yet";
+      const goalText = goal?.targetRole ? `Target: ${goal.targetRole} in ${goal.targetJobType || "any field"}` : "No goal set";
+      const checklistDone = checklist?.filter((c: any) => c.isCompleted).length || 0;
+      const checklistTotal = checklist?.length || 0;
+
+      const prompt = `You are a career coach AI. Generate a concise, encouraging daily career report for a job seeker.
+
+User data:
+- Recent applications: ${appSummary}
+- Resume score: ${resumeScore}
+- Career goal: ${goalText}
+- Today's checklist: ${checklistDone}/${checklistTotal} tasks completed
+
+Write a personalized daily report with:
+1. **Today's Progress** - What they've accomplished
+2. **Key Insights** - 2-3 specific observations about their job search
+3. **Tomorrow's Focus** - 3 concrete action items
+4. **Motivation** - One encouraging sentence
+
+Keep it concise (under 300 words). Use markdown formatting. Be specific and actionable, not generic.`;
+
+      try {
+        const { text } = await generateText({
+          model: openai.chat("gemini-2.5-flash"),
+          prompt,
+          maxOutputTokens: 500,
+        });
+
+        return db.saveReport(ctx.user.id, {
+          title: `Daily Report - ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`,
+          content: text,
+          reportType: "daily",
+        });
+      } catch {
+        return db.saveReport(ctx.user.id, {
+          title: `Daily Report - ${new Date().toLocaleDateString()}`,
+          content: `## Today's Career Progress\n\nYour job search is on track! Keep applying consistently.\n\n**Applications:** ${appSummary}\n\n**Resume Score:** ${resumeScore}\n\n**Goal:** ${goalText}\n\n**Checklist:** ${checklistDone}/${checklistTotal} tasks completed today.`,
+          reportType: "daily",
+        });
+      }
     }),
   }),
 
   goal: router({
     get: protectedProcedure.query(async ({ ctx }) => {
-      return db.getGoalByUserId(ctx.user.id);
+      const goal = await db.getGoalByUserId(ctx.user.id);
+      return goal ?? null;
     }),
     save: protectedProcedure.input(z.object({
       targetJobType: z.string().optional(),
@@ -135,7 +192,8 @@ export const appRouter = router({
 
   emailAlert: router({
     get: protectedProcedure.query(async ({ ctx }) => {
-      return db.getEmailAlertByUserId(ctx.user.id);
+      const alert = await db.getEmailAlertByUserId(ctx.user.id);
+      return alert ?? null;
     }),
     save: protectedProcedure.input(z.object({
       targetRoles: z.array(z.string()).optional(),
@@ -194,13 +252,16 @@ export const appRouter = router({
       return db.getApprovedConsultants();
     }),
     getById: publicProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {
-      return db.getConsultantById(input.id);
+      const consultant = await db.getConsultantById(input.id);
+      return consultant ?? null;
     }),
     myProfile: protectedProcedure.query(async ({ ctx }) => {
-      return db.getConsultantByUserId(ctx.user.id);
+      const profile = await db.getConsultantByUserId(ctx.user.id);
+      return profile ?? null;
     }),
     myApplication: protectedProcedure.query(async ({ ctx }) => {
-      return db.getConsultingApplicationByUserId(ctx.user.id);
+      const app = await db.getConsultingApplicationByUserId(ctx.user.id);
+      return app ?? null;
     }),
     applyConsultant: protectedProcedure.input(z.object({
       displayName: z.string().min(2),
@@ -304,7 +365,8 @@ export const appRouter = router({
     getByDate: protectedProcedure.input(z.object({
       date: z.string(),
     })).query(async ({ ctx, input }) => {
-      return db.getJournalByDate(ctx.user.id, input.date);
+      const entry = await db.getJournalByDate(ctx.user.id, input.date);
+      return entry ?? null;
     }),
     save: protectedProcedure.input(z.object({
       date: z.string(),
@@ -350,7 +412,8 @@ export const appRouter = router({
       return db.getResumeAnalysisHistory(ctx.user.id);
     }),
     latest: protectedProcedure.query(async ({ ctx }) => {
-      return db.getLatestResumeAnalysis(ctx.user.id);
+      const analysis = await db.getLatestResumeAnalysis(ctx.user.id);
+      return analysis ?? null;
     }),
     save: protectedProcedure.input(z.object({
       resumeText: z.string().optional(),
@@ -364,6 +427,76 @@ export const appRouter = router({
       rawResult: z.any().optional(),
     })).mutation(async ({ ctx, input }) => {
       return db.saveResumeAnalysisResult(ctx.user.id, input);
+    }),
+  }),
+
+  reviews: router({
+    // Public: get all approved reviews
+    list: publicProcedure.query(async () => {
+      return db.getApprovedReviews();
+    }),
+    // Protected: submit a review
+    submit: protectedProcedure.input(z.object({
+      rating: z.number().min(1).max(5),
+      comment: z.string().min(10).max(1000),
+      displayName: z.string().max(128).optional(),
+      targetRole: z.string().max(128).optional(),
+      targetMarket: z.string().max(64).optional(),
+      isAnonymous: z.boolean().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      return db.submitReview(ctx.user.id, input);
+    }),
+    // Protected: get my own reviews
+    mine: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUserReviews(ctx.user.id);
+    }),
+  }),
+  trend: router({
+    generate: protectedProcedure.input(z.object({
+      sector: z.string().optional(),
+      region: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const openai = createOpenAI({
+        apiKey: ENV.forgeApiKey,
+        baseURL: `${ENV.forgeApiUrl}/v1`,
+        fetch: createPatchedFetch(fetch),
+      });
+      const sector = input.sector || "all sectors";
+      const region = input.region || "Singapore, Korea, India";
+      const today = new Date().toISOString().split("T")[0];
+      const prompt = `You are a career market analyst specializing in Singapore, Korea, and India job markets.
+Generate a comprehensive industry trends report for ${sector} in ${region} as of ${today}.
+
+Include:
+## Hot Skills in Demand
+List the top 5-8 skills most in demand right now with brief explanations.
+
+## Salary Trends
+Describe current salary trends (realistic ranges in SGD for Singapore, KRW for Korea, INR for India).
+
+## Top Hiring Companies
+List 5-8 companies actively hiring in this sector in these regions.
+
+## Market Insights
+Key observations about the job market and opportunities for Korean and Indian professionals in Singapore.
+
+## Action Items
+3-5 specific actionable recommendations for job seekers targeting these markets.
+
+Be specific, data-driven, and practical. Use real company names and realistic figures.`;
+
+      const { text } = await generateText({
+        model: openai("gemini-2.5-flash"),
+        prompt,
+        maxOutputTokens: 1200,
+      });
+
+      return {
+        content: text,
+        sector,
+        region,
+        generatedAt: new Date().toISOString(),
+      };
     }),
   }),
 });

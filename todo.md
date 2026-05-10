@@ -87,3 +87,16 @@
 - [x] Resume Analysis result saving to DB + dashboard summary card
 - [x] Dashboard Home summary screen (resume, applications, trends at a glance)
 - [x] Founders Live Singapore pitch deck (7 slides max, EN)
+- [ ] Update pitch deck slide 3 with Singapore local job market data (why SG investors should care)
+- [x] Add user reviews/testimonials section to website (DB + landing page + consultant profiles)
+
+## Feedback Fixes (May 2026 Round 2)
+- [x] Fix resume analysis "load failed" error
+- [x] Fix daily report detail view (상세보기 broken + add criteria explanation)
+- [x] Industry trends: real AI generation on button click (not static demo data)
+- [ ] Industry trends: future email alert notification (placeholder)
+- [x] Guided user flow: after resume analysis → suggest next step
+- [x] Daily goal nudge popup when user is active mid-session
+- [x] Complete reviews DB helpers + reviews section on landing page
+- [x] Add Japanese (日本語) language support
+- [x] Add Chinese (中文) language support

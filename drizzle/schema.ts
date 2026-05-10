@@ -315,3 +315,18 @@ export const resumeAnalysisResults = mysqlTable("resumeAnalysisResults", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type ResumeAnalysisResult = typeof resumeAnalysisResults.$inferSelect;
+
+// ─── User Reviews / Testimonials ─────────────────────────────────
+export const reviews = mysqlTable("reviews", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  rating: int("rating").notNull(), // 1-5
+  comment: text("comment").notNull(),
+  displayName: varchar("displayName", { length: 128 }), // user-chosen display name
+  targetRole: varchar("targetRole", { length: 128 }), // e.g. "Software Engineer"
+  targetMarket: varchar("targetMarket", { length: 64 }), // e.g. "Singapore", "Korea"
+  isApproved: boolean("isApproved").default(false), // owner approves before public display
+  isAnonymous: boolean("isAnonymous").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type Review = typeof reviews.$inferSelect;
