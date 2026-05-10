@@ -16,6 +16,7 @@ import Admin from "./pages/Admin";
 import Trends from "./pages/Trends";
 import ChatBot from "./pages/ChatBot";
 import DashboardLayout from "./components/DashboardLayout";
+import FloatingChatButton from "./components/FloatingChatButton";
 import { lazy, Suspense } from "react";
 const Checklist = lazy(() => import("./pages/Checklist"));
 const Journal = lazy(() => import("./pages/Journal"));
@@ -79,6 +80,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
+          <FloatingChatButton />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

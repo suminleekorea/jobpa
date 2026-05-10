@@ -68,7 +68,7 @@
 - [ ] Disable Saramin API gracefully (반려됨 — skip if no key, no UI error)
 - [ ] MCF MCP server integration (mcpmarket.com/server/mycareersfuture)
 - [ ] jobscrapers (pwaaron/jobscrapers) integration for additional SG job sources
-- [ ] Consultant application form — activate real DB submission + owner notification
+- [x] Consultant application form — activate real DB submission + owner notification
 
 ## Consulting Marketplace Rebuild
 - [x] Add linkedinUrl, photoUrl, industry, specialties fields to consultants table
@@ -76,3 +76,8 @@
 - [x] Consulting directory: industry/role filter grid + consultant cards
 - [x] Consultant detail page: LinkedIn, photo, career, Sprouts purchase flow
 - [ ] Replace Home.tsx with pitch-structured landing page
+
+## Bug Fixes
+- [x] Fix Resume Analysis Unauthorized error (server route auth issue)
+- [x] Fix AI Career Chat "messages array is required" error
+- [x] Add floating AI chat button to landing page (bottom-right corner)

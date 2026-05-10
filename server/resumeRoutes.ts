@@ -6,6 +6,7 @@ import { z } from "zod";
 import { createPatchedFetch } from "./_core/patchedFetch";
 import { storagePut } from "./storage";
 import * as db from "./db";
+import { sdk } from "./_core/sdk";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -106,8 +107,13 @@ export function registerResumeRoutes(app: Express) {
   // POST /api/resume/upload-analyze
   app.post("/api/resume/upload-analyze", upload.single("resume"), async (req: any, res: any) => {
     try {
-      // Auth check
-      const user = (req as any).user;
+      // Auth check — this route is outside tRPC middleware, so we call sdk directly
+      let user: any = null;
+      try {
+        user = await sdk.authenticateRequest(req);
+      } catch {
+        user = null;
+      }
       if (!user) {
         return res.status(401).json({ error: "Unauthorized" });
       }

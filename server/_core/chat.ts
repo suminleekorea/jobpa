@@ -4,7 +4,7 @@
  * Express endpoint for AI SDK streaming chat customized for JobPA career guidance.
  */
 
-import { streamText, stepCountIs } from "ai";
+import { streamText, stepCountIs, convertToModelMessages } from "ai";
 import { tool } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { Express } from "express";
@@ -193,17 +193,42 @@ export function registerChatRoutes(app: Express) {
 
   app.post("/api/chat", async (req, res) => {
     try {
-      const { messages } = req.body;
+      // AIChatBox sends { message: lastMessage, chatId, userId } via prepareSendMessagesRequest
+      // The message is a UIMessage with { parts: [{type: 'text', text: '...'}], role, id }
+      // Legacy callers may send { messages: [...] } with plain text content
+      // AI SDK v6 streamText requires ModelMessage[] format
+      let uiMessages = req.body.messages;
+      if (!uiMessages || !Array.isArray(uiMessages)) {
+        const singleMessage = req.body.message;
+        if (singleMessage) {
+          uiMessages = [singleMessage];
+        } else {
+          res.status(400).json({ error: "messages array is required" });
+          return;
+        }
+      }
 
-      if (!messages || !Array.isArray(messages)) {
-        res.status(400).json({ error: "messages array is required" });
-        return;
+      // Convert UIMessage[] (with parts) to ModelMessage[] for streamText
+      // convertToModelMessages is async in AI SDK v6
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let modelMessages: any[];
+      try {
+        modelMessages = await convertToModelMessages(uiMessages);
+      } catch {
+        // Fallback: messages may already be in ModelMessage format (plain content string)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        modelMessages = uiMessages.map((m: any) => ({
+          role: m.role,
+          content: typeof m.content === 'string'
+            ? m.content
+            : (m.parts?.filter((p: any) => p.type === 'text').map((p: any) => p.text ?? '').join('') ?? ''),
+        }));
       }
 
       const result = streamText({
         model: openai.chat("gemini-2.5-flash"),
         system: CAREER_SYSTEM_PROMPT,
-        messages,
+        messages: modelMessages,
         tools: careerTools,
         stopWhen: stepCountIs(5),
       });
