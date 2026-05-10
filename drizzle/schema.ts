@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, json, boolean } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, json, boolean, bigint } from "drizzle-orm/mysql-core";
 
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
@@ -18,15 +18,10 @@ export type InsertUser = typeof users.$inferInsert;
 export const surveys = mysqlTable("surveys", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
-  /** Step 0: What are you looking for through JobPA? (JSON array) */
   lookingFor: json("lookingFor").$type<string[]>(),
-  /** Step 1: Target role */
   targetRole: varchar("targetRole", { length: 255 }),
-  /** Step 2: Experience level */
   experienceLevel: varchar("experienceLevel", { length: 64 }),
-  /** Step 3: Areas of interest (JSON array) */
   interests: json("interests").$type<string[]>(),
-  /** Step 4: Additional info */
   targetCompanies: text("targetCompanies"),
   preferredLocations: json("preferredLocations").$type<string[]>(),
   salaryExpectation: varchar("salaryExpectation", { length: 128 }),
@@ -146,7 +141,7 @@ export const userXP = mysqlTable("userXP", {
   level: int("level").default(1).notNull(),
   currentStreak: int("currentStreak").default(0).notNull(),
   longestStreak: int("longestStreak").default(0).notNull(),
-  lastActiveDate: varchar("lastActiveDate", { length: 10 }), // YYYY-MM-DD
+  lastActiveDate: varchar("lastActiveDate", { length: 10 }),
   badges: json("badges").$type<string[]>(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -158,7 +153,7 @@ export type InsertUserXP = typeof userXP.$inferInsert;
 export const xpEvents = mysqlTable("xpEvents", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
-  action: varchar("action", { length: 64 }).notNull(), // apply, checklist, journal, resume, fit, login
+  action: varchar("action", { length: 64 }).notNull(),
   xpAmount: int("xpAmount").notNull(),
   description: varchar("description", { length: 512 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -170,11 +165,11 @@ export type XPEvent = typeof xpEvents.$inferSelect;
 export const dailyChecklist = mysqlTable("dailyChecklist", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
-  date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
+  date: varchar("date", { length: 10 }).notNull(),
   title: varchar("title", { length: 512 }).notNull(),
   isAIGenerated: boolean("isAIGenerated").default(false),
   isCompleted: boolean("isCompleted").default(false),
-  category: varchar("category", { length: 64 }), // apply, research, network, skill, prep
+  category: varchar("category", { length: 64 }),
   sortOrder: int("sortOrder").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -187,8 +182,8 @@ export type InsertDailyChecklistItem = typeof dailyChecklist.$inferInsert;
 export const journal = mysqlTable("journal", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
-  date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
-  mood: varchar("mood", { length: 32 }), // great, good, okay, tough, frustrated
+  date: varchar("date", { length: 10 }).notNull(),
+  mood: varchar("mood", { length: 32 }),
   content: text("content"),
   highlights: json("highlights").$type<string[]>(),
   goals: json("goals").$type<string[]>(),
@@ -200,8 +195,6 @@ export type JournalEntry = typeof journal.$inferSelect;
 export type InsertJournalEntry = typeof journal.$inferInsert;
 
 // ─── Consulting Marketplace ──────────────────────────────────────
-import { bigint } from "drizzle-orm/mysql-core";
-
 export const consultants = mysqlTable("consultants", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull().unique(),
@@ -284,3 +277,41 @@ export const creditTransactions = mysqlTable("creditTransactions", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type CreditTransaction = typeof creditTransactions.$inferSelect;
+
+// ─── Chat History ────────────────────────────────────────────────
+export const chatSessions = mysqlTable("chatSessions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  sessionId: varchar("sessionId", { length: 128 }).notNull().unique(),
+  title: varchar("title", { length: 256 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ChatSession = typeof chatSessions.$inferSelect;
+
+export const chatMessages = mysqlTable("chatMessages", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: varchar("sessionId", { length: 128 }).notNull(),
+  userId: int("userId").notNull(),
+  role: varchar("role", { length: 16 }).notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ChatMessage = typeof chatMessages.$inferSelect;
+
+// ─── Resume Analysis Results ─────────────────────────────────────
+export const resumeAnalysisResults = mysqlTable("resumeAnalysisResults", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  resumeText: text("resumeText"),
+  targetRole: varchar("targetRole", { length: 256 }),
+  targetMarket: varchar("targetMarket", { length: 64 }),
+  overallScore: int("overallScore"),
+  summary: text("summary"),
+  strengths: json("strengths"),
+  improvements: json("improvements"),
+  keywords: json("keywords"),
+  rawResult: json("rawResult"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ResumeAnalysisResult = typeof resumeAnalysisResults.$inferSelect;

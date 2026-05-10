@@ -5,6 +5,7 @@ import {
   reports, goals, emailAlerts, consultingWaitlist,
   userXP, xpEvents, dailyChecklist, journal,
   consultants, consultingApplications, consultingSessions, userCredits, creditTransactions,
+  chatSessions, chatMessages, resumeAnalysisResults,
   type InsertSurvey, type InsertApplication, type Survey, type Application,
   type InsertUserXP, type InsertDailyChecklistItem, type InsertJournalEntry,
 } from "../drizzle/schema";
@@ -500,4 +501,72 @@ export async function getSessionsByConsultant(consultantId: number) {
   return db.select().from(consultingSessions)
     .where(eq(consultingSessions.consultantId, consultantId))
     .orderBy(desc(consultingSessions.createdAt));
+}
+
+// ─── Chat History ────────────────────────────────────────────────
+export async function upsertChatSession(userId: number, sessionId: string, title?: string) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const existing = await db.select().from(chatSessions)
+    .where(and(eq(chatSessions.sessionId, sessionId), eq(chatSessions.userId, userId))).limit(1);
+  if (existing.length > 0) {
+    if (title) await db.update(chatSessions).set({ title }).where(eq(chatSessions.sessionId, sessionId));
+    return existing[0];
+  }
+  const [result] = await db.insert(chatSessions).values({ userId, sessionId, title: title || 'New Chat' }).$returningId();
+  return result;
+}
+
+export async function saveChatMessage(userId: number, sessionId: string, role: string, content: string) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(chatMessages).values({ userId, sessionId, role, content }).$returningId();
+  return result;
+}
+
+export async function getChatSessions(userId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(chatSessions)
+    .where(eq(chatSessions.userId, userId))
+    .orderBy(desc(chatSessions.updatedAt))
+    .limit(50);
+}
+
+export async function getChatMessages(userId: number, sessionId: string) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(chatMessages)
+    .where(and(eq(chatMessages.sessionId, sessionId), eq(chatMessages.userId, userId)))
+    .orderBy(chatMessages.createdAt);
+}
+
+export async function deleteChatSession(userId: number, sessionId: string) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.delete(chatMessages).where(and(eq(chatMessages.sessionId, sessionId), eq(chatMessages.userId, userId)));
+  await db.delete(chatSessions).where(and(eq(chatSessions.sessionId, sessionId), eq(chatSessions.userId, userId)));
+}
+
+// ─── Resume Analysis Results ─────────────────────────────────────
+export async function saveResumeAnalysisResult(userId: number, data: {
+  resumeText?: string; targetRole?: string; targetMarket?: string;
+  overallScore?: number; summary?: string; strengths?: unknown;
+  improvements?: unknown; keywords?: unknown; rawResult?: unknown;
+}) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(resumeAnalysisResults).values({ userId, ...data }).$returningId();
+  return result;
+}
+
+export async function getResumeAnalysisHistory(userId: number, limit = 10) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(resumeAnalysisResults)
+    .where(eq(resumeAnalysisResults.userId, userId))
+    .orderBy(desc(resumeAnalysisResults.createdAt))
+    .limit(limit);
+}
+
+export async function getLatestResumeAnalysis(userId: number) {
+  const db = await getDb(); if (!db) return undefined;
+  const result = await db.select().from(resumeAnalysisResults)
+    .where(eq(resumeAnalysisResults.userId, userId))
+    .orderBy(desc(resumeAnalysisResults.createdAt))
+    .limit(1);
+  return result[0];
 }

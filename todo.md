@@ -81,3 +81,9 @@
 - [x] Fix Resume Analysis Unauthorized error (server route auth issue)
 - [x] Fix AI Career Chat "messages array is required" error
 - [x] Add floating AI chat button to landing page (bottom-right corner)
+
+## New Features (May 2026)
+- [x] Chat history DB persistence (save/load conversations per user)
+- [x] Resume Analysis result saving to DB + dashboard summary card
+- [x] Dashboard Home summary screen (resume, applications, trends at a glance)
+- [x] Founders Live Singapore pitch deck (7 slides max, EN)

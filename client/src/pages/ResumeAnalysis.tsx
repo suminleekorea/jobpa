@@ -166,6 +166,7 @@ export default function ResumeAnalysis() {
   const addChecklistItem = trpc.checklist.add.useMutation({
     onSuccess: () => utils.checklist.get.invalidate(),
   });
+  const saveResumeAnalysis = trpc.resumeAnalysis.save.useMutation();
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -207,6 +208,21 @@ export default function ResumeAnalysis() {
       const data = await response.json();
       setResult(data.analysis);
       await refetch();
+      // Save analysis result to DB for dashboard history
+      try {
+        await saveResumeAnalysis.mutateAsync({
+          targetRole: data.analysis?.targetRole,
+          targetMarket: targetRegion,
+          overallScore: data.analysis?.overallScore,
+          summary: data.analysis?.summary,
+          strengths: data.analysis?.strengths,
+          improvements: data.analysis?.improvements?.map((i: any) => typeof i === 'string' ? i : i.title || ''),
+          keywords: data.analysis?.missingKeywords,
+          rawResult: data.analysis,
+        });
+      } catch {
+        // Non-critical: don't fail the whole analysis if save fails
+      }
       toast.success(language === "ko" ? "이력서 분석 완료!" : "Resume analysis complete!");
     } catch (err: any) {
       toast.error(err.message || "Analysis failed. Please try again.");

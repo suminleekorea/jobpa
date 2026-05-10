@@ -318,6 +318,54 @@ export const appRouter = router({
       return result;
     }),
   }),
+
+  chat: router({
+    sessions: protectedProcedure.query(async ({ ctx }) => {
+      return db.getChatSessions(ctx.user.id);
+    }),
+    messages: protectedProcedure.input(z.object({
+      sessionId: z.string(),
+    })).query(async ({ ctx, input }) => {
+      return db.getChatMessages(ctx.user.id, input.sessionId);
+    }),
+    saveMessage: protectedProcedure.input(z.object({
+      sessionId: z.string(),
+      role: z.enum(["user", "assistant"]),
+      content: z.string(),
+      sessionTitle: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      await db.upsertChatSession(ctx.user.id, input.sessionId, input.sessionTitle);
+      return db.saveChatMessage(ctx.user.id, input.sessionId, input.role, input.content);
+    }),
+    deleteSession: protectedProcedure.input(z.object({
+      sessionId: z.string(),
+    })).mutation(async ({ ctx, input }) => {
+      await db.deleteChatSession(ctx.user.id, input.sessionId);
+      return { success: true };
+    }),
+  }),
+
+  resumeAnalysis: router({
+    history: protectedProcedure.query(async ({ ctx }) => {
+      return db.getResumeAnalysisHistory(ctx.user.id);
+    }),
+    latest: protectedProcedure.query(async ({ ctx }) => {
+      return db.getLatestResumeAnalysis(ctx.user.id);
+    }),
+    save: protectedProcedure.input(z.object({
+      resumeText: z.string().optional(),
+      targetRole: z.string().optional(),
+      targetMarket: z.string().optional(),
+      overallScore: z.number().optional(),
+      summary: z.string().optional(),
+      strengths: z.array(z.string()).optional(),
+      improvements: z.array(z.string()).optional(),
+      keywords: z.array(z.string()).optional(),
+      rawResult: z.any().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      return db.saveResumeAnalysisResult(ctx.user.id, input);
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

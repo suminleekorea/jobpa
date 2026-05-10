@@ -13,7 +13,7 @@ import { useI18n } from "@/contexts/i18nContext";
 import {
   Briefcase, FileText, Target, BarChart3, Bookmark, Settings,
   LogOut, PanelLeft, Bot, Users, Sparkles, Shield, Languages,
-  TrendingUp, MessageCircle, Trophy, CheckSquare, BookOpen,
+  TrendingUp, MessageCircle, Trophy, CheckSquare, BookOpen, Home,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -71,7 +71,8 @@ function DashboardLayoutContent({ children, setSidebarWidth }: { children: React
   const isMobile = useIsMobile();
 
   const menuItems = [
-    { icon: Briefcase, label: t.nav.jobs, path: "/dashboard" },
+    { icon: Home, label: t.nav.home, path: "/dashboard" },
+    { icon: Briefcase, label: t.nav.jobs, path: "/dashboard/jobs" },
     { icon: Bookmark, label: t.nav.applications, path: "/dashboard/applications" },
     { icon: CheckSquare, label: t.checklist.title, path: "/dashboard/checklist" },
     { icon: BookOpen, label: t.journal.title, path: "/dashboard/journal" },
@@ -89,7 +90,7 @@ function DashboardLayoutContent({ children, setSidebarWidth }: { children: React
   ] : [];
 
   const allItems = [...menuItems, ...adminItems];
-  const activeMenuItem = allItems.find(item => item.path === location) || allItems[0];
+  const activeMenuItem = allItems.find(item => item.path === location) || allItems.find(item => location.startsWith(item.path) && item.path !== "/dashboard") || allItems[0];
 
   useEffect(() => { if (isCollapsed) setIsResizing(false); }, [isCollapsed]);
 
