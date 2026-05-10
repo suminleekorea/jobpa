@@ -115,6 +115,19 @@ function HeroSection() {
             ))}
           </div>
         </div>
+        {/* Dashboard Preview Screenshot */}
+        <div className="mt-16 relative mx-auto max-w-5xl px-4">
+          <div className="absolute -inset-2 bg-gradient-to-r from-primary/20 via-primary/5 to-primary/20 rounded-3xl blur-2xl opacity-70" />
+          <div className="relative rounded-2xl overflow-hidden border border-border/40 shadow-2xl shadow-primary/10">
+            <img
+              src="https://d2xsxph8kpxj0f.cloudfront.net/310519663393467842/7CDWVFFxWiw496tEAbvLTL/jobpa_hero_preview-5Gbawz8jxTjXQ8L9akENvz.png"
+              alt="JobPA Dashboard"
+              className="w-full h-auto object-contain block"
+              loading="lazy"
+            />
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground text-center">✨ Live dashboard — resume score, job trends, AI chat, XP all in one place</p>
+        </div>
       </div>
     </section>
   );
