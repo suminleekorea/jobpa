@@ -10,8 +10,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 const NUDGE_KEY = "jobpa_goal_nudge_last_shown";
 
 export default function DailyGoalNudge() {
-  const { language } = useI18n();
-  const isKo = language === "ko";
+  const { language, t } = useI18n();
   const { isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const [targetRole, setTargetRole] = useState("");
@@ -65,17 +64,15 @@ export default function DailyGoalNudge() {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Target className="h-5 w-5 text-primary" />
-            {isKo ? "오늘 목표 설정해볼래요? 🎯" : "Set Today's Goal? 🎯"}
+            {t.goalsPage.nudgeTitle}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 pt-2">
           <p className="text-sm text-muted-foreground">
-            {isKo
-              ? "목표 직무를 설정하면 AI가 더 맞춤화된 분석과 리포트를 제공합니다."
-              : "Setting a target role helps AI provide more personalized analysis and reports."}
+            {t.goalsPage.nudgeDesc}
           </p>
           <Input
-            placeholder={isKo ? "예: Software Engineer, Product Manager..." : "e.g. Software Engineer, Product Manager..."}
+            placeholder={t.goalsPage.nudgePlaceholder}
             value={targetRole}
             onChange={(e) => setTargetRole(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSave()}
@@ -86,11 +83,11 @@ export default function DailyGoalNudge() {
               disabled={!targetRole.trim() || saveGoal.isPending}
               className="flex-1"
             >
-              {isKo ? "목표 설정하기" : "Set Goal"}
+              {t.goalsPage.nudgeSet}
             </Button>
             <Button variant="ghost" onClick={handleDismiss} className="gap-1">
               <X className="h-4 w-4" />
-              {isKo ? "나중에" : "Later"}
+              {t.goalsPage.nudgeLater}
             </Button>
           </div>
         </div>

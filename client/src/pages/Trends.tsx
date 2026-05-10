@@ -73,8 +73,7 @@ function MarkdownContent({ content }: { content: string }) {
 }
 
 export default function Trends() {
-  const { language } = useI18n();
-  const isKo = language === "ko";
+  const { language, t } = useI18n();
   const [selectedSector, setSelectedSector] = useState("all");
   const [selectedRegion, setSelectedRegion] = useState("Singapore, Korea, India");
   const [aiResult, setAiResult] = useState<{ content: string; sector: string; region: string; generatedAt: string } | null>(null);
@@ -82,13 +81,13 @@ export default function Trends() {
   const generate = trpc.trend.generate.useMutation({
     onSuccess: (data) => {
       setAiResult(data);
-      toast.success(isKo ? "AI \uD2B8\uB80C\uB4DC \uBD84\uC11D \uC644\uB8CC!" : "AI trend analysis complete!");
+      toast.success(t.trends.generated);
     },
     onError: (err) => toast.error(err.message || "Failed to generate trends"),
   });
 
-  const sectorLabel = (s: typeof INDUSTRY_SECTORS[0]) => isKo ? s.labelKo : s.labelEn;
-  const regionLabel = (r: typeof REGIONS[0]) => isKo ? r.labelKo : r.labelEn;
+  const sectorLabel = (s: typeof INDUSTRY_SECTORS[0]) => language === "ko" ? s.labelKo : s.labelEn;
+  const regionLabel = (r: typeof REGIONS[0]) => language === "ko" ? r.labelKo : r.labelEn;
 
   return (
     <div className="space-y-6">
@@ -96,10 +95,10 @@ export default function Trends() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <TrendingUp className="h-6 w-6 text-primary" />
-            {isKo ? "\uC5C5\uACC4 \uD2B8\uB80C\uB4DC" : "Industry Trends"}
+            {t.trends.title}
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            {isKo ? "AI\uAC00 \uBD84\uC11D\uD55C \uC2E4\uC2DC\uAC04 \uCDE8\uC5C5 \uC2DC\uC7A5 \uD2B8\uB80C\uB4DC" : "AI-powered real-time job market trends"}
+            {t.trends.subtitle}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -129,7 +128,7 @@ export default function Trends() {
             className="gap-2"
           >
             {generate.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {generate.isPending ? (isKo ? "AI \uBD84\uC11D \uC911..." : "Analyzing...") : (isKo ? "AI \uD2B8\uB80C\uB4DC \uC0DD\uC131" : "Generate AI Trends")}
+            {generate.isPending ? t.trends.generating : t.trends.generate}
           </Button>
         </div>
       </div>
@@ -139,9 +138,9 @@ export default function Trends() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
-              {isKo ? "AI \uC0DD\uC131 \uD2B8\uB80C\uB4DC \uB9AC\uD3EC\uD2B8" : "AI-Generated Trends Report"}
+              {t.trends.aiReport}
               <Badge variant="secondary" className="ml-auto text-xs">
-                {new Date(aiResult.generatedAt).toLocaleDateString(isKo ? "ko-KR" : "en-US")}
+                {new Date(aiResult.generatedAt).toLocaleDateString()}
               </Badge>
             </CardTitle>
             <p className="text-xs text-muted-foreground">
@@ -158,7 +157,7 @@ export default function Trends() {
               disabled={generate.isPending}
             >
               <RefreshCw className="h-3 w-3" />
-              {isKo ? "\uB2E4\uC2DC \uC0DD\uC131" : "Regenerate"}
+              {t.trends.regenerate}
             </Button>
           </CardContent>
         </Card>
@@ -166,7 +165,7 @@ export default function Trends() {
 
       <div>
         <h2 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
-          {isKo ? "\uC8FC\uC694 \uC5C5\uACC4 \uD604\uD669" : "Key Industry Highlights"}
+          {t.trends.keyHighlights}
         </h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {STATIC_TRENDS.map((item, idx) => (
@@ -177,7 +176,7 @@ export default function Trends() {
                     <span className="text-xl">{item.icon}</span>
                     <div>
                       <p className="font-semibold text-sm leading-tight">
-                        {isKo ? item.titleKo : item.titleEn}
+                        {language === "ko" ? item.titleKo : item.titleEn}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">{item.region}</p>
                     </div>
@@ -194,7 +193,7 @@ export default function Trends() {
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground mb-3">
-                  {isKo ? item.descKo : item.descEn}
+                  {language === "ko" ? item.descKo : item.descEn}
                 </p>
                 <div className="flex flex-wrap gap-1">
                   {item.skills.map((skill) => (
@@ -212,12 +211,10 @@ export default function Trends() {
           <CardContent className="p-6 text-center">
             <Sparkles className="h-8 w-8 text-primary/40 mx-auto mb-3" />
             <h3 className="font-medium mb-1">
-              {isKo ? "AI\uB85C \uCD5C\uC2E0 \uD2B8\uB80C\uB4DC \uBD84\uC11D \uBC1B\uAE30" : "Get AI-Powered Latest Trends"}
+              {t.trends.getLatest}
             </h3>
             <p className="text-sm text-muted-foreground mb-4">
-              {isKo
-                ? "\uC6D0\uD558\uB294 \uC5C5\uACC4\uC640 \uC9C0\uC5ED\uC744 \uC120\uD0DD\uD558\uACE0 AI \uD2B8\uB80C\uB4DC \uC0DD\uC131 \uBC84\uD2BC\uC744 \uB20C\uB7EC\uBCF4\uC138\uC694."
-                : "Select your industry and region, then click Generate AI Trends for real-time insights."}
+              {t.trends.getLatestDesc}
             </p>
             <Button
               onClick={() => generate.mutate({ sector: selectedSector === "all" ? undefined : selectedSector, region: selectedRegion })}
@@ -225,7 +222,7 @@ export default function Trends() {
               className="gap-2"
             >
               {generate.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              {isKo ? "AI \uD2B8\uB80C\uB4DC \uC0DD\uC131\uD558\uAE30" : "Generate AI Trends"}
+              {t.trends.generate}
             </Button>
           </CardContent>
         </Card>

@@ -9,26 +9,12 @@ import {
   Bot, Users, Languages, DollarSign, MessageCircle, Newspaper
 } from "lucide-react";
 import { useState } from "react";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Star } from "lucide-react";
 
-function LanguageToggle() {
-  const { language, setLanguage } = useI18n();
-  return (
-    <button
-      onClick={() => {
-        const langs = ["ko", "en", "ja", "zh"] as const;
-        const idx = langs.indexOf(language as any);
-        setLanguage(langs[(idx + 1) % langs.length]);
-      }}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-secondary text-secondary-foreground hover:bg-accent transition-colors"
-    >
-      <Languages className="h-3.5 w-3.5" />
-      {language === "ko" ? "EN" : language === "en" ? "JA" : language === "ja" ? "ZH" : "KO"}
-    </button>
-  );
-}
+
 
 function Navbar() {
   const { t } = useI18n();
@@ -48,7 +34,7 @@ function Navbar() {
           </div>
         </button>
         <div className="flex items-center gap-3">
-          <LanguageToggle />
+          <LanguageSelector />
           {isAuthenticated ? (
             <Button onClick={() => setLocation("/dashboard")} size="sm">
               {t.nav.dashboard}
@@ -74,7 +60,7 @@ function HeroSection() {
   const stats = [
     { icon: Bot, value: "5+", label: t.hero.stats.agents },
     { icon: BarChart3, value: "6+", label: t.hero.stats.analyses },
-    { icon: Languages, value: "2", label: t.hero.stats.languages },
+    { icon: Languages, value: "4", label: t.hero.stats.languages },
     { icon: DollarSign, value: "$0", label: t.hero.stats.price },
   ];
 
@@ -147,8 +133,8 @@ function FeaturesSection() {
     { icon: Target, ...t.features.fit, color: "text-violet-600 bg-violet-50" },
     { icon: BarChart3, ...t.features.reports, color: "text-amber-600 bg-amber-50" },
     { icon: Bookmark, ...t.features.tracking, color: "text-rose-600 bg-rose-50" },
-    { icon: Newspaper, title: language === "ko" ? "산업 트렌드" : "Industry Trends", desc: language === "ko" ? "IT, 금융, 헬스케어, 에너지 등 다양한 산업의 채용 트렌드를 확인하세요." : "Stay updated with hiring trends across IT, finance, healthcare, energy, and more.", color: "text-cyan-600 bg-cyan-50" },
-    { icon: MessageCircle, title: language === "ko" ? "AI 커리어 챗봇" : "AI Career Chat", desc: language === "ko" ? "취업 전략, 비자 정보, 연봉 협상 등 무엇이든 AI에게 물어보세요." : "Chat with our AI assistant about job strategy, visa info, salary benchmarks, and more.", color: "text-indigo-600 bg-indigo-50" },
+    { icon: Newspaper, ...t.features.trendsFeat, color: "text-cyan-600 bg-cyan-50" },
+    { icon: MessageCircle, ...t.features.chatFeat, color: "text-indigo-600 bg-indigo-50" },
   ];
 
   return (
@@ -233,8 +219,7 @@ function ConsultingTeaser() {
 }
 
 function ReviewsSection() {
-  const { language } = useI18n();
-  const isKo = language === "ko";
+  const { t } = useI18n();
   const { data: reviews } = trpc.reviews.list.useQuery();
   const [showForm, setShowForm] = useState(false);
   const [rating, setRating] = useState(5);
@@ -255,36 +240,9 @@ function ReviewsSection() {
   });
 
   const demoReviews = [
-    {
-      id: -1,
-      displayName: "Jiyeon K.",
-      rating: 5,
-      comment: isKo
-        ? "싱가포르 취업 준비하면서 정말 많은 도움을 받았어요. AI 이력서 분석이 특히 유용했습니다!"
-        : "Really helpful for my Singapore job search. The AI resume analysis was especially useful!",
-      targetRole: "Data Analyst",
-      targetMarket: "Singapore",
-    },
-    {
-      id: -2,
-      displayName: "Rahul M.",
-      rating: 5,
-      comment: isKo
-        ? "인도에서 싱가포르로 이직할 때 JobPA가 큰 도움이 됐어요. 컨설팅 서비스도 훌륭합니다."
-        : "JobPA was a great help when relocating from India to Singapore. The consulting service is excellent.",
-      targetRole: "Product Manager",
-      targetMarket: "Singapore",
-    },
-    {
-      id: -3,
-      displayName: "Suji L.",
-      rating: 4,
-      comment: isKo
-        ? "데일리 리포트 기능이 정말 좋아요. 매일 아침 커리어 인사이트를 받을 수 있어서 동기부여가 됩니다."
-        : "Love the daily report feature. Getting career insights every morning keeps me motivated.",
-      targetRole: "Marketing Manager",
-      targetMarket: "Singapore",
-    },
+    { id: -1, displayName: "Jiyeon K.", rating: 5, comment: t.reviews.demo[0], targetRole: "Data Analyst", targetMarket: "Singapore" },
+    { id: -2, displayName: "Rahul M.", rating: 5, comment: t.reviews.demo[1], targetRole: "Product Manager", targetMarket: "Singapore" },
+    { id: -3, displayName: "Suji L.", rating: 4, comment: t.reviews.demo[2], targetRole: "Marketing Manager", targetMarket: "Singapore" },
   ];
 
   const displayReviews = (reviews && reviews.length > 0) ? reviews : demoReviews;
@@ -294,10 +252,10 @@ function ReviewsSection() {
       <div className="container">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold tracking-tight mb-3">
-            {isKo ? "사용자 후기" : "User Reviews"}
+            {t.reviews.title}
           </h2>
           <p className="text-muted-foreground">
-            {isKo ? "JobPA를 사용한 분들의 실제 경험을 들어보세요" : "Real experiences from JobPA users"}
+            {t.reviews.subtitle}
           </p>
         </div>
         <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto mb-10">
@@ -310,7 +268,7 @@ function ReviewsSection() {
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed mb-4">"{review.comment}"</p>
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">{review.displayName || (isKo ? "익명" : "Anonymous")}</p>
+                <p className="text-sm font-medium">{review.displayName || t.reviews.anonymous}</p>
                 {review.targetMarket && (
                   <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">{review.targetMarket}</span>
                 )}
@@ -328,17 +286,17 @@ function ReviewsSection() {
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border text-sm font-medium hover:bg-accent transition-colors"
             >
               <Star className="h-4 w-4" />
-              {isKo ? "후기 남기기" : "Leave a Review"}
+              {t.reviews.leaveReview}
             </button>
           )}
           {submitted && (
             <p className="text-sm text-emerald-600 font-medium">
-              {isKo ? "후기가 제출됐습니다! 검토 후 게시됩니다." : "Review submitted! It will be published after review."}
+              {t.reviews.submitted}
             </p>
           )}
           {showForm && (
             <div className="max-w-md mx-auto bg-background border rounded-xl p-6 text-left shadow-sm">
-              <h3 className="font-semibold mb-4">{isKo ? "후기 작성" : "Write a Review"}</h3>
+              <h3 className="font-semibold mb-4">{t.reviews.writeReview}</h3>
               <div className="flex items-center gap-1 mb-4">
                 {[1,2,3,4,5].map((s) => (
                   <button key={s} onClick={() => setRating(s)}>
@@ -348,14 +306,14 @@ function ReviewsSection() {
               </div>
               <input
                 className="w-full border rounded-lg px-3 py-2 text-sm mb-3 bg-background"
-                placeholder={isKo ? "이름 (선택)" : "Display name (optional)"}
+                placeholder={t.reviews.namePlaceholder}
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
               />
               <textarea
                 className="w-full border rounded-lg px-3 py-2 text-sm mb-3 bg-background resize-none"
                 rows={3}
-                placeholder={isKo ? "JobPA 사용 경험을 공유해주세요 (최소 10자)" : "Share your experience with JobPA (min 10 chars)"}
+                placeholder={t.reviews.contentPlaceholder}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
               />
@@ -365,13 +323,13 @@ function ReviewsSection() {
                   disabled={comment.length < 10 || submit.isPending}
                   className="flex-1 bg-primary text-primary-foreground rounded-lg py-2 text-sm font-medium disabled:opacity-50"
                 >
-                  {submit.isPending ? (isKo ? "제출 중..." : "Submitting...") : (isKo ? "제출하기" : "Submit")}
+                  {submit.isPending ? t.reviews.submitting : t.reviews.submit}
                 </button>
                 <button
                   onClick={() => setShowForm(false)}
                   className="px-4 py-2 border rounded-lg text-sm"
                 >
-                  {isKo ? "취소" : "Cancel"}
+                  {t.reviews.cancel}
                 </button>
               </div>
             </div>

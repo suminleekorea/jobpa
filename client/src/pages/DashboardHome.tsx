@@ -24,8 +24,8 @@ const STATUS_COLORS: Record<string, string> = {
 export default function DashboardHome() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
-  const { language } = useI18n();
-  const isKo = language === "ko";
+  const { language, t } = useI18n();
+
 
   const { data: applications } = trpc.application.list.useQuery();
   const { data: latestAnalysis } = trpc.resumeAnalysis.latest.useQuery();
@@ -52,14 +52,9 @@ export default function DashboardHome() {
 
   const greeting = () => {
     const hour = new Date().getHours();
-    if (isKo) {
-      if (hour < 12) return "좋은 아침이에요";
-      if (hour < 18) return "안녕하세요";
-      return "좋은 저녁이에요";
-    }
-    if (hour < 12) return "Good morning";
-    if (hour < 18) return "Good afternoon";
-    return "Good evening";
+    if (hour < 12) return t.dashboard.goodMorning;
+    if (hour < 18) return t.dashboard.goodAfternoon;
+    return t.dashboard.goodEvening;
   };
 
   return (
@@ -71,7 +66,7 @@ export default function DashboardHome() {
             {greeting()}{user?.name ? `, ${user.name.split(" ")[0]}` : ""}! 👋
           </h1>
           <p className="text-gray-500 mt-1 text-sm">
-            {isKo ? "오늘의 취업 활동을 확인해보세요" : "Here's your job search overview for today"}
+            {t.dashboard.todayOverview}
           </p>
         </div>
         <Button
@@ -80,7 +75,7 @@ export default function DashboardHome() {
           size="sm"
         >
           <Briefcase className="w-4 h-4" />
-          {isKo ? "채용 공고 보기" : "Browse Jobs"}
+          {t.dashboard.browseJobs}
         </Button>
       </div>
 
@@ -90,7 +85,7 @@ export default function DashboardHome() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-1">
               <Briefcase className="w-4 h-4 text-blue-600" />
-              <span className="text-xs text-blue-600 font-medium">{isKo ? "전체 지원" : "Total Applied"}</span>
+              <span className="text-xs text-blue-600 font-medium">{t.dashboard.totalApplied}</span>
             </div>
             <p className="text-2xl font-bold text-blue-700">{totalApps}</p>
           </CardContent>
@@ -99,7 +94,7 @@ export default function DashboardHome() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-1">
               <Clock className="w-4 h-4 text-yellow-600" />
-              <span className="text-xs text-yellow-600 font-medium">{isKo ? "진행 중" : "In Progress"}</span>
+              <span className="text-xs text-yellow-600 font-medium">{t.dashboard.inProgress}</span>
             </div>
             <p className="text-2xl font-bold text-yellow-700">{activeApps}</p>
           </CardContent>
@@ -108,7 +103,7 @@ export default function DashboardHome() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-1">
               <CheckCircle2 className="w-4 h-4 text-green-600" />
-              <span className="text-xs text-green-600 font-medium">{isKo ? "면접" : "Interview"}</span>
+              <span className="text-xs text-green-600 font-medium">{t.dashboard.interview}</span>
             </div>
             <p className="text-2xl font-bold text-green-700">{interviewApps}</p>
           </CardContent>
@@ -117,7 +112,7 @@ export default function DashboardHome() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-1">
               <Star className="w-4 h-4 text-purple-600" />
-              <span className="text-xs text-purple-600 font-medium">{isKo ? "오퍼" : "Offer"}</span>
+              <span className="text-xs text-purple-600 font-medium">{t.dashboard.offer}</span>
             </div>
             <p className="text-2xl font-bold text-purple-700">{offerApps}</p>
           </CardContent>
@@ -135,7 +130,7 @@ export default function DashboardHome() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                   <FileText className="w-4 h-4 text-gray-500" />
-                  {isKo ? "이력서 분석" : "Resume Analysis"}
+                  {t.dashboard.resumeAnalysis}
                 </CardTitle>
                 <ChevronRight className="w-4 h-4 text-gray-400" />
               </div>
@@ -150,22 +145,22 @@ export default function DashboardHome() {
                   <Progress value={resumeScore} className="h-2" />
                   <p className="text-xs text-gray-500">
                     {latestAnalysis?.targetRole
-                      ? `${isKo ? "목표 직무" : "Target"}: ${latestAnalysis.targetRole}`
-                      : isKo ? "이력서가 분석되었습니다" : "Resume analyzed"}
+                      ? `${t.dashboard.targetRole}: ${latestAnalysis.targetRole}`
+                      : t.dashboard.resumeAnalyzed}
                   </p>
                   {latestAnalysis?.createdAt && (
                     <p className="text-xs text-gray-400">
-                      {new Date(latestAnalysis.createdAt).toLocaleDateString(isKo ? "ko-KR" : "en-US")}
+                      {new Date(latestAnalysis.createdAt).toLocaleDateString()}
                     </p>
                   )}
                 </div>
               ) : (
                 <div className="text-center py-3">
                   <p className="text-sm text-gray-400 mb-2">
-                    {isKo ? "이력서를 업로드하고 분석해보세요" : "Upload your resume for analysis"}
+                    {t.dashboard.uploadResume}
                   </p>
                   <Button size="sm" variant="outline" className="text-xs">
-                    {isKo ? "분석 시작" : "Start Analysis"}
+                    {t.dashboard.startAnalysis}
                   </Button>
                 </div>
               )}
@@ -179,7 +174,7 @@ export default function DashboardHome() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                   <Trophy className="w-4 h-4 text-yellow-500" />
-                  {isKo ? "레벨 & 뱃지" : "Level & Badges"}
+                  {t.dashboard.levelBadges}
                 </CardTitle>
                 <ChevronRight className="w-4 h-4 text-gray-400" />
               </div>
@@ -211,15 +206,15 @@ export default function DashboardHome() {
             <CardHeader className="pb-2 pt-4 px-4">
               <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                 <Zap className="w-4 h-4 text-orange-500" />
-                {isKo ? "빠른 실행" : "Quick Actions"}
+                {t.dashboard.quickActions}
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4 space-y-2">
               {[
-                { icon: Briefcase, label: isKo ? "채용 공고 탐색" : "Browse Jobs", path: "/dashboard" },
-                { icon: Target, label: isKo ? "직무 적합도 분석" : "Job Fit Analysis", path: "/dashboard/fit" },
-                { icon: BarChart3, label: isKo ? "취업 트렌드" : "Job Trends", path: "/dashboard/trends" },
-                { icon: Sparkles, label: isKo ? "커리어 컨설팅" : "Career Consulting", path: "/dashboard/consulting" },
+                { icon: Briefcase, label: t.dashboard.browseJobsAction, path: "/dashboard" },
+                { icon: Target, label: t.dashboard.jobFitAction, path: "/dashboard/fit" },
+                { icon: BarChart3, label: t.dashboard.jobTrendsAction, path: "/dashboard/trends" },
+                { icon: Sparkles, label: t.dashboard.careerConsulting, path: "/dashboard/consulting" },
               ].map(({ icon: Icon, label, path }) => (
                 <button
                   key={path}
@@ -243,7 +238,7 @@ export default function DashboardHome() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                   <Briefcase className="w-4 h-4 text-gray-500" />
-                  {isKo ? "최근 지원 현황" : "Recent Applications"}
+                  {t.dashboard.recentApplications}
                 </CardTitle>
                 <Button
                   variant="ghost"
@@ -251,7 +246,7 @@ export default function DashboardHome() {
                   className="text-xs text-gray-400 h-7 px-2"
                   onClick={() => setLocation("/dashboard/applications")}
                 >
-                  {isKo ? "전체 보기" : "View all"}
+                  {t.dashboard.viewAll}
                   <ArrowRight className="w-3 h-3 ml-1" />
                 </Button>
               </div>
@@ -261,7 +256,7 @@ export default function DashboardHome() {
                 <div className="text-center py-6">
                   <Briefcase className="w-8 h-8 text-gray-200 mx-auto mb-2" />
                   <p className="text-sm text-gray-400">
-                    {isKo ? "아직 지원한 공고가 없습니다" : "No applications yet"}
+                    {t.dashboard.noApplications}
                   </p>
                   <Button
                     size="sm"
@@ -269,7 +264,7 @@ export default function DashboardHome() {
                     className="mt-2 text-xs"
                     onClick={() => setLocation("/dashboard")}
                   >
-                    {isKo ? "채용 공고 보기" : "Browse Jobs"}
+                    {t.dashboard.browseJobs}
                   </Button>
                 </div>
               ) : (
@@ -305,7 +300,7 @@ export default function DashboardHome() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                   <Bot className="w-4 h-4 text-gray-500" />
-                  {isKo ? "최근 AI 채팅" : "Recent AI Chats"}
+                  {t.dashboard.recentChats}
                 </CardTitle>
                 <Button
                   variant="ghost"
@@ -313,7 +308,7 @@ export default function DashboardHome() {
                   className="text-xs text-gray-400 h-7 px-2"
                   onClick={() => setLocation("/dashboard/chat")}
                 >
-                  {isKo ? "전체 보기" : "View all"}
+                  {t.dashboard.viewAll}
                   <ArrowRight className="w-3 h-3 ml-1" />
                 </Button>
               </div>
@@ -323,10 +318,10 @@ export default function DashboardHome() {
                 <div className="text-center py-6">
                   <MessageCircle className="w-8 h-8 text-gray-200 mx-auto mb-2" />
                   <p className="text-sm text-gray-400">
-                    {isKo ? "아직 채팅 기록이 없습니다" : "No chat history yet"}
+                    {t.dashboard.noChatHistory}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    {isKo ? "우측 하단 채팅 버튼을 눌러 AI와 대화해보세요" : "Click the chat button to start a conversation"}
+                    {t.dashboard.startChatHint}
                   </p>
                 </div>
               ) : (
@@ -342,7 +337,7 @@ export default function DashboardHome() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-gray-700 truncate">{session.title || "Chat"}</p>
                         <p className="text-xs text-gray-400">
-                          {new Date(session.updatedAt ?? session.createdAt).toLocaleDateString(isKo ? "ko-KR" : "en-US")}
+                          {new Date(session.updatedAt ?? session.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
@@ -359,7 +354,7 @@ export default function DashboardHome() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-gray-500" />
-                    {isKo ? "이력서 분석 요약" : "Resume Analysis Summary"}
+                    {t.dashboard.resumeSummary}
                   </CardTitle>
                   <Button
                     variant="ghost"
@@ -367,14 +362,14 @@ export default function DashboardHome() {
                     className="text-xs text-gray-400 h-7 px-2"
                     onClick={() => setLocation("/dashboard/resume")}
                   >
-                    {isKo ? "자세히 보기" : "Details"}
+                    {t.dashboard.details}
                     <ArrowRight className="w-3 h-3 ml-1" />
                   </Button>
                 </div>
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">
-                  {latestAnalysis.summary || (isKo ? "분석 요약이 없습니다." : "No summary available.")}
+                  {latestAnalysis.summary || t.dashboard.noSummary}
                 </p>
                 {Array.isArray(latestAnalysis.strengths) && latestAnalysis.strengths.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-1.5">

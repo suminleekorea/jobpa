@@ -10,6 +10,7 @@ import {
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { useI18n } from "@/contexts/i18nContext";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import {
   Briefcase, FileText, Target, BarChart3, Bookmark, Settings,
   LogOut, PanelLeft, Bot, Users, Sparkles, Shield, Languages,
@@ -64,7 +65,7 @@ function DashboardLayoutContent({ children, setSidebarWidth }: { children: React
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
   const { state, toggleSidebar } = useSidebar();
-  const { t, language, setLanguage } = useI18n();
+  const { t, language } = useI18n();
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -163,17 +164,9 @@ function DashboardLayoutContent({ children, setSidebarWidth }: { children: React
 
           <SidebarFooter className="p-2 space-y-1 border-t border-border/50">
             {!isCollapsed && (
-              <button
-                onClick={() => {
-                  const langs = ["ko", "en", "ja", "zh"] as const;
-                  const idx = langs.indexOf(language as any);
-                  setLanguage(langs[(idx + 1) % langs.length]);
-                }}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors text-[13px] text-muted-foreground w-full"
-              >
-                <Languages className="h-4 w-4" />
-                <span>{language === "ko" ? "English" : language === "en" ? "日本語" : language === "ja" ? "中文" : "한국어"}</span>
-              </button>
+              <div className="px-1">
+                <LanguageSelector variant="ghost" className="w-full justify-start" />
+              </div>
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

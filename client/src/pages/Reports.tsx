@@ -27,12 +27,11 @@ function MarkdownContent({ content }: { content: string }) {
 
 export default function Reports() {
   const { t, language } = useI18n();
-  const isKo = language === "ko";
   const { data: reports, isLoading, refetch } = trpc.report.list.useQuery();
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const generate = trpc.report.generate.useMutation({
     onSuccess: () => {
-      toast.success(isKo ? "오늘의 리포트가 생성됐습니다!" : "Daily report generated!");
+      toast.success(t.reports.reportGenerated);
       refetch();
     },
     onError: (err) => toast.error(err.message || "Failed to generate report"),
@@ -47,7 +46,7 @@ export default function Reports() {
         </div>
         <Button onClick={() => generate.mutate()} disabled={generate.isPending} className="gap-2">
           {generate.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <BarChart3 className="h-4 w-4" />}
-          {generate.isPending ? (isKo ? "AI 분석 중..." : "Generating...") : t.reports.generate}
+          {generate.isPending ? t.reports.generating : t.reports.generate}
         </Button>
       </div>
 
@@ -55,12 +54,10 @@ export default function Reports() {
       <Card className="bg-primary/5 border-primary/20">
         <CardContent className="p-4">
           <p className="text-sm font-medium text-primary mb-1">
-            {isKo ? "📊 데일리 리포트란?" : "📊 What is a Daily Report?"}
+            {t.reports.whatIsReport}
           </p>
           <p className="text-xs text-muted-foreground">
-            {isKo
-              ? "AI가 오늘의 지원 현황, 이력서 점수, 체크리스트 달성률을 분석해 맞춤형 커리어 인사이트와 내일의 액션 아이템을 제공합니다."
-              : "AI analyzes your application status, resume score, and checklist completion to provide personalized career insights and tomorrow's action items."}
+            {t.reports.criteriaDetail}
           </p>
         </CardContent>
       </Card>
@@ -74,11 +71,11 @@ export default function Reports() {
           <BarChart3 className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
           <h3 className="font-medium">{t.reports.noReports}</h3>
           <p className="text-sm text-muted-foreground mt-1">
-            {isKo ? "첫 번째 리포트를 생성해 오늘의 커리어 인사이트를 받아보세요." : "Generate your first report to get personalized career insights."}
+            {t.reports.firstReportDesc}
           </p>
           <Button onClick={() => generate.mutate()} disabled={generate.isPending} className="mt-4 gap-2">
             {generate.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <BarChart3 className="h-4 w-4" />}
-            {isKo ? "첫 리포트 생성하기" : "Generate First Report"}
+            {t.reports.generateFirst}
           </Button>
         </div>
       ) : (
@@ -99,7 +96,7 @@ export default function Reports() {
                     <div className="flex items-center gap-1 mt-0.5">
                       <Calendar className="h-3 w-3 text-muted-foreground" />
                       <p className="text-xs text-muted-foreground">
-                        {new Date(report.createdAt).toLocaleDateString(isKo ? "ko-KR" : "en-US", {
+                        {new Date(report.createdAt).toLocaleDateString(undefined, {
                           year: "numeric", month: "long", day: "numeric"
                         })}
                       </p>
@@ -108,7 +105,7 @@ export default function Reports() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
-                    {report.reportType === "daily" ? (isKo ? "데일리" : "Daily") : report.reportType}
+                    {report.reportType === "daily" ? t.reports.daily : report.reportType}
                   </span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
@@ -131,7 +128,7 @@ export default function Reports() {
             {selectedReport?.content ? (
               <MarkdownContent content={selectedReport.content} />
             ) : (
-              <p className="text-sm text-muted-foreground">{isKo ? "내용이 없습니다." : "No content available."}</p>
+              <p className="text-sm text-muted-foreground">{t.reports.noContent}</p>
             )}
           </div>
         </DialogContent>
