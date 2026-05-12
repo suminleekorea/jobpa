@@ -71,26 +71,32 @@ function DashboardLayoutContent({ children, setSidebarWidth }: { children: React
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
 
-  const menuItems = [
+  const coreMenuItems = [
     { icon: Home, label: t.nav.home, path: "/dashboard" },
     { icon: Briefcase, label: t.nav.jobs, path: "/dashboard/jobs" },
     { icon: Bookmark, label: t.nav.applications, path: "/dashboard/applications" },
+    { icon: FileText, label: t.nav.resume, path: "/dashboard/resume" },
+    { icon: Target, label: t.nav.fit, path: "/dashboard/fit" },
+    { icon: MessageCircle, label: t.chatbot.title, path: "/dashboard/chat" },
+    { icon: Sparkles, label: t.nav.consulting, path: "/dashboard/consulting" },
+  ];
+
+  const moreMenuItems = [
     { icon: CheckSquare, label: t.checklist.title, path: "/dashboard/checklist" },
     { icon: BookOpen, label: t.journal.title, path: "/dashboard/journal" },
     { icon: Trophy, label: t.gamification.title, path: "/dashboard/level" },
-    { icon: FileText, label: t.nav.resume, path: "/dashboard/resume" },
-    { icon: Target, label: t.nav.fit, path: "/dashboard/fit" },
     { icon: BarChart3, label: t.nav.reports, path: "/dashboard/reports" },
     { icon: TrendingUp, label: t.trends.title, path: "/dashboard/trends" },
-    { icon: MessageCircle, label: t.chatbot.title, path: "/dashboard/chat" },
-    { icon: Sparkles, label: t.nav.consulting, path: "/dashboard/consulting" },
   ];
 
   const adminItems = user?.role === "admin" ? [
     { icon: Shield, label: t.nav.admin, path: "/dashboard/admin" },
   ] : [];
 
-  const allItems = [...menuItems, ...adminItems];
+  const allItems = [...coreMenuItems, ...moreMenuItems, ...adminItems];
+  const [moreExpanded, setMoreExpanded] = useState(() =>
+    moreMenuItems.some(item => location === item.path || (location.startsWith(item.path) && item.path !== "/dashboard"))
+  );
   const activeMenuItem = allItems.find(item => item.path === location) || allItems.find(item => location.startsWith(item.path) && item.path !== "/dashboard") || allItems[0];
 
   useEffect(() => { if (isCollapsed) setIsResizing(false); }, [isCollapsed]);
@@ -139,7 +145,7 @@ function DashboardLayoutContent({ children, setSidebarWidth }: { children: React
 
           <SidebarContent className="gap-0">
             <SidebarMenu className="px-2 py-2">
-              {allItems.map(item => {
+              {coreMenuItems.map(item => {
                 const isActive = location === item.path;
                 return (
                   <SidebarMenuItem key={item.path}>
@@ -148,6 +154,58 @@ function DashboardLayoutContent({ children, setSidebarWidth }: { children: React
                       onClick={() => setLocation(item.path)}
                       tooltip={item.label}
                       className={`h-8 text-[13px] transition-all font-medium ${
+                        isActive
+                          ? "bg-primary/8 text-primary border border-primary/15"
+                          : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                      }`}
+                    >
+                      <item.icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? "text-primary" : ""}`} />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+              {adminItems.map(item => {
+                const isActive = location === item.path;
+                return (
+                  <SidebarMenuItem key={item.path}>
+                    <SidebarMenuButton
+                      isActive={isActive}
+                      onClick={() => setLocation(item.path)}
+                      tooltip={item.label}
+                      className={`h-8 text-[13px] transition-all font-medium ${
+                        isActive
+                          ? "bg-primary/8 text-primary border border-primary/15"
+                          : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                      }`}
+                    >
+                      <item.icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? "text-primary" : ""}`} />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+              {/* More Features collapsible section */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => setMoreExpanded(v => !v)}
+                  tooltip={t.nav.moreFeatures}
+                  className="h-8 text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent"
+                >
+                  <Settings className="h-3.5 w-3.5 shrink-0" />
+                  <span className="flex-1">{t.nav.moreFeatures}</span>
+                  <span className="text-[10px] opacity-60">{moreExpanded ? '▲' : '▼'}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              {moreExpanded && moreMenuItems.map(item => {
+                const isActive = location === item.path;
+                return (
+                  <SidebarMenuItem key={item.path}>
+                    <SidebarMenuButton
+                      isActive={isActive}
+                      onClick={() => setLocation(item.path)}
+                      tooltip={item.label}
+                      className={`h-8 text-[13px] transition-all font-medium pl-6 ${
                         isActive
                           ? "bg-primary/8 text-primary border border-primary/15"
                           : "text-muted-foreground hover:text-foreground hover:bg-accent"

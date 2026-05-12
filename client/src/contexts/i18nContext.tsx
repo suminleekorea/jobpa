@@ -23,7 +23,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("jobpa-lang", lang);
   }, []);
 
-  const t = translations[language];
+  const t = translations[language] as Translations;
 
   return (
     <I18nContext.Provider value={{ language, setLanguage, t }}>

@@ -160,6 +160,7 @@ export default function ResumeAnalysis() {
   const [jobDescription, setJobDescription] = useState("");
   const [showJD, setShowJD] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
 
   // Sync savedResume to result state once data loads (fixes "load failed" issue)
@@ -191,10 +192,11 @@ export default function ResumeAnalysis() {
 
   const handleAnalyze = async () => {
     if (!file) {
-      toast.error("Please select a resume file first");
+      toast.error(t.resume.noFile);
       return;
     }
     setIsAnalyzing(true);
+    setAnalysisError(null);
     try {
       const formData = new FormData();
       formData.append("resume", file);
@@ -208,8 +210,19 @@ export default function ResumeAnalysis() {
       });
 
       if (!response.ok) {
-        const err = await response.json().catch(() => ({ error: "Analysis failed" }));
-        throw new Error(err.error || "Analysis failed");
+        const err = await response.json().catch(() => ({ error: "" }));
+        const errMsg = err.error || "";
+        if (errMsg.includes("Only PDF") || errMsg.includes("not allowed")) {
+          throw new Error(t.resume.errors.fileType);
+        } else if (errMsg.includes("10MB") || errMsg.includes("LIMIT_FILE_SIZE") || errMsg.includes("too large")) {
+          throw new Error(t.resume.errors.fileSize);
+        } else if (errMsg.includes("extract") || errMsg.includes("text")) {
+          throw new Error(t.resume.errors.extractFail);
+        } else if (errMsg.includes("Unauthorized") || errMsg.includes("401")) {
+          throw new Error(t.resume.errors.unauthorized);
+        } else {
+          throw new Error(errMsg || t.resume.errors.default);
+        }
       }
 
       const data = await response.json();
@@ -230,9 +243,11 @@ export default function ResumeAnalysis() {
       } catch {
         // Non-critical: don't fail the whole analysis if save fails
       }
-      toast.success(language === "ko" ? "이력서 분석 완료!" : "Resume analysis complete!");
+      toast.success(t.resume.success);
     } catch (err: any) {
-      toast.error(err.message || "Analysis failed. Please try again.");
+      const msg = err.message || t.resume.errors.default;
+      setAnalysisError(msg);
+      toast.error(msg);
     } finally {
       setIsAnalyzing(false);
     }
@@ -339,14 +354,14 @@ export default function ResumeAnalysis() {
             {isAnalyzing ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {language === "ko" ? "AI 분석 중... (30-60초)" : "AI Analyzing... (30-60 sec)"}
+                {t.resume.analyzing}
               </>
             ) : (
               <>
                 <Sparkles className="h-4 w-4" />
                 {result
-                  ? (language === "ko" ? "다시 분석하기" : "Re-analyze")
-                  : (language === "ko" ? "AI 이력서 분석 시작" : "Start AI Analysis")}
+                  ? t.resume.analyze
+                  : t.resume.analyze}
               </>
             )}
           </Button>
@@ -354,10 +369,25 @@ export default function ResumeAnalysis() {
           {result && (
             <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
               <RefreshCw className="h-3 w-3" />
-              {language === "ko"
-                ? `마지막 분석: ${new Date(result.analyzedAt || 0).toLocaleDateString("ko-KR")}`
-                : `Last analyzed: ${new Date(result.analyzedAt || 0).toLocaleDateString()}`}
+              {(t.resume.lastAnalyzed || "Last analyzed: {date}").replace("{date}", new Date(result.analyzedAt || 0).toLocaleDateString())}
             </p>
+          )}
+          {analysisError && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 flex flex-col gap-2">
+              <div className="flex items-start gap-2 text-destructive text-sm">
+                <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                <span>{analysisError}</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="self-start gap-1 border-destructive/40 text-destructive hover:bg-destructive/10"
+                onClick={() => { setAnalysisError(null); handleAnalyze(); }}
+              >
+                <RefreshCw className="h-3 w-3" />
+                {t.resume.retry}
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>

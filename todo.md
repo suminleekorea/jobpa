@@ -100,3 +100,10 @@
 - [x] Complete reviews DB helpers + reviews section on landing page
 - [x] Add Japanese (日本語) language support
 - [x] Add Chinese (中文) language support
+
+## Feedback Fixes (May 2026 Round 3)
+- [x] Fix resume analysis CV parsing error (multer error handler + better error messages)
+- [x] Move My Level, Journal, Reports, Industry Trends to collapsible "기타 기능" section in sidebar
+- [ ] Add MyProfile tab with one-time profile form (personal info, skills, experience, education) [TODO]
+- [ ] Prioritize LinkedIn jobs in job search results (high-paid/MNC/foreigner target) [TODO]
+- [ ] Add resume template styles (International standard + Korean Saramin 자소서 style) [TODO]

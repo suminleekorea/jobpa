@@ -105,7 +105,17 @@ const REGION_CONTEXT: Record<string, string> = {
 
 export function registerResumeRoutes(app: Express) {
   // POST /api/resume/upload-analyze
-  app.post("/api/resume/upload-analyze", upload.single("resume"), async (req: any, res: any) => {
+  app.post("/api/resume/upload-analyze", (req: any, res: any, next: any) => {
+    upload.single("resume")(req, res, (err: any) => {
+      if (err) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: 'File too large. Maximum size is 10MB.' });
+        }
+        return res.status(400).json({ error: err.message || 'File upload failed.' });
+      }
+      next();
+    });
+  }, async (req: any, res: any) => {
     try {
       // Auth check — this route is outside tRPC middleware, so we call sdk directly
       let user: any = null;

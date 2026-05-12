@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useI18n } from "@/contexts/i18nContext";
 import { trpc } from "@/lib/trpc";
-import { BarChart3, Loader2, FileText, ChevronRight, Calendar } from "lucide-react";
+import { BarChart3, BarChart2, Loader2, FileText, ChevronRight, Calendar } from "lucide-react";
 import { toast } from "sonner";
 
 // Simple markdown renderer
@@ -124,7 +124,11 @@ export default function Reports() {
               {selectedReport?.title}
             </DialogTitle>
           </DialogHeader>
-          <div className="mt-2">
+          <div className="mt-2 flex flex-col gap-3">
+            <div className="flex items-start gap-2 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
+              <BarChart2 className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+              <span>{t.reports.criteriaDetail}</span>
+            </div>
             {selectedReport?.content ? (
               <MarkdownContent content={selectedReport.content} />
             ) : (
