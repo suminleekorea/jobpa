@@ -11,6 +11,8 @@ import type { Express } from "express";
 import { z } from "zod/v4";
 import { ENV } from "./env";
 import { createPatchedFetch } from "./patchedFetch";
+import * as db from "../db";
+import { sdk } from "./sdk";
 
 function createLLMProvider() {
   const baseURL = ENV.forgeApiUrl.endsWith("/v1")
@@ -225,9 +227,41 @@ export function registerChatRoutes(app: Express) {
         }));
       }
 
+      // Build personalized system prompt with user profile if available
+      let systemPrompt = CAREER_SYSTEM_PROMPT;
+      try {
+        const authResult = await sdk.authenticateRequest(req);
+        if (authResult?.id) {
+          const profile = await db.getUserProfile(authResult.id);
+          if (profile && (profile.fullName || profile.skills || profile.experience)) {
+            const skills = (profile.skills as string[] | null) ?? [];
+            const experience = (profile.experience as {company: string; role: string; period: string}[] | null) ?? [];
+            const education = (profile.education as {school: string; degree: string; field: string}[] | null) ?? [];
+            const profileContext = `
+
+## User Profile (Personalization Context)
+Name: ${profile.fullName || 'Not provided'}
+Headline: ${profile.headline || 'Not provided'}
+Location: ${profile.location || 'Not provided'}
+Target Role: ${profile.targetRole || 'Not provided'}
+Target Location: ${profile.targetLocation || 'Not provided'}
+Target Salary: ${profile.targetSalary || 'Not provided'}
+Visa Status: ${profile.visaStatus || 'Not provided'}
+Skills: ${skills.length > 0 ? skills.join(', ') : 'Not provided'}
+Work Experience: ${experience.length > 0 ? experience.map(e => `${e.role} at ${e.company} (${e.period})`).join('; ') : 'Not provided'}
+Education: ${education.length > 0 ? education.map(e => `${e.degree} in ${e.field} from ${e.school}`).join('; ') : 'Not provided'}
+
+Use this profile to provide highly personalized career advice. Reference their specific background, skills, and goals when giving recommendations.`;
+            systemPrompt = CAREER_SYSTEM_PROMPT + profileContext;
+          }
+        }
+      } catch {
+        // Profile fetch failed, use default system prompt
+      }
+
       const result = streamText({
         model: openai.chat("gemini-2.5-flash"),
-        system: CAREER_SYSTEM_PROMPT,
+        system: systemPrompt,
         messages: modelMessages,
         tools: careerTools,
         stopWhen: stepCountIs(5),

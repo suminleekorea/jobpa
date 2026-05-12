@@ -5,21 +5,31 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/contexts/i18nContext";
 import { trpc } from "@/lib/trpc";
-import { Target, Loader2, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { Target, Loader2, AlertCircle, UserCircle, CheckCircle2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { Link } from "wouter";
 
 export default function JobFit() {
   const { t } = useI18n();
   const [targetRole, setTargetRole] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const { data: resume } = trpc.resume.get.useQuery();
+  const { data: profile } = trpc.profile.get.useQuery();
   const { data: history } = trpc.fit.history.useQuery();
   const evaluate = trpc.fit.evaluate.useMutation({
     onSuccess: () => toast.success("Evaluation saved"),
     onError: (err) => toast.error(err.message),
   });
   const hasResume = resume && resume.analysisResult != null;
+  const hasProfile = profile && (profile.fullName || (profile.skills && (profile.skills as string[]).length > 0) || (profile.experience && (profile.experience as unknown[]).length > 0));
+
+  // Pre-fill target role from profile
+  useEffect(() => {
+    if (profile?.targetRole && !targetRole) {
+      setTargetRole(profile.targetRole);
+    }
+  }, [profile]);
 
   return (
     <div className="space-y-6">
@@ -27,14 +37,39 @@ export default function JobFit() {
         <h1 className="text-2xl font-bold tracking-tight">{t.fit.title}</h1>
         <p className="text-muted-foreground mt-1">{t.fit.subtitle}</p>
       </div>
-      {!hasResume && (
-        <Card className="border-amber-200 bg-amber-50">
+
+      {/* Profile banner - shown when user has a profile */}
+      {hasProfile && (
+        <Card className="border-blue-200 bg-blue-50">
           <CardContent className="p-4 flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
-            <p className="text-sm text-amber-800">{t.fit.needResume}</p>
+            <CheckCircle2 className="h-5 w-5 text-blue-600 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm text-blue-800 font-medium">{profile.fullName || profile.headline}</p>
+              <p className="text-xs text-blue-600">{t.myProfile.usedInFit}</p>
+            </div>
+            <Link href="/dashboard/profile" className="text-xs text-blue-600 underline">
+              {t.nav.myProfile}
+            </Link>
           </CardContent>
         </Card>
       )}
+
+      {/* No resume and no profile warning */}
+      {!hasResume && !hasProfile && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="p-4 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm text-amber-800">{t.fit.needResume}</p>
+            </div>
+            <Link href="/dashboard/profile" className="text-xs text-amber-700 underline flex items-center gap-1">
+              <UserCircle className="w-3 h-3" />
+              {t.nav.myProfile}
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardContent className="p-6 space-y-4">
           <div>

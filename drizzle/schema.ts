@@ -330,3 +330,28 @@ export const reviews = mysqlTable("reviews", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type Review = typeof reviews.$inferSelect;
+
+// ─── User Profiles (MyProfile) ───────────────────────────────────
+export const userProfiles = mysqlTable("userProfiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  fullName: varchar("fullName", { length: 255 }),
+  headline: varchar("headline", { length: 512 }),
+  email: varchar("email", { length: 320 }),
+  phone: varchar("phone", { length: 64 }),
+  location: varchar("location", { length: 255 }),
+  skills: json("skills").$type<string[]>(),
+  experience: json("experience").$type<{company: string; role: string; period: string; description: string}[]>(),
+  education: json("education").$type<{school: string; degree: string; field: string; period: string}[]>(),
+  targetRole: varchar("targetRole", { length: 255 }),
+  targetLocation: varchar("targetLocation", { length: 255 }),
+  targetSalary: varchar("targetSalary", { length: 128 }),
+  visaStatus: varchar("visaStatus", { length: 128 }),
+  linkedinUrl: text("linkedinUrl"),
+  portfolioUrl: text("portfolioUrl"),
+  summary: text("summary"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type UserProfile = typeof userProfiles.$inferSelect;
+export type InsertUserProfile = typeof userProfiles.$inferInsert;

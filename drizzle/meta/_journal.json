@@ -50,6 +50,13 @@
       "when": 1778387427705,
       "tag": "0006_naive_scalphunter",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1778581670281,
+      "tag": "0007_open_silver_sable",
+      "breakpoints": true
     }
   ]
 }

@@ -23,6 +23,7 @@ import { lazy, Suspense } from "react";
 const Checklist = lazy(() => import("./pages/Checklist"));
 const Journal = lazy(() => import("./pages/Journal"));
 const Level = lazy(() => import("./pages/Level"));
+const MyProfile = lazy(() => import("./pages/MyProfile"));
 
 function DashboardPage({ children }: { children: React.ReactNode }) {
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -68,6 +69,9 @@ function Router() {
       </Route>
       <Route path="/dashboard/level">
         <DashboardPage><Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading...</div>}><Level /></Suspense></DashboardPage>
+      </Route>
+      <Route path="/dashboard/profile">
+        <DashboardPage><Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading...</div>}><MyProfile /></Suspense></DashboardPage>
       </Route>
       <Route path="/dashboard/admin">
         <DashboardPage><Admin /></DashboardPage>

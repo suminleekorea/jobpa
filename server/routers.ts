@@ -451,6 +451,41 @@ Keep it concise (under 300 words). Use markdown formatting. Be specific and acti
       return db.getUserReviews(ctx.user.id);
     }),
   }),
+  profile: router({
+    get: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUserProfile(ctx.user.id);
+    }),
+    upsert: protectedProcedure.input(z.object({
+      fullName: z.string().optional(),
+      headline: z.string().optional(),
+      email: z.string().optional(),
+      phone: z.string().optional(),
+      location: z.string().optional(),
+      skills: z.array(z.string()).optional(),
+      experience: z.array(z.object({
+        company: z.string(),
+        role: z.string(),
+        period: z.string(),
+        description: z.string(),
+      })).optional(),
+      education: z.array(z.object({
+        school: z.string(),
+        degree: z.string(),
+        field: z.string(),
+        period: z.string(),
+      })).optional(),
+      targetRole: z.string().optional(),
+      targetLocation: z.string().optional(),
+      targetSalary: z.string().optional(),
+      visaStatus: z.string().optional(),
+      linkedinUrl: z.string().optional(),
+      portfolioUrl: z.string().optional(),
+      summary: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      return db.upsertUserProfile(ctx.user.id, input);
+    }),
+  }),
+
   trend: router({
     generate: protectedProcedure.input(z.object({
       sector: z.string().optional(),

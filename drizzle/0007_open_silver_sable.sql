@@ -1,0 +1,23 @@
+CREATE TABLE `userProfiles` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`fullName` varchar(255),
+	`headline` varchar(512),
+	`email` varchar(320),
+	`phone` varchar(64),
+	`location` varchar(255),
+	`skills` json,
+	`experience` json,
+	`education` json,
+	`targetRole` varchar(255),
+	`targetLocation` varchar(255),
+	`targetSalary` varchar(128),
+	`visaStatus` varchar(128),
+	`linkedinUrl` text,
+	`portfolioUrl` text,
+	`summary` text,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `userProfiles_id` PRIMARY KEY(`id`),
+	CONSTRAINT `userProfiles_userId_unique` UNIQUE(`userId`)
+);

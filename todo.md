@@ -104,6 +104,14 @@
 ## Feedback Fixes (May 2026 Round 3)
 - [x] Fix resume analysis CV parsing error (multer error handler + better error messages)
 - [x] Move My Level, Journal, Reports, Industry Trends to collapsible "기타 기능" section in sidebar
-- [ ] Add MyProfile tab with one-time profile form (personal info, skills, experience, education) [TODO]
-- [ ] Prioritize LinkedIn jobs in job search results (high-paid/MNC/foreigner target) [TODO]
-- [ ] Add resume template styles (International standard + Korean Saramin 자소서 style) [TODO]
+- [x] Add MyProfile tab with one-time profile form (personal info, skills, experience, education)
+- [x] Prioritize LinkedIn jobs in job search results (high-paid/MNC/foreigner target)
+- [x] Add resume template styles (International standard + Korean Saramin 자소서 style)
+
+## New Features (May 2026 Round 4)
+- [x] MyProfile tab: DB schema (user_profiles table), tRPC procedures, profile form (name, headline, skills, experience, education, target role, target location, visa status)
+- [x] Wire MyProfile into Job Fit evaluation (use profile instead of requiring resume upload)
+- [x] Wire MyProfile into AI Career Chat (personalized context from profile)
+- [x] LinkedIn priority filter + MNC/foreigner-friendly badge + high salary filter
+- [x] Resume template download: International standard style (PDF)
+- [x] Resume template download: Korean Saramin 자소서 style (PDF)

@@ -6,8 +6,10 @@ import {
   userXP, xpEvents, dailyChecklist, journal,
   consultants, consultingApplications, consultingSessions, userCredits, creditTransactions,
   chatSessions, chatMessages, resumeAnalysisResults, reviews,
+  userProfiles,
   type InsertSurvey, type InsertApplication, type Survey, type Application,
   type InsertUserXP, type InsertDailyChecklistItem, type InsertJournalEntry,
+  type InsertUserProfile,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -599,4 +601,25 @@ export async function getUserReviews(userId: number) {
 export async function approveReview(id: number) {
   const db = await getDb(); if (!db) throw new Error("DB not available");
   await db.update(reviews).set({ isApproved: true }).where(eq(reviews.id, id));
+}
+
+// ─── User Profiles (MyProfile) ───────────────────────────────────
+export async function getUserProfile(userId: number) {
+  const db = await getDb(); if (!db) return null;
+  const result = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function upsertUserProfile(userId: number, data: Omit<InsertUserProfile, 'userId' | 'id' | 'createdAt' | 'updatedAt'>) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const existing = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId)).limit(1);
+  if (existing.length > 0) {
+    await db.update(userProfiles).set(data).where(eq(userProfiles.userId, userId));
+    const updated = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId)).limit(1);
+    return updated[0];
+  } else {
+    await db.insert(userProfiles).values({ userId, ...data });
+    const inserted = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId)).limit(1);
+    return inserted[0];
+  }
 }

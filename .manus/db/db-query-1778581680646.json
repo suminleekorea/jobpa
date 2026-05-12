@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `userProfiles` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`userId` int NOT NULL,\n\t`fullName` varchar(255),\n\t`headline` varchar(512),\n\t`email` varchar(320),\n\t`phone` varchar(64),\n\t`location` varchar(255),\n\t`skills` json,\n\t`experience` json,\n\t`education` json,\n\t`targetRole` varchar(255),\n\t`targetLocation` varchar(255),\n\t`targetSalary` varchar(128),\n\t`visaStatus` varchar(128),\n\t`linkedinUrl` text,\n\t`portfolioUrl` text,\n\t`summary` text,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `userProfiles_id` PRIMARY KEY(`id`),\n\tCONSTRAINT `userProfiles_userId_unique` UNIQUE(`userId`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JnPRnaAUkD2vcq.root --database 7CDWVFFxWiw496tEAbvLTL --execute CREATE TABLE `userProfiles` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`userId` int NOT NULL,\n\t`fullName` varchar(255),\n\t`headline` varchar(512),\n\t`email` varchar(320),\n\t`phone` varchar(64),\n\t`location` varchar(255),\n\t`skills` json,\n\t`experience` json,\n\t`education` json,\n\t`targetRole` varchar(255),\n\t`targetLocation` varchar(255),\n\t`targetSalary` varchar(128),\n\t`visaStatus` varchar(128),\n\t`linkedinUrl` text,\n\t`portfolioUrl` text,\n\t`summary` text,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `userProfiles_id` PRIMARY KEY(`id`),\n\tCONSTRAINT `userProfiles_userId_unique` UNIQUE(`userId`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1843
+}

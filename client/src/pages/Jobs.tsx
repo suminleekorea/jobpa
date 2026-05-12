@@ -9,16 +9,20 @@ import { useI18n } from "@/contexts/i18nContext";
 import { trpc } from "@/lib/trpc";
 import {
   Search, MapPin, Building2, Clock, ExternalLink, Filter, X,
-  Briefcase, Bookmark, Check, Globe, BadgeCheck, Loader2, RefreshCw
+  Briefcase, Bookmark, Check, Globe, BadgeCheck, Loader2, RefreshCw,
+  TrendingUp, Users, DollarSign,
 } from "lucide-react";
 import { useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
+
+// LinkedIn brand colors
+const LINKEDIN_BLUE = "bg-[#0A66C2] text-white";
 
 // Source badge colors
 const SOURCE_BADGES: Record<string, { label: string; color: string }> = {
   careergov: { label: "Career@Gov", color: "bg-blue-100 text-blue-800" },
   mcf: { label: "MCF", color: "bg-emerald-100 text-emerald-800" },
-  linkedin: { label: "LinkedIn", color: "bg-sky-100 text-sky-800" },
+  linkedin: { label: "LinkedIn", color: `${LINKEDIN_BLUE}` },
   indeed: { label: "Indeed", color: "bg-purple-100 text-purple-800" },
   glassdoor: { label: "Glassdoor", color: "bg-green-100 text-green-800" },
   jobsdb: { label: "JobsDB", color: "bg-orange-100 text-orange-800" },
@@ -33,6 +37,40 @@ function getSourceBadge(source?: string) {
   if (!source) return SOURCE_BADGES.google;
   const key = source.toLowerCase().replace(/[^a-z]/g, "");
   return SOURCE_BADGES[key] || { label: source, color: "bg-gray-100 text-gray-800" };
+}
+
+// Detect if a job is likely MNC / foreigner-friendly
+function isMNCJob(job: JobItem): boolean {
+  const mncs = [
+    "google", "microsoft", "amazon", "meta", "apple", "netflix", "salesforce",
+    "oracle", "sap", "ibm", "accenture", "deloitte", "pwc", "kpmg", "ey",
+    "mckinsey", "bcg", "bain", "jp morgan", "goldman sachs", "morgan stanley",
+    "citibank", "hsbc", "standard chartered", "dbs", "ocbc", "uob",
+    "grab", "sea", "shopee", "lazada", "bytedance", "tiktok", "alibaba",
+    "samsung", "lg", "hyundai", "sk", "lotte", "posco",
+    "siemens", "bosch", "shell", "bp", "exxon", "chevron",
+    "unilever", "procter", "nestle", "novartis", "pfizer", "johnson",
+    "3m", "honeywell", "ge", "philips", "sony", "panasonic",
+  ];
+  const companyLower = (job.company || "").toLowerCase();
+  return mncs.some(mnc => companyLower.includes(mnc)) || job.visa === true;
+}
+
+// Detect if job has high salary
+function isHighSalaryJob(job: JobItem): boolean {
+  if (!job.salary) return false;
+  const salaryStr = job.salary.toLowerCase();
+  // Look for numbers above certain thresholds
+  const numbers = salaryStr.match(/[\d,]+/g)?.map(n => parseInt(n.replace(/,/g, ""))) || [];
+  if (numbers.length === 0) return false;
+  const maxNum = Math.max(...numbers);
+  // SGD 8k+/mo, HKD 40k+/mo, AED 20k+/mo, KRW 6M+/mo
+  if (salaryStr.includes("sgd") || salaryStr.includes("s$")) return maxNum >= 8000;
+  if (salaryStr.includes("hkd") || salaryStr.includes("hk$")) return maxNum >= 40000;
+  if (salaryStr.includes("aed")) return maxNum >= 20000;
+  if (salaryStr.includes("krw") || salaryStr.includes("₩")) return maxNum >= 6000000;
+  if (salaryStr.includes("k")) return maxNum >= 8; // 8k+
+  return maxNum >= 8000;
 }
 
 interface JobItem {
@@ -143,6 +181,11 @@ export default function Jobs() {
   const [remoteOnly, setRemoteOnly] = useState(false);
   const [selectedSource, setSelectedSource] = useState<string>("all");
 
+  // New filters
+  const [linkedinFirst, setLinkedinFirst] = useState(false);
+  const [mncOnly, setMncOnly] = useState(false);
+  const [highSalaryOnly, setHighSalaryOnly] = useState(false);
+
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<JobItem | null>(null);
 
@@ -154,7 +197,7 @@ export default function Jobs() {
       limit: 200,
     },
     {
-      staleTime: 5 * 60 * 1000, // 5 min
+      staleTime: 5 * 60 * 1000,
       refetchOnWindowFocus: false,
     }
   );
@@ -173,12 +216,12 @@ export default function Jobs() {
   const activeFilterCount = [
     selectedJobType !== "all", selectedExperience !== "all",
     selectedIndustry !== "all", selectedPosted !== "all", visaOnly, remoteOnly,
-    selectedSource !== "all",
+    selectedSource !== "all", linkedinFirst, mncOnly, highSalaryOnly,
   ].filter(Boolean).length;
 
-  // Client-side filtering for type/experience/industry/posted/visa/remote/source
+  // Client-side filtering + sorting
   const filteredJobs = useMemo(() => {
-    return allJobs.filter(job => {
+    let jobs = allJobs.filter(job => {
       if (selectedJobType !== "all" && job.type !== selectedJobType) return false;
       if (selectedExperience !== "all" && job.experience !== selectedExperience) return false;
       if (selectedIndustry !== "all" && job.industry !== selectedIndustry) return false;
@@ -192,9 +235,24 @@ export default function Jobs() {
         const jobSource = (job.source || "").toLowerCase().replace(/[^a-z]/g, "");
         if (jobSource !== selectedSource) return false;
       }
+      if (mncOnly && !isMNCJob(job)) return false;
+      if (highSalaryOnly && !isHighSalaryJob(job)) return false;
       return true;
     });
-  }, [allJobs, selectedJobType, selectedExperience, selectedIndustry, selectedPosted, visaOnly, remoteOnly, selectedSource]);
+
+    // LinkedIn-first sorting: LinkedIn jobs bubble to top
+    if (linkedinFirst) {
+      jobs = [...jobs].sort((a, b) => {
+        const aIsLinkedIn = (a.source || "").toLowerCase().includes("linkedin");
+        const bIsLinkedIn = (b.source || "").toLowerCase().includes("linkedin");
+        if (aIsLinkedIn && !bIsLinkedIn) return -1;
+        if (!aIsLinkedIn && bIsLinkedIn) return 1;
+        return 0;
+      });
+    }
+
+    return jobs;
+  }, [allJobs, selectedJobType, selectedExperience, selectedIndustry, selectedPosted, visaOnly, remoteOnly, selectedSource, linkedinFirst, mncOnly, highSalaryOnly]);
 
   const handleSearch = useCallback(() => {
     setSearchQuery(searchInput);
@@ -209,7 +267,7 @@ export default function Jobs() {
   const clearFilters = () => {
     setSelectedJobType("all"); setSelectedExperience("all");
     setSelectedIndustry("all"); setSelectedPosted("all"); setVisaOnly(false); setRemoteOnly(false);
-    setSelectedSource("all");
+    setSelectedSource("all"); setLinkedinFirst(false); setMncOnly(false); setHighSalaryOnly(false);
   };
 
   return (
@@ -237,8 +295,8 @@ export default function Jobs() {
               )}
               {(jobsData.sources as any).jsearch > 0 && (
                 <span className="inline-flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-purple-500" />
-                  JSearch: {(jobsData.sources as any).jsearch}
+                  <span className="h-2 w-2 rounded-full bg-[#0A66C2]" />
+                  LinkedIn+: {(jobsData.sources as any).jsearch}
                 </span>
               )}
               {(jobsData.sources as any).saramin > 0 && (
@@ -250,6 +308,45 @@ export default function Jobs() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Smart Filter Quick Buttons */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => setLinkedinFirst(!linkedinFirst)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+            linkedinFirst
+              ? "bg-[#0A66C2] text-white border-[#0A66C2] shadow-sm"
+              : "border-[#0A66C2] text-[#0A66C2] hover:bg-[#0A66C2]/10"
+          }`}
+        >
+          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+          </svg>
+          {(t.jobs as any).linkedinPriority}
+        </button>
+        <button
+          onClick={() => setMncOnly(!mncOnly)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+            mncOnly
+              ? "bg-violet-600 text-white border-violet-600 shadow-sm"
+              : "border-violet-400 text-violet-700 hover:bg-violet-50"
+          }`}
+        >
+          <Building2 className="w-3.5 h-3.5" />
+          {(t.jobs as any).mncFriendly}
+        </button>
+        <button
+          onClick={() => setHighSalaryOnly(!highSalaryOnly)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+            highSalaryOnly
+              ? "bg-amber-500 text-white border-amber-500 shadow-sm"
+              : "border-amber-400 text-amber-700 hover:bg-amber-50"
+          }`}
+        >
+          <DollarSign className="w-3.5 h-3.5" />
+          {(t.jobs as any).highSalary}
+        </button>
       </div>
 
       {/* Search & Filter Bar */}
@@ -379,6 +476,18 @@ export default function Jobs() {
                 <Label className="text-xs font-medium">{t.jobs.filterLabels.remote}</Label>
                 <Switch checked={remoteOnly} onCheckedChange={setRemoteOnly} />
               </div>
+              <div className="flex items-center justify-between col-span-1">
+                <Label className="text-xs font-medium">{(t.jobs as any).linkedinPriority}</Label>
+                <Switch checked={linkedinFirst} onCheckedChange={setLinkedinFirst} />
+              </div>
+              <div className="flex items-center justify-between col-span-1">
+                <Label className="text-xs font-medium">{(t.jobs as any).mncFriendly}</Label>
+                <Switch checked={mncOnly} onCheckedChange={setMncOnly} />
+              </div>
+              <div className="flex items-center justify-between col-span-1">
+                <Label className="text-xs font-medium">{(t.jobs as any).highSalary}</Label>
+                <Switch checked={highSalaryOnly} onCheckedChange={setHighSalaryOnly} />
+              </div>
             </div>
             {activeFilterCount > 0 && (
               <div className="mt-3 flex items-center justify-between">
@@ -396,6 +505,24 @@ export default function Jobs() {
       {/* Active Filter Chips */}
       {activeFilterCount > 0 && !showFilters && (
         <div className="flex flex-wrap gap-2">
+          {linkedinFirst && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#0A66C2]/10 text-[#0A66C2] border border-[#0A66C2]/30">
+              LinkedIn {(t.jobs as any).linkedinPriority}
+              <button onClick={() => setLinkedinFirst(false)} className="hover:opacity-70"><X className="h-3 w-3" /></button>
+            </span>
+          )}
+          {mncOnly && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-violet-100 text-violet-800 border border-violet-200">
+              {(t.jobs as any).mncFriendly}
+              <button onClick={() => setMncOnly(false)} className="hover:opacity-70"><X className="h-3 w-3" /></button>
+            </span>
+          )}
+          {highSalaryOnly && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
+              {(t.jobs as any).highSalary}
+              <button onClick={() => setHighSalaryOnly(false)} className="hover:opacity-70"><X className="h-3 w-3" /></button>
+            </span>
+          )}
           {selectedJobType !== "all" && (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
               {(t.jobs.jobTypes as any)[selectedJobType] || selectedJobType}
@@ -479,20 +606,51 @@ export default function Jobs() {
             <div className="grid gap-3">
               {filteredJobs.map(job => {
                 const badge = getSourceBadge(job.source);
+                const isLinkedIn = (job.source || "").toLowerCase().includes("linkedin");
+                const isMNC = isMNCJob(job);
+                const isHighSalary = isHighSalaryJob(job);
                 return (
-                  <Card key={job.id} className="hover:shadow-md transition-shadow">
+                  <Card
+                    key={job.id}
+                    className={`hover:shadow-md transition-shadow ${isLinkedIn && linkedinFirst ? "border-[#0A66C2]/30 bg-[#0A66C2]/[0.02]" : ""}`}
+                  >
                     <CardContent className="p-4">
                       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap mb-1">
                             <h3 className="font-semibold text-base">{job.title}</h3>
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>
-                              {badge.label}
-                            </span>
+                            {/* Source badge — LinkedIn gets special styling */}
+                            {isLinkedIn ? (
+                              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-[#0A66C2] text-white flex items-center gap-1">
+                                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                                </svg>
+                                LinkedIn
+                              </span>
+                            ) : (
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>
+                                {badge.label}
+                              </span>
+                            )}
+                            {/* MNC badge */}
+                            {isMNC && (
+                              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-800 flex items-center gap-1">
+                                <Building2 className="h-3 w-3" />
+                                {(t.jobs as any).mncBadge}
+                              </span>
+                            )}
+                            {/* Visa/Foreigner-friendly badge */}
                             {job.visa && (
                               <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 flex items-center gap-1">
                                 <BadgeCheck className="h-3 w-3" />
-                                Visa
+                                {(t.jobs as any).foreignerFriendly || "Visa OK"}
+                              </span>
+                            )}
+                            {/* High salary badge */}
+                            {isHighSalary && (
+                              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 flex items-center gap-1">
+                                <TrendingUp className="h-3 w-3" />
+                                {(t.jobs as any).highSalary}
                               </span>
                             )}
                           </div>
@@ -535,7 +693,7 @@ export default function Jobs() {
                         </div>
                         <Button
                           onClick={() => handleApplyClick(job)}
-                          className="gap-2 shrink-0"
+                          className={`gap-2 shrink-0 ${isLinkedIn ? "bg-[#0A66C2] hover:bg-[#004182] text-white" : ""}`}
                           size="sm"
                         >
                           <ExternalLink className="h-3.5 w-3.5" />
@@ -551,7 +709,7 @@ export default function Jobs() {
         </>
       )}
 
-      {/* Korean Platform External Resources — shown when Korea filter is active */}
+      {/* Korean Platform External Resources */}
       {selectedLocation === "korea" && (
         <div className="rounded-xl border bg-gradient-to-br from-rose-50/60 to-indigo-50/60 dark:from-rose-950/20 dark:to-indigo-950/20 p-5">
           <div className="flex items-center gap-2 mb-3">

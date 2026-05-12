@@ -14,6 +14,7 @@ import {
   Zap, ArrowUp, ArrowRight, Sparkles, MapPin, Tag
 } from "lucide-react";
 import { toast } from "sonner";
+import { ResumeTemplates } from "@/components/ResumeTemplates";
 import { useState, useRef, useCallback, useEffect } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -618,6 +619,8 @@ export default function ResumeAnalysis() {
           </Card>
         </>
       )}
+      {/* Resume Template Download */}
+      <ResumeTemplates />
     </div>
   );
 }

@@ -14,7 +14,7 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import {
   Briefcase, FileText, Target, BarChart3, Bookmark, Settings,
   LogOut, PanelLeft, Bot, Users, Sparkles, Shield, Languages,
-  TrendingUp, MessageCircle, Trophy, CheckSquare, BookOpen, Home,
+  TrendingUp, MessageCircle, Trophy, CheckSquare, BookOpen, Home, UserCircle,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -79,6 +79,7 @@ function DashboardLayoutContent({ children, setSidebarWidth }: { children: React
     { icon: Target, label: t.nav.fit, path: "/dashboard/fit" },
     { icon: MessageCircle, label: t.chatbot.title, path: "/dashboard/chat" },
     { icon: Sparkles, label: t.nav.consulting, path: "/dashboard/consulting" },
+    { icon: UserCircle, label: t.nav.myProfile, path: "/dashboard/profile" },
   ];
 
   const moreMenuItems = [
