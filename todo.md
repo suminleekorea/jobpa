@@ -115,3 +115,12 @@
 - [x] LinkedIn priority filter + MNC/foreigner-friendly badge + high salary filter
 - [x] Resume template download: International standard style (PDF)
 - [x] Resume template download: Korean Saramin 자소서 style (PDF)
+
+## LaTeX PDF Parsing Fix (May 2026 Round 5)
+- [x] Install pymupdf (fitz) on server
+- [x] Create server/pdfParser.ts with 3-layer fallback: pymupdf → pdf-parse → Gemini Vision API
+- [x] Wire new parser into resume upload handler
+- [x] Add parseInfo field to API response (method + label + warning)
+- [x] Show "✅ Parsed: LaTeX-optimized parser" in UI with method badge
+- [x] Improve error handling: specific error messages for parse failures
+- [x] Write vitest tests for pdfParser (9 tests passing)

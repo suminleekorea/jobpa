@@ -163,6 +163,7 @@ export default function ResumeAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [parseInfo, setParseInfo] = useState<{ method: string; label: string | null; warning: string | null } | null>(null);
 
   // Sync savedResume to result state once data loads (fixes "load failed" issue)
   useEffect(() => {
@@ -228,6 +229,7 @@ export default function ResumeAnalysis() {
 
       const data = await response.json();
       setResult(data.analysis);
+      if (data.parseInfo) setParseInfo(data.parseInfo);
       await refetch();
       // Save analysis result to DB for dashboard history
       try {
@@ -244,7 +246,12 @@ export default function ResumeAnalysis() {
       } catch {
         // Non-critical: don't fail the whole analysis if save fails
       }
-      toast.success(t.resume.success);
+      const parseLabel = data.parseInfo?.label;
+      toast.success(
+        parseLabel
+          ? `✅ Resume parsed successfully (${parseLabel})`
+          : t.resume.success
+      );
     } catch (err: any) {
       const msg = err.message || t.resume.errors.default;
       setAnalysisError(msg);
@@ -367,6 +374,15 @@ export default function ResumeAnalysis() {
             )}
           </Button>
 
+          {result && parseInfo?.label && (
+            <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              <span>Parsed: {parseInfo.label}</span>
+            </div>
+          )}
+          {result && parseInfo?.warning && (
+            <p className="text-xs text-center text-amber-600 dark:text-amber-400">{parseInfo.warning}</p>
+          )}
           {result && (
             <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
               <RefreshCw className="h-3 w-3" />

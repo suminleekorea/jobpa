@@ -7,6 +7,7 @@ import { createPatchedFetch } from "./_core/patchedFetch";
 import { storagePut } from "./storage";
 import * as db from "./db";
 import { sdk } from "./_core/sdk";
+import { extractTextFromPdf, getParseMethodLabel, type ParseMethod } from "./pdfParser";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -18,31 +19,45 @@ const upload = multer({
   },
 });
 
-async function extractTextFromBuffer(buffer: Buffer, mimetype: string): Promise<string> {
+interface ExtractResult {
+  text: string;
+  method: ParseMethod | "text" | "docx";
+  warning?: string;
+}
+
+async function extractTextFromBuffer(buffer: Buffer, mimetype: string): Promise<ExtractResult> {
   if (mimetype === "text/plain") {
-    return buffer.toString("utf-8");
+    return { text: buffer.toString("utf-8"), method: "text" };
   }
+
   if (mimetype === "application/pdf") {
-    try {
-      // Dynamic import to avoid issues
-      const pdfParse = await import("pdf-parse") as any;
-      const parseFn = pdfParse.default ?? pdfParse;
-      const data = await parseFn(buffer);
-      return data.text;
-    } catch {
-      return buffer.toString("utf-8").replace(/[^\x20-\x7E\n]/g, " ");
-    }
+    // Use the 3-layer PDF parser (pymupdf → pdf-parse → Gemini Vision)
+    const result = await extractTextFromPdf(buffer);
+    return {
+      text: result.text,
+      method: result.method,
+      warning: result.warning,
+    };
   }
+
   if (mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
     try {
       const mammoth = await import("mammoth");
       const result = await mammoth.extractRawText({ buffer });
-      return result.value;
+      if (result.value && result.value.trim().length > 0) {
+        return { text: result.value, method: "docx" };
+      }
     } catch {
-      return buffer.toString("utf-8").replace(/[^\x20-\x7E\n]/g, " ");
+      // fall through
     }
+    return {
+      text: buffer.toString("utf-8").replace(/[^\x20-\x7E\n]/g, " "),
+      method: "docx",
+      warning: "DOCX parsing had issues; some content may be missing.",
+    };
   }
-  return buffer.toString("utf-8");
+
+  return { text: buffer.toString("utf-8"), method: "text" };
 }
 
 const ResumeAnalysisSchema = z.object({
@@ -117,7 +132,7 @@ export function registerResumeRoutes(app: Express) {
     });
   }, async (req: any, res: any) => {
     try {
-      // Auth check — this route is outside tRPC middleware, so we call sdk directly
+      // Auth check
       let user: any = null;
       try {
         user = await sdk.authenticateRequest(req);
@@ -137,10 +152,24 @@ export function registerResumeRoutes(app: Express) {
       const jobDescription = (req.body.jobDescription as string) || "";
       const targetRole = (req.body.targetRole as string) || "";
 
-      // Extract text from file
-      const resumeText = await extractTextFromBuffer(file.buffer, file.mimetype);
+      // Extract text using 3-layer parser
+      let extractResult: ExtractResult;
+      try {
+        extractResult = await extractTextFromBuffer(file.buffer, file.mimetype);
+      } catch (parseError: any) {
+        return res.status(400).json({
+          error: parseError.message || "Could not extract text from file. Please try a different format.",
+          parseError: true,
+        });
+      }
+
+      const { text: resumeText, method: parseMethod, warning: parseWarning } = extractResult;
+
       if (!resumeText || resumeText.trim().length < 50) {
-        return res.status(400).json({ error: "Could not extract text from file. Please try a different format." });
+        return res.status(400).json({
+          error: "The extracted text is too short. Please ensure the file contains readable text content.",
+          parseError: true,
+        });
       }
 
       // Upload file to S3
@@ -186,7 +215,21 @@ Provide honest, specific, and actionable feedback. The interviewProbability shou
         overallScore: analysis.overallScore,
       });
 
-      return res.json({ success: true, analysis, fileUrl });
+      // Build parse method info for UI
+      const parseMethodLabel = ["pymupdf", "pdf-parse", "gemini-vision"].includes(parseMethod as string)
+        ? getParseMethodLabel(parseMethod as ParseMethod)
+        : null;
+
+      return res.json({
+        success: true,
+        analysis,
+        fileUrl,
+        parseInfo: {
+          method: parseMethod,
+          label: parseMethodLabel,
+          warning: parseWarning ?? null,
+        },
+      });
     } catch (error: any) {
       console.error("[ResumeRoutes] Analysis error:", error);
       return res.status(500).json({ error: error.message || "Analysis failed" });
