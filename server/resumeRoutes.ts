@@ -31,7 +31,7 @@ async function extractTextFromBuffer(buffer: Buffer, mimetype: string): Promise<
   }
 
   if (mimetype === "application/pdf") {
-    // Use the 3-layer PDF parser (pymupdf → pdf-parse → Gemini Vision)
+    // Use the 2-layer PDF parser (pdfjs-dist → Gemini Vision)
     const result = await extractTextFromPdf(buffer);
     return {
       text: result.text,
@@ -216,7 +216,7 @@ Provide honest, specific, and actionable feedback. The interviewProbability shou
       });
 
       // Build parse method info for UI
-      const parseMethodLabel = ["pymupdf", "pdf-parse", "gemini-vision"].includes(parseMethod as string)
+      const parseMethodLabel = ["pdfjs", "gemini-vision"].includes(parseMethod as string)
         ? getParseMethodLabel(parseMethod as ParseMethod)
         : null;
 

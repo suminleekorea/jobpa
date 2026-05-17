@@ -124,3 +124,11 @@
 - [x] Show "✅ Parsed: LaTeX-optimized parser" in UI with method badge
 - [x] Improve error handling: specific error messages for parse failures
 - [x] Write vitest tests for pdfParser (9 tests passing)
+
+## Critical Bug Fix: Resume Analysis PDF Parsing (May 2026 Round 6)
+- [ ] Fix PDF text extraction failing in production (Python/pymupdf not available in deploy runtime)
+- [ ] Rewrite pdfParser to pure Node.js (no Python dependency)
+- [ ] Use pdf-parse as primary, Gemini Vision API as fallback for scanned/image PDFs
+- [ ] Test with real PDF uploads end-to-end
+- [ ] Add DOCX download option for resume templates (ATS-friendly + Saramin)
+- [ ] Ensure Korean text renders correctly in DOCX downloads
