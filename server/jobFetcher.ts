@@ -3,8 +3,10 @@
  * Fetches real job listings from:
  *  1. Career@Gov (CSV) — Singapore Government
  *  2. MCF (API) — MyCareersFuture Singapore
- *  3. JSearch (RapidAPI) — LinkedIn, Indeed, Glassdoor, Google Jobs, etc.
- *  4. Saramin (API) — 사람인, Korea's largest job portal (requires SARAMIN_API_KEY)
+ *  3. PSG (API) — Singapore Public Service tech roles (go.gov.sg/pst-roles)
+ *  4. GovTech (API) — Singapore Government tech jobs (jobs.careers.gov.sg)
+ *  5. JSearch (RapidAPI) — LinkedIn, Indeed, Glassdoor, Google Jobs, etc.
+ *  6. Saramin (API) — 사람인, Korea's largest job portal (requires SARAMIN_API_KEY)
  * Caches results in memory with TTL to avoid excessive API calls
  */
 import axios from "axios";
@@ -18,7 +20,7 @@ export interface JobListing {
   agency?: string;
   location: string;
   salary?: string;
-  source: "careergov" | "mcf" | "linkedin" | "indeed" | "glassdoor" | "google" | "ziprecruiter" | "monster" | "jobstreet" | "saramin" | "other";
+  source: "careergov" | "mcf" | "psg" | "govtech" | "linkedin" | "indeed" | "glassdoor" | "google" | "ziprecruiter" | "monster" | "jobstreet" | "saramin" | "other";
   applyUrl: string;
   visa: boolean;
   type: string;

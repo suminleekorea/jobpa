@@ -22,6 +22,8 @@ const LINKEDIN_BLUE = "bg-[#0A66C2] text-white";
 const SOURCE_BADGES: Record<string, { label: string; color: string }> = {
   careergov: { label: "Career@Gov", color: "bg-blue-100 text-blue-800" },
   mcf: { label: "MCF", color: "bg-emerald-100 text-emerald-800" },
+  psg: { label: "PSG Tech", color: "bg-green-100 text-green-800" },
+  govtech: { label: "GovTech", color: "bg-teal-100 text-teal-800" },
   linkedin: { label: "LinkedIn", color: `${LINKEDIN_BLUE}` },
   indeed: { label: "Indeed", color: "bg-purple-100 text-purple-800" },
   glassdoor: { label: "Glassdoor", color: "bg-green-100 text-green-800" },

@@ -129,7 +129,7 @@ export const translations = {
         posted: "게시일", remote: "원격근무", source: "잡 포털",
       },
       sources: {
-        careergov: "Career@Gov", mcf: "MCF (싱가포르)", linkedin: "LinkedIn",
+        careergov: "Career@Gov", mcf: "MCF (싱가포)", psg: "PSG 기술직", govtech: "GovTech", linkedin: "LinkedIn",
         indeed: "Indeed", glassdoor: "Glassdoor", jobsdb: "JobsDB",
         bayt: "Bayt", gulftalent: "GulfTalent", saramin: "사람인",
         jobkorea: "잡코리아", google: "Google Jobs",
@@ -489,7 +489,7 @@ export const translations = {
         posted: "Posted Within", remote: "Remote Friendly", source: "Job Portal",
       },
       sources: {
-        careergov: "Career@Gov", mcf: "MCF (Singapore)", linkedin: "LinkedIn",
+        careergov: "Career@Gov", mcf: "MCF (Singapore)", psg: "PSG Tech Roles", govtech: "GovTech", linkedin: "LinkedIn",
         indeed: "Indeed", glassdoor: "Glassdoor", jobsdb: "JobsDB",
         bayt: "Bayt", gulftalent: "GulfTalent", saramin: "Saramin (사람인)",
         jobkorea: "JobKorea (잡코리아)", google: "Google Jobs",
@@ -850,7 +850,7 @@ export const translations = {
         posted: "掲載日", remote: "リモートワーク", source: "求人サイト",
       },
       sources: {
-        careergov: "Career@Gov", mcf: "MCF (シンガポール)", linkedin: "LinkedIn",
+        careergov: "Career@Gov", mcf: "MCF (シンガポール)", psg: "PSG 技術職", govtech: "GovTech", linkedin: "LinkedIn",
         indeed: "Indeed", glassdoor: "Glassdoor", jobsdb: "JobsDB",
         bayt: "Bayt", gulftalent: "GulfTalent", saramin: "サラミン",
         jobkorea: "ジョブコリア", google: "Google Jobs",
@@ -1230,7 +1230,7 @@ export const translations = {
         posted: "发布日期", remote: "远程工作", source: "招聘网站",
       },
       sources: {
-        careergov: "Career@Gov", mcf: "MCF (新加坡)", linkedin: "LinkedIn",
+        careergov: "Career@Gov", mcf: "MCF (新加坡)", psg: "PSG 技术职位", govtech: "GovTech", linkedin: "LinkedIn",
         indeed: "Indeed", glassdoor: "Glassdoor", jobsdb: "JobsDB",
         bayt: "Bayt", gulftalent: "GulfTalent", saramin: "Saramin",
         jobkorea: "JobKorea", google: "Google Jobs",

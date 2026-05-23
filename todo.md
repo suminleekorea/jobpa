@@ -76,6 +76,7 @@
 - [x] Consulting directory: industry/role filter grid + consultant cards
 - [x] Consultant detail page: LinkedIn, photo, career, Sprouts purchase flow
 - [ ] Replace Home.tsx with pitch-structured landing page
+- [x] Create 4-file pitch deck set (Demo + Detailed, PDF + PPTX) with Khosla Golden Rules structure
 
 ## Bug Fixes
 - [x] Fix Resume Analysis Unauthorized error (server route auth issue)
@@ -124,11 +125,25 @@
 - [x] Show "✅ Parsed: LaTeX-optimized parser" in UI with method badge
 - [x] Improve error handling: specific error messages for parse failures
 - [x] Write vitest tests for pdfParser (9 tests passing)
+- [x] Generated Korean voiceover demo video (3 min) with platform walkthrough
+- [x] Made GitHub repository public with comprehensive README
 
 ## Critical Bug Fix: Resume Analysis PDF Parsing (May 2026 Round 6)
-- [ ] Fix PDF text extraction failing in production (Python/pymupdf not available in deploy runtime)
-- [ ] Rewrite pdfParser to pure Node.js (no Python dependency)
-- [ ] Use pdf-parse as primary, Gemini Vision API as fallback for scanned/image PDFs
-- [ ] Test with real PDF uploads end-to-end
+- [x] Fix PDF text extraction failing in production (Python/pymupdf not available in deploy runtime)
+- [x] Rewrite pdfParser to pure Node.js (no Python dependency)
+- [x] Use pdfjs-dist as primary, Gemini Vision API as fallback for scanned/image PDFs
+- [x] Test with real PDF uploads end-to-end
 - [ ] Add DOCX download option for resume templates (ATS-friendly + Saramin)
 - [ ] Ensure Korean text renders correctly in DOCX downloads
+
+## Singapore Public Service (PSG) & GovTech Integration (May 2026 Round 7)
+- [ ] Analyze current job schema for multi-source support requirements
+- [ ] Add `jobSource` enum field to jobs table (linkedin | psg | govtech | other)
+- [ ] Create PSG job board adapter (go.gov.sg/pst-roles API integration)
+- [ ] Create GovTech job board adapter (jobs.careers.gov.sg API integration)
+- [ ] Add PSG/GovTech badges to job card display (green government badge)
+- [ ] Update job filtering to include source filters
+- [ ] Test data migration from single-source to multi-source schema
+- [ ] Verify backward compatibility with existing LinkedIn-only data
+- [ ] Update resume analysis to recognize government sector roles
+- [ ] Add government sector-specific resume feedback (PSC requirements, security clearance)
