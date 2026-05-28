@@ -147,3 +147,67 @@
 - [ ] Verify backward compatibility with existing LinkedIn-only data
 - [ ] Update resume analysis to recognize government sector roles
 - [ ] Add government sector-specific resume feedback (PSC requirements, security clearance)
+
+
+## Strategic Pivot: Niche IT Talent Platform (May 2026 Round 9)
+
+### Phase 1: UI/Branding Redesign
+- [ ] Update color palette: Dark navy (#0F1419) + Electric blue (#0066FF) + White
+- [ ] Redesign landing page: "AI-Powered Resume for Tech Talent" messaging
+- [ ] Update App.tsx theme colors and typography (Inter, Roboto Mono)
+- [ ] Simplify navigation: Remove job search, keep resume builder focus
+- [ ] Update logo/branding assets to match tech-focused aesthetic
+
+### Phase 2: MyProfile Simplification
+- [ ] Reduce MyProfile fields from 10+ to 5 essential: name, headline, experience, education, skills
+- [ ] Remove job preferences (target role, location, visa status) - defer to Phase 2
+- [ ] Add "Target Country" dropdown (Singapore, Korea, US, Europe)
+- [ ] Add "Seniority Level" dropdown (Junior, Mid, Senior)
+- [ ] Update i18n for simplified labels
+
+### Phase 3: Regional Resume Format Conversion
+- [ ] Implement Singapore ATS-Friendly format (LinkedIn style, English, keyword-optimized)
+- [ ] Implement Korea Saramin format (Korean self-introduction + experience, HR-friendly)
+- [ ] Implement US Tech format (Concise, metrics-focused, FAANG-optimized)
+- [ ] Implement Europe format (CV standard, detailed, 2-3 pages)
+- [ ] Add format selector in resume download UI
+- [ ] Test Korean text encoding in DOCX exports (no character corruption)
+
+### Phase 4: ATS Score Calculation
+- [ ] Create ATS scoring algorithm (0-100)
+- [ ] Analyze keyword density (match job description keywords)
+- [ ] Check format compliance (no images, proper spacing, standard fonts)
+- [ ] Detect missing sections (contact info, education, experience)
+- [ ] Display ATS score in real-time as user edits resume
+- [ ] Add ATS improvement suggestions
+
+### Phase 5: Landing Page Redesign
+- [ ] Create new hero section: "AI Resume Optimizer for Tech Talent"
+- [ ] Add 3-step flow visualization: Profile → Generate → Download
+- [ ] Add social proof: "500+ tech professionals optimized their resumes"
+- [ ] Add CTA: "Start Free" (no credit card required)
+- [ ] Add FAQ section: Regional formats, ATS score, consulting (Phase 2)
+- [ ] Add testimonials from beta users
+
+### Phase 6: Job-Specific Resume Tailoring
+- [ ] Add "Paste Job Description" input field
+- [ ] Extract key requirements from job description using AI
+- [ ] Auto-highlight matching skills in resume
+- [ ] Suggest missing skills to develop
+- [ ] Generate tailored resume version
+- [ ] Show match score (0-100%)
+
+### Phase 7: Testing & Validation
+- [ ] User research: Interview 5-10 target users (Reddit, LinkedIn)
+- [ ] A/B test landing page messaging
+- [ ] Test resume downloads across formats (PDF, DOCX)
+- [ ] Verify Korean text rendering in all formats
+- [ ] Test ATS score accuracy against real ATS systems
+- [ ] Gather feedback on regional format quality
+
+### Phase 8: Phase 2 Planning
+- [ ] Design consulting marketplace architecture
+- [ ] Plan token system (pricing, commission model)
+- [ ] Design consultant onboarding flow
+- [ ] Plan AI interview prep features
+- [ ] Plan human consultant matching algorithm
