@@ -1,0 +1,28 @@
+{
+  "query": "SELECT id, displayName, title, isApproved FROM consultants; SELECT id, name, email FROM users LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JnPRnaAUkD2vcq.root --database 7CDWVFFxWiw496tEAbvLTL --execute SELECT id, displayName, title, isApproved FROM consultants; SELECT id, name, email FROM users LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "displayName": "Sumin Lee",
+      "title": "Digital Marketing Intern @ Great Eastern | NTU MSc Business Analytics | APAC Career Coach",
+      "isApproved": "1"
+    }
+  ],
+  "messages": [
+    "id\tname\temail",
+    "1\tGlobal Bridge\tglobalbridge47@gmail.com",
+    "120024\tDavid Hu\tdavidhukun@gmail.com",
+    "270001\tDarren Evander Ali\tdarrenevanderali@gmail.com",
+    "330001\tShahriar Evan\tmsaevan101@gmail.com",
+    "360001\tmd  shahriar azad evan\tmevan2330569@bscse.uiu.ac.bd",
+    "390001\tYifan LYU\tlyufeso47h2o@gmail.com",
+    "480001\tadriel choo\tadrielchoo@gmail.com",
+    "510001\tJoydeep Roy\troy.joydeep.2609@gmail.com",
+    "570002\tSumin Lee\tleewaterfolk@gmail.com",
+    "660001\tChong Yao Tan\tmahopon123@gmail.com"
+  ],
+  "stdout": "id\tdisplayName\ttitle\tisApproved\n1\tSumin Lee\tDigital Marketing Intern @ Great Eastern | NTU MSc Business Analytics | APAC Career Coach\t1\nid\tname\temail\n1\tGlobal Bridge\tglobalbridge47@gmail.com\n120024\tDavid Hu\tdavidhukun@gmail.com\n270001\tDarren Evander Ali\tdarrenevanderali@gmail.com\n330001\tShahriar Evan\tmsaevan101@gmail.com\n360001\tmd  shahriar azad evan\tmevan2330569@bscse.uiu.ac.bd\n390001\tYifan LYU\tlyufeso47h2o@gmail.com\n480001\tadriel choo\tadrielchoo@gmail.com\n510001\tJoydeep Roy\troy.joydeep.2609@gmail.com\n570002\tSumin Lee\tleewaterfolk@gmail.com\n660001\tChong Yao Tan\tmahopon123@gmail.com\n",
+  "stderr": "",
+  "execution_time_ms": 2091
+}

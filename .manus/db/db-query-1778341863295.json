@@ -1,0 +1,9 @@
+{
+  "query": "\nALTER TABLE `consultants` ADD `photoUrl` text;\nALTER TABLE `consultants` ADD `industry` varchar(128);\nALTER TABLE `consultants` ADD `industries` json;\nALTER TABLE `consultants` ADD `careerHistory` json;\nALTER TABLE `consultants` ADD `sessionTypes` json;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JnPRnaAUkD2vcq.root --database 7CDWVFFxWiw496tEAbvLTL --execute \nALTER TABLE `consultants` ADD `photoUrl` text;\nALTER TABLE `consultants` ADD `industry` varchar(128);\nALTER TABLE `consultants` ADD `industries` json;\nALTER TABLE `consultants` ADD `careerHistory` json;\nALTER TABLE `consultants` ADD `sessionTypes` json;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 3634
+}

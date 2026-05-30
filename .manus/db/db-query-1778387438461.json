@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `reviews` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`userId` int NOT NULL,\n\t`rating` int NOT NULL,\n\t`comment` text NOT NULL,\n\t`displayName` varchar(128),\n\t`targetRole` varchar(128),\n\t`targetMarket` varchar(64),\n\t`isApproved` boolean DEFAULT false,\n\t`isAnonymous` boolean DEFAULT false,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `reviews_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JnPRnaAUkD2vcq.root --database 7CDWVFFxWiw496tEAbvLTL --execute CREATE TABLE `reviews` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`userId` int NOT NULL,\n\t`rating` int NOT NULL,\n\t`comment` text NOT NULL,\n\t`displayName` varchar(128),\n\t`targetRole` varchar(128),\n\t`targetMarket` varchar(64),\n\t`isApproved` boolean DEFAULT false,\n\t`isAnonymous` boolean DEFAULT false,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `reviews_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1911
+}

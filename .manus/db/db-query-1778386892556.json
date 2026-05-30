@@ -1,0 +1,197 @@
+{
+  "query": "DESCRIBE consultants; SELECT * FROM consultants LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JnPRnaAUkD2vcq.root --database 7CDWVFFxWiw496tEAbvLTL --execute DESCRIBE consultants; SELECT * FROM consultants LIMIT 5;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "userId",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "UNI",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "displayName",
+      "Type": "varchar(255)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "title",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "bio",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "specialties",
+      "Type": "json",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "targetRegions",
+      "Type": "json",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "languages",
+      "Type": "json",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "yearsExperience",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "sessionPriceCredits",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "10",
+      "Extra": ""
+    },
+    {
+      "Field": "avatarUrl",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "linkedinUrl",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "isApproved",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "isActive",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "totalSessions",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "avgRating",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "createdAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "updatedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    },
+    {
+      "Field": "photoUrl",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "industry",
+      "Type": "varchar(128)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "industries",
+      "Type": "json",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "careerHistory",
+      "Type": "json",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "sessionTypes",
+      "Type": "json",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    }
+  ],
+  "messages": [
+    "id\tuserId\tdisplayName\ttitle\tbio\tspecialties\ttargetRegions\tlanguages\tyearsExperience\tsessionPriceCredits\tavatarUrl\tlinkedinUrl\tisApproved\tisActive\ttotalSessions\tavgRating\tcreatedAt\tupdatedAt\tphotoUrl\tindustry\tindustries\tcareerHistory\tsessionTypes",
+    "1\t480001\tSumin Lee\tEnterprise Account Executive @ Sprinklr | Ex-Salesforce, LinkedIn | APAC Career Coach\t싱가포르 현지 취업 6년차. Sprinklr, Salesforce, LinkedIn을 거치며 APAC 테크 세일즈 커리어를 쌓았습니다. 한국에서 싱가포르로 이직하는 과정의 어려움을 직접 경험했기에, 같은 길을 걷는 분들께 실질적인 도움을 드리고 싶습니다. EP 비자 전략부터 링크드인 최적화, 현지 네트워킹까지 — 혼자 헤매지 않아도 됩니다.\t[\"Singapore EP Visa Strategy\", \"Tech Sales Career Transition\", \"APAC Job Market Navigation\", \"Korean Professionals Abroad\", \"LinkedIn Profile Optimization\", \"Interview Coaching\"]\t[\"Singapore\", \"Korea\", \"Southeast Asia\", \"Australia\"]\t[\"Korean\", \"English\"]\t6\t10\t/manus-storage/suminlee-profile_fc56112c.png\thttps://linkedin.com/in/suminlee-apac\t1\t1\t12\t5\t2026-05-09 16:12:19\t2026-05-09 16:12:19\t/manus-storage/suminlee-profile_fc56112c.png\tTechnology / SaaS\t[\"Technology\", \"SaaS\", \"Enterprise Sales\", \"Talent Acquisition\"]\t[{\"company\": \"Sprinklr\", \"period\": \"2023 – Present\", \"role\": \"Enterprise Account Executive, APAC\"}, {\"company\": \"Salesforce\", \"period\": \"2021 – 2023\", \"role\": \"Account Executive, Korea & SEA\"}, {\"company\": \"LinkedIn\", \"period\": \"2019 – 2021\", \"role\": \"Talent Solutions Consultant\"}]\t[{\"description\": \"이력서 피드백, 비자 질문, 빠른 커리어 방향 점검\", \"durationMinutes\": 30, \"name\": \"30분 빠른 상담\", \"priceCredits\": 5}, {\"description\": \"취업 전략 수립, 면접 준비, 링크드인 프로필 최적화\", \"durationMinutes\": 60, \"name\": \"60분 심층 코칭\", \"priceCredits\": 10}, {\"description\": \"싱가포르/APAC 취업 전체 전략 수립 + 액션플랜 작성\", \"durationMinutes\": 90, \"name\": \"90분 커리어 로드맵\", \"priceCredits\": 15}]"
+  ],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nuserId\tint\tNO\tUNI\tNULL\t\ndisplayName\tvarchar(255)\tNO\t\tNULL\t\ntitle\tvarchar(255)\tYES\t\tNULL\t\nbio\ttext\tYES\t\tNULL\t\nspecialties\tjson\tYES\t\tNULL\t\ntargetRegions\tjson\tYES\t\tNULL\t\nlanguages\tjson\tYES\t\tNULL\t\nyearsExperience\tint\tYES\t\t0\t\nsessionPriceCredits\tint\tYES\t\t10\t\navatarUrl\ttext\tYES\t\tNULL\t\nlinkedinUrl\ttext\tYES\t\tNULL\t\nisApproved\ttinyint(1)\tYES\t\t0\t\nisActive\ttinyint(1)\tYES\t\t1\t\ntotalSessions\tint\tYES\t\t0\t\navgRating\tint\tYES\t\t0\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\nphotoUrl\ttext\tYES\t\tNULL\t\nindustry\tvarchar(128)\tYES\t\tNULL\t\nindustries\tjson\tYES\t\tNULL\t\ncareerHistory\tjson\tYES\t\tNULL\t\nsessionTypes\tjson\tYES\t\tNULL\t\nid\tuserId\tdisplayName\ttitle\tbio\tspecialties\ttargetRegions\tlanguages\tyearsExperience\tsessionPriceCredits\tavatarUrl\tlinkedinUrl\tisApproved\tisActive\ttotalSessions\tavgRating\tcreatedAt\tupdatedAt\tphotoUrl\tindustry\tindustries\tcareerHistory\tsessionTypes\n1\t480001\tSumin Lee\tEnterprise Account Executive @ Sprinklr | Ex-Salesforce, LinkedIn | APAC Career Coach\t싱가포르 현지 취업 6년차. Sprinklr, Salesforce, LinkedIn을 거치며 APAC 테크 세일즈 커리어를 쌓았습니다. 한국에서 싱가포르로 이직하는 과정의 어려움을 직접 경험했기에, 같은 길을 걷는 분들께 실질적인 도움을 드리고 싶습니다. EP 비자 전략부터 링크드인 최적화, 현지 네트워킹까지 — 혼자 헤매지 않아도 됩니다.\t[\"Singapore EP Visa Strategy\", \"Tech Sales Career Transition\", \"APAC Job Market Navigation\", \"Korean Professionals Abroad\", \"LinkedIn Profile Optimization\", \"Interview Coaching\"]\t[\"Singapore\", \"Korea\", \"Southeast Asia\", \"Australia\"]\t[\"Korean\", \"English\"]\t6\t10\t/manus-storage/suminlee-profile_fc56112c.png\thttps://linkedin.com/in/suminlee-apac\t1\t1\t12\t5\t2026-05-09 16:12:19\t2026-05-09 16:12:19\t/manus-storage/suminlee-profile_fc56112c.png\tTechnology / SaaS\t[\"Technology\", \"SaaS\", \"Enterprise Sales\", \"Talent Acquisition\"]\t[{\"company\": \"Sprinklr\", \"period\": \"2023 – Present\", \"role\": \"Enterprise Account Executive, APAC\"}, {\"company\": \"Salesforce\", \"period\": \"2021 – 2023\", \"role\": \"Account Executive, Korea & SEA\"}, {\"company\": \"LinkedIn\", \"period\": \"2019 – 2021\", \"role\": \"Talent Solutions Consultant\"}]\t[{\"description\": \"이력서 피드백, 비자 질문, 빠른 커리어 방향 점검\", \"durationMinutes\": 30, \"name\": \"30분 빠른 상담\", \"priceCredits\": 5}, {\"description\": \"취업 전략 수립, 면접 준비, 링크드인 프로필 최적화\", \"durationMinutes\": 60, \"name\": \"60분 심층 코칭\", \"priceCredits\": 10}, {\"description\": \"싱가포르/APAC 취업 전체 전략 수립 + 액션플랜 작성\", \"durationMinutes\": 90, \"name\": \"90분 커리어 로드맵\", \"priceCredits\": 15}]\n",
+  "stderr": "",
+  "execution_time_ms": 2060
+}

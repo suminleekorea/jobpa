@@ -1,0 +1,76 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JnPRnaAUkD2vcq.root --database 7CDWVFFxWiw496tEAbvLTL --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "applications"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "chatMessages"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "chatSessions"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "consultants"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "consultingApplications"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "consultingSessions"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "consultingWaitlist"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "creditTransactions"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "dailyChecklist"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "emailAlerts"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "fitEvaluations"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "goals"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "journal"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "reports"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "resumeAnalysisResults"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "resumes"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "surveys"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "userCredits"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "userXP"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "users"
+    },
+    {
+      "Tables_in_7CDWVFFxWiw496tEAbvLTL": "xpEvents"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_7CDWVFFxWiw496tEAbvLTL\n__drizzle_migrations\napplications\nchatMessages\nchatSessions\nconsultants\nconsultingApplications\nconsultingSessions\nconsultingWaitlist\ncreditTransactions\ndailyChecklist\nemailAlerts\nfitEvaluations\ngoals\njournal\nreports\nresumeAnalysisResults\nresumes\nsurveys\nuserCredits\nuserXP\nusers\nxpEvents\n",
+  "stderr": "",
+  "execution_time_ms": 2542
+}
