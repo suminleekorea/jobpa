@@ -39,20 +39,10 @@ export function getSessionCookieOptions(
   //       ? hostname
   //       : undefined;
 
-<<<<<<< HEAD
   return {
     httpOnly: true,
     path: "/",
     sameSite: "none",
     secure: isSecureRequest(req),
-=======
-  const secure = isSecureRequest(req);
-  return {
-    httpOnly: true,
-    path: "/",
-    // sameSite:"none" requires secure:true. Use "lax" for http (local dev).
-    sameSite: secure ? "none" : "lax",
-    secure,
->>>>>>> user_github/main
   };
 }

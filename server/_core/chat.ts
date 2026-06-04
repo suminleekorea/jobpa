@@ -10,15 +10,11 @@ import { createOpenAI } from "@ai-sdk/openai";
 import type { Express } from "express";
 import { z } from "zod/v4";
 import { ENV } from "./env";
-<<<<<<< HEAD
 import { createPatchedFetch } from "./patchedFetch";
-=======
->>>>>>> user_github/main
 import * as db from "../db";
 import { sdk } from "./sdk";
 
 function createLLMProvider() {
-<<<<<<< HEAD
   const baseURL = ENV.forgeApiUrl.endsWith("/v1")
     ? ENV.forgeApiUrl
     : `${ENV.forgeApiUrl}/v1`;
@@ -28,18 +24,6 @@ function createLLMProvider() {
     apiKey: ENV.forgeApiKey,
     fetch: createPatchedFetch(fetch),
   });
-=======
-  // LLM_BASE_URL 설정 시 OpenAI 호환 엔드포인트(Gemini 등) 사용, 없으면 OpenAI 직접
-  const opts: Parameters<typeof createOpenAI>[0] = {
-    apiKey: ENV.llmApiKey || "no-key",
-  };
-  if (ENV.llmBaseUrl) {
-    opts.baseURL = ENV.llmBaseUrl.endsWith("/v1")
-      ? ENV.llmBaseUrl
-      : `${ENV.llmBaseUrl}/v1`;
-  }
-  return createOpenAI(opts);
->>>>>>> user_github/main
 }
 
 const careerTools = {
@@ -276,11 +260,7 @@ Use this profile to provide highly personalized career advice. Reference their s
       }
 
       const result = streamText({
-<<<<<<< HEAD
         model: openai.chat("gemini-2.5-flash"),
-=======
-        model: openai.chat(ENV.llmModel),
->>>>>>> user_github/main
         system: systemPrompt,
         messages: modelMessages,
         tools: careerTools,

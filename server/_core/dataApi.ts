@@ -1,5 +1,4 @@
 /**
-<<<<<<< HEAD
  * Quick example (matches curl usage):
  *   await callDataApi("Youtube/search", {
  *     query: { gl: "US", hl: "en", q: "manus" },
@@ -7,11 +6,6 @@
  */
 import { ENV } from "./env";
 
-=======
- * dataApi — Manus Forge 데이터 API 스텁
- * 기존 코드에서 호출하는 곳이 있으면 경고 후 빈 응답 반환
- */
->>>>>>> user_github/main
 export type DataApiCallOptions = {
   query?: Record<string, unknown>;
   body?: Record<string, unknown>;
@@ -21,7 +15,6 @@ export type DataApiCallOptions = {
 
 export async function callDataApi(
   apiId: string,
-<<<<<<< HEAD
   options: DataApiCallOptions = {}
 ): Promise<unknown> {
   if (!ENV.forgeApiUrl) {
@@ -68,10 +61,4 @@ export async function callDataApi(
     }
   }
   return payload;
-=======
-  _options: DataApiCallOptions = {}
-): Promise<unknown> {
-  console.warn(`[dataApi] callDataApi("${apiId}") not implemented — Forge dependency removed.`);
-  return {};
->>>>>>> user_github/main
 }
