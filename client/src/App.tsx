@@ -85,7 +85,11 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
+<<<<<<< HEAD
       <ThemeProvider defaultTheme="dark">
+=======
+      <ThemeProvider defaultTheme="light">
+>>>>>>> user_github/main
         <TooltipProvider>
           <Toaster />
           <Router />

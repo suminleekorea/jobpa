@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 /**
+=======
+﻿/**
+>>>>>>> user_github/main
  * Google Maps API Integration for Manus WebDev Templates
  * 
  * Main function: makeRequest<T>(endpoint, params) - Makes authenticated requests to Google Maps APIs
@@ -19,8 +23,13 @@ type MapsConfig = {
 };
 
 function getMapsConfig(): MapsConfig {
+<<<<<<< HEAD
   const baseUrl = ENV.forgeApiUrl;
   const apiKey = ENV.forgeApiKey;
+=======
+  const baseUrl = ENV.llmBaseUrl;
+  const apiKey = ENV.llmApiKey;
+>>>>>>> user_github/main
 
   if (!baseUrl || !apiKey) {
     throw new Error(
@@ -317,3 +326,7 @@ export type RoadsResult = {
 
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> user_github/main

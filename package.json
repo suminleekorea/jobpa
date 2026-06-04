@@ -4,9 +4,15 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
+<<<<<<< HEAD
     "dev": "NODE_ENV=development tsx watch server/_core/index.ts",
     "build": "vite build && esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
+=======
+    "dev": "cross-env NODE_ENV=development tsx watch server/_core/index.ts",
+    "build": "vite build && esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+    "start": "cross-env NODE_ENV=production node dist/index.js",
+>>>>>>> user_github/main
     "check": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "vitest run",
@@ -103,6 +109,10 @@
     "@vitejs/plugin-react": "^5.0.4",
     "add": "^2.0.6",
     "autoprefixer": "^10.4.20",
+<<<<<<< HEAD
+=======
+    "cross-env": "^10.1.0",
+>>>>>>> user_github/main
     "drizzle-kit": "^0.31.4",
     "esbuild": "^0.25.0",
     "pnpm": "^10.15.1",
