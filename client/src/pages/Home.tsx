@@ -2,7 +2,6 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useI18n } from "@/contexts/i18nContext";
-import { getLoginUrl } from "@/const";
 import {
   TrendingUp, FileText, Target, BarChart3, Bookmark,
   ArrowRight, ChevronDown, ChevronUp, Globe, Sparkles, Zap,
@@ -41,7 +40,7 @@ function Navbar() {
               <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
             </Button>
           ) : (
-            <Button onClick={() => { window.location.href = getLoginUrl(); }} size="sm">
+            <Button onClick={() => { setLocation("/login"); }} size="sm">
               {t.nav.getStarted}
               <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
             </Button>
@@ -91,7 +90,7 @@ function HeroSection() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
-              <Button size="lg" onClick={() => { window.location.href = getLoginUrl(); }} className="px-8 shadow-lg shadow-primary/20">
+              <Button size="lg" onClick={() => { setLocation("/login"); }} className="px-8 shadow-lg shadow-primary/20">
                 {t.nav.getStarted}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -282,7 +281,7 @@ function ReviewsSection() {
         <div className="text-center">
           {!showForm && !submitted && (
             <button
-              onClick={() => isAuthenticated ? setShowForm(true) : (window.location.href = "/api/oauth/login")}
+              onClick={() => isAuthenticated ? setShowForm(true) : (window.location.href = "/login")}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border text-sm font-medium hover:bg-accent transition-colors"
             >
               <Star className="h-4 w-4" />
@@ -394,7 +393,7 @@ function CTASection() {
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           ) : (
-            <Button size="lg" variant="secondary" onClick={() => { window.location.href = getLoginUrl(); }} className="px-8">
+            <Button size="lg" variant="secondary" onClick={() => { setLocation("/login"); }} className="px-8">
               {t.nav.getStarted}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>

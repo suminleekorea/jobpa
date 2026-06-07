@@ -1,7 +1,6 @@
 import { COOKIE_NAME } from "@shared/const";
 import { createOpenAI } from "@ai-sdk/openai";
 import { generateText } from "ai";
-import { createPatchedFetch } from "./_core/patchedFetch";
 import { ENV } from "./_core/env";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -123,11 +122,10 @@ export const appRouter = router({
         db.getChecklistByDate(ctx.user.id, new Date().toISOString().split("T")[0]),
       ]);
 
-      const openai = createOpenAI({
-        apiKey: ENV.forgeApiKey,
-        baseURL: `${ENV.forgeApiUrl}/v1`,
-        fetch: createPatchedFetch(fetch),
-      });
+      const baseURL = ENV.llmBaseUrl
+        ? (ENV.llmBaseUrl.endsWith("/v1") ? ENV.llmBaseUrl : `${ENV.llmBaseUrl}/v1`)
+        : undefined;
+      const openai = createOpenAI({ apiKey: ENV.llmApiKey, baseURL });
 
       const appSummary = applications?.slice(0, 5).map((a: any) => `${a.company} - ${a.position} (${a.status})`).join(", ") || "No applications yet";
       const resumeScore = latestResume?.overallScore ? `${latestResume.overallScore}/100` : "Not analyzed yet";
@@ -153,7 +151,7 @@ Keep it concise (under 300 words). Use markdown formatting. Be specific and acti
 
       try {
         const { text } = await generateText({
-          model: openai.chat("gemini-2.5-flash"),
+          model: openai.chat(ENV.llmModel),
           prompt,
           maxOutputTokens: 500,
         });
@@ -491,11 +489,10 @@ Keep it concise (under 300 words). Use markdown formatting. Be specific and acti
       sector: z.string().optional(),
       region: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
-      const openai = createOpenAI({
-        apiKey: ENV.forgeApiKey,
-        baseURL: `${ENV.forgeApiUrl}/v1`,
-        fetch: createPatchedFetch(fetch),
-      });
+      const baseURL2 = ENV.llmBaseUrl
+        ? (ENV.llmBaseUrl.endsWith("/v1") ? ENV.llmBaseUrl : `${ENV.llmBaseUrl}/v1`)
+        : undefined;
+      const openai = createOpenAI({ apiKey: ENV.llmApiKey, baseURL: baseURL2 });
       const sector = input.sector || "all sectors";
       const region = input.region || "Singapore, Korea, India";
       const today = new Date().toISOString().split("T")[0];
@@ -521,7 +518,7 @@ Key observations about the job market and opportunities for Korean and Indian pr
 Be specific, data-driven, and practical. Use real company names and realistic figures.`;
 
       const { text } = await generateText({
-        model: openai("gemini-2.5-flash"),
+        model: openai(ENV.llmModel),
         prompt,
         maxOutputTokens: 1200,
       });

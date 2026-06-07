@@ -9,7 +9,6 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { generateText } from "ai";
 import { ENV } from "./_core/env";
-import { createPatchedFetch } from "./_core/patchedFetch";
 
 export type ParseMethod = "pdfjs" | "gemini-vision";
 
@@ -76,20 +75,19 @@ async function extractWithPdfjs(buffer: Buffer): Promise<{ text: string; pageCou
 
 // ─── Layer 2: Gemini Vision API (for scanned/image PDFs) ─────────────────────
 async function extractWithGeminiVision(buffer: Buffer): Promise<string | null> {
-  if (!ENV.forgeApiUrl || !ENV.forgeApiKey) return null;
+  if (!ENV.llmApiKey) return null;
 
   try {
-    const openai = createOpenAI({
-      baseURL: ENV.forgeApiUrl.endsWith("/v1") ? ENV.forgeApiUrl : `${ENV.forgeApiUrl}/v1`,
-      apiKey: ENV.forgeApiKey,
-      fetch: createPatchedFetch(fetch) as any,
-    });
+    const baseURL = ENV.llmBaseUrl
+      ? (ENV.llmBaseUrl.endsWith("/v1") ? ENV.llmBaseUrl : `${ENV.llmBaseUrl}/v1`)
+      : undefined;
+    const openai = createOpenAI({ baseURL, apiKey: ENV.llmApiKey });
 
     // Send the raw PDF as a base64 file to Gemini (it supports PDF natively)
     const base64Pdf = buffer.toString("base64");
 
     const { text } = await generateText({
-      model: openai.chat("gemini-2.5-flash"),
+      model: openai.chat(ENV.llmModel),
       messages: [
         {
           role: "user",

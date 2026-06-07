@@ -3,7 +3,7 @@ import express from "express";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { registerOAuthRoutes } from "./oauth";
+import { registerAuthRoutes } from "./auth";
 import { registerChatRoutes } from "./chat";
 import { registerStorageProxy } from "./storageProxy";
 import { registerResumeRoutes } from "../resumeRoutes";
@@ -40,8 +40,8 @@ async function startServer() {
   registerStorageProxy(app);
   // Resume upload + AI analysis routes
   registerResumeRoutes(app);
-  // OAuth callback under /api/oauth/callback
-  registerOAuthRoutes(app);
+  // Email/password auth routes
+  registerAuthRoutes(app);
   // Chat API with streaming and tool calling
   registerChatRoutes(app);
   // tRPC API

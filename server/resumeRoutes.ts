@@ -3,7 +3,7 @@ import multer from "multer";
 import { createOpenAI } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { createPatchedFetch } from "./_core/patchedFetch";
+import { ENV } from "./_core/env";
 import { storagePut } from "./storage";
 import * as db from "./db";
 import { sdk } from "./_core/sdk";
@@ -184,14 +184,13 @@ export function registerResumeRoutes(app: Express) {
         ? `\n\nTarget Role: ${targetRole}`
         : "";
 
-      const openai = createOpenAI({
-        apiKey: process.env.BUILT_IN_FORGE_API_KEY,
-        baseURL: `${process.env.BUILT_IN_FORGE_API_URL}/v1`,
-        fetch: createPatchedFetch(fetch) as any,
-      });
+      const baseURL = ENV.llmBaseUrl
+        ? (ENV.llmBaseUrl.endsWith("/v1") ? ENV.llmBaseUrl : `${ENV.llmBaseUrl}/v1`)
+        : undefined;
+      const openai = createOpenAI({ apiKey: ENV.llmApiKey, baseURL });
 
       const { object: analysis } = await generateObject({
-        model: openai.chat("gemini-2.5-flash"),
+        model: openai.chat(ENV.llmModel),
         schema: ResumeAnalysisSchema,
         prompt: `You are an expert career coach and hiring manager with 15+ years of experience in ${targetRegion.toUpperCase()} job market.
 

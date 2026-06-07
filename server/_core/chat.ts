@@ -10,19 +10,17 @@ import { createOpenAI } from "@ai-sdk/openai";
 import type { Express } from "express";
 import { z } from "zod/v4";
 import { ENV } from "./env";
-import { createPatchedFetch } from "./patchedFetch";
 import * as db from "../db";
 import { sdk } from "./sdk";
 
 function createLLMProvider() {
-  const baseURL = ENV.forgeApiUrl.endsWith("/v1")
-    ? ENV.forgeApiUrl
-    : `${ENV.forgeApiUrl}/v1`;
+  const baseURL = ENV.llmBaseUrl
+    ? (ENV.llmBaseUrl.endsWith("/v1") ? ENV.llmBaseUrl : `${ENV.llmBaseUrl}/v1`)
+    : undefined; // undefined = use OpenAI default
 
   return createOpenAI({
     baseURL,
-    apiKey: ENV.forgeApiKey,
-    fetch: createPatchedFetch(fetch),
+    apiKey: ENV.llmApiKey,
   });
 }
 
@@ -260,7 +258,7 @@ Use this profile to provide highly personalized career advice. Reference their s
       }
 
       const result = streamText({
-        model: openai.chat("gemini-2.5-flash"),
+        model: openai.chat(ENV.llmModel),
         system: systemPrompt,
         messages: modelMessages,
         tools: careerTools,
