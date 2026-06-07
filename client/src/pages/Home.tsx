@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { LanguageSelector } from "@/components/LanguageSelector";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Star } from "lucide-react";
 
@@ -415,10 +415,12 @@ function Footer() {
           </div>
           <span className="font-medium text-foreground">{t.brand.full}</span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap justify-center">
           <span>{t.footer.madeBy}</span>
-          <span className="text-border">|</span>
+          <span className="opacity-30">|</span>
           <span>{t.footer.builtWith}</span>
+          <span className="opacity-30">|</span>
+          <Link href="/disclaimer" className="hover:text-primary hover:underline transition-colors">{t.disclaimer.nav}</Link>
         </div>
       </div>
     </footer>

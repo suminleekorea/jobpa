@@ -26,6 +26,7 @@ const Checklist = lazy(() => import("./pages/Checklist"));
 const Journal = lazy(() => import("./pages/Journal"));
 const Level = lazy(() => import("./pages/Level"));
 const MyProfile = lazy(() => import("./pages/MyProfile"));
+const Disclaimer = lazy(() => import("./pages/Disclaimer"));
 
 function DashboardPage({ children }: { children: React.ReactNode }) {
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -79,6 +80,9 @@ function Router() {
       </Route>
       <Route path="/dashboard/admin">
         <DashboardPage><Admin /></DashboardPage>
+      </Route>
+      <Route path="/disclaimer">
+        <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading...</div>}><Disclaimer /></Suspense>
       </Route>
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

@@ -17,7 +17,7 @@ import {
   TrendingUp, MessageCircle, Trophy, CheckSquare, BookOpen, Home, UserCircle,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "./ui/button";
 
@@ -223,8 +223,12 @@ function DashboardLayoutContent({ children, setSidebarWidth }: { children: React
 
           <SidebarFooter className="p-2 space-y-1 border-t border-border/50">
             {!isCollapsed && (
-              <div className="px-1">
+              <div className="px-1 space-y-1">
                 <LanguageSelector variant="ghost" className="w-full justify-start" />
+                <Link href="/disclaimer" className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-muted-foreground hover:text-primary hover:bg-accent/50 transition-colors w-full">
+                  <Shield className="h-3.5 w-3.5 shrink-0" />
+                  <span>{t.disclaimer.nav}</span>
+                </Link>
               </div>
             )}
             <DropdownMenu>
