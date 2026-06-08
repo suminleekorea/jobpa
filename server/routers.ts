@@ -122,10 +122,8 @@ export const appRouter = router({
         db.getChecklistByDate(ctx.user.id, new Date().toISOString().split("T")[0]),
       ]);
 
-      const baseURL = ENV.llmBaseUrl
-        ? (ENV.llmBaseUrl.endsWith("/v1") ? ENV.llmBaseUrl : `${ENV.llmBaseUrl}/v1`)
-        : undefined;
-      const openai = createOpenAI({ apiKey: ENV.llmApiKey, baseURL });
+      const baseURL = `${process.env.BUILT_IN_FORGE_API_URL}/v1`;
+      const openai = createOpenAI({ apiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "", baseURL });
 
       const appSummary = applications?.slice(0, 5).map((a: any) => `${a.company} - ${a.position} (${a.status})`).join(", ") || "No applications yet";
       const resumeScore = latestResume?.overallScore ? `${latestResume.overallScore}/100` : "Not analyzed yet";
@@ -151,7 +149,7 @@ Keep it concise (under 300 words). Use markdown formatting. Be specific and acti
 
       try {
         const { text } = await generateText({
-          model: openai.chat(ENV.llmModel),
+          model: openai.chat("gemini-2.5-flash"),
           prompt,
           maxOutputTokens: 500,
         });
@@ -489,10 +487,8 @@ Keep it concise (under 300 words). Use markdown formatting. Be specific and acti
       sector: z.string().optional(),
       region: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
-      const baseURL2 = ENV.llmBaseUrl
-        ? (ENV.llmBaseUrl.endsWith("/v1") ? ENV.llmBaseUrl : `${ENV.llmBaseUrl}/v1`)
-        : undefined;
-      const openai = createOpenAI({ apiKey: ENV.llmApiKey, baseURL: baseURL2 });
+      const baseURL2 = `${process.env.BUILT_IN_FORGE_API_URL}/v1`;
+      const openai = createOpenAI({ apiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "", baseURL: baseURL2 });
       const sector = input.sector || "all sectors";
       const region = input.region || "Singapore, Korea, India";
       const today = new Date().toISOString().split("T")[0];
@@ -518,7 +514,7 @@ Key observations about the job market and opportunities for Korean and Indian pr
 Be specific, data-driven, and practical. Use real company names and realistic figures.`;
 
       const { text } = await generateText({
-        model: openai(ENV.llmModel),
+        model: openai("gemini-2.5-flash"),
         prompt,
         maxOutputTokens: 1200,
       });

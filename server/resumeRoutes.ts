@@ -184,13 +184,11 @@ export function registerResumeRoutes(app: Express) {
         ? `\n\nTarget Role: ${targetRole}`
         : "";
 
-      const baseURL = ENV.llmBaseUrl
-        ? (ENV.llmBaseUrl.endsWith("/v1") ? ENV.llmBaseUrl : `${ENV.llmBaseUrl}/v1`)
-        : undefined;
-      const openai = createOpenAI({ apiKey: ENV.llmApiKey, baseURL });
+      const baseURL = `${process.env.BUILT_IN_FORGE_API_URL}/v1`;
+      const openai = createOpenAI({ apiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "", baseURL });
 
       const { object: analysis } = await generateObject({
-        model: openai.chat(ENV.llmModel),
+        model: openai.chat("gemini-2.5-flash"),
         schema: ResumeAnalysisSchema,
         prompt: `You are an expert career coach and hiring manager with 15+ years of experience in ${targetRegion.toUpperCase()} job market.
 

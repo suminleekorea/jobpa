@@ -123,13 +123,13 @@ export type AgentAnalysisResult = {
 // ─── Helper: create AI model ──────────────────────────────────────────────────
 
 function createModel() {
-  // Use freellmapi for free LLM access (~300M tokens/month from 16 providers)
+  // Use Manus Forge API (built-in LLM access)
   const openai = createOpenAI({
-    apiKey: "freellmapi-a26d7a58bed3bc04b11b24548cdec4d703fdccaf9da84a91",
-    baseURL: "https://4000-iiyhsufznr14wazhrdrve-07420d78.sg1.manus.computer/v1",
+    apiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+    baseURL: `${process.env.BUILT_IN_FORGE_API_URL}/v1`,
     fetch: createPatchedFetch(fetch) as any,
   });
-  return openai.chat("auto"); // freellmapi auto-routes to best available model
+  return openai.chat("gemini-2.5-flash");
 }
 
 // ─── SSE helper ──────────────────────────────────────────────────────────────

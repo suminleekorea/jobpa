@@ -1,0 +1,22 @@
+John Doe
+Software Engineer
+Email: john.doe@example.com | Phone: +65 9123 4567 | LinkedIn: linkedin.com/in/johndoe
+
+SUMMARY
+Experienced software engineer with 5 years of experience in full-stack development.
+
+WORK EXPERIENCE
+Senior Software Engineer - TechCorp Singapore (2021-2024)
+- Developed React-based web applications serving 100K+ users
+- Led team of 5 engineers
+- Improved system performance by 40%
+
+Software Engineer - StartupXYZ (2019-2021)
+- Built REST APIs using Node.js and Express
+- Implemented CI/CD pipelines
+
+EDUCATION
+Bachelor of Computer Science - NUS (2015-2019)
+
+SKILLS
+JavaScript, TypeScript, React, Node.js, Python, SQL, Docker, AWS

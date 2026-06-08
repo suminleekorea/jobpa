@@ -15,9 +15,9 @@ import { sdk } from "./sdk";
 import { createPatchedFetch } from "./patchedFetch";
 
 function createLLMProvider() {
-  // Use freellmapi for free LLM access (~300M tokens/month from 16 providers)
-  const baseURL = "https://4000-iiyhsufznr14wazhrdrve-07420d78.sg1.manus.computer/v1";
-  const apiKey = "freellmapi-a26d7a58bed3bc04b11b24548cdec4d703fdccaf9da84a91"; // freellmapi key
+  // Use Manus Forge API (built-in LLM access)
+  const baseURL = `${process.env.BUILT_IN_FORGE_API_URL}/v1`;
+  const apiKey = process.env.BUILT_IN_FORGE_API_KEY ?? "";
 
   return createOpenAI({
     baseURL,
