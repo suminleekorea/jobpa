@@ -14,6 +14,7 @@ import * as db from "../db";
 import { sdk } from "./sdk";
 
 function createLLMProvider() {
+<<<<<<< Updated upstream
   const baseURL = ENV.llmBaseUrl
     ? (ENV.llmBaseUrl.endsWith("/v1") ? ENV.llmBaseUrl : `${ENV.llmBaseUrl}/v1`)
     : undefined; // undefined = use OpenAI default
@@ -21,6 +22,16 @@ function createLLMProvider() {
   return createOpenAI({
     baseURL,
     apiKey: ENV.llmApiKey,
+=======
+  // Use freellmapi for free LLM access (~300M tokens/month from 16 providers)
+  const baseURL = "https://4000-iiyhsufznr14wazhrdrve-07420d78.sg1.manus.computer/v1";
+  const apiKey = "freellmapi-a26d7a58bed3bc04b11b24548cdec4d703fdccaf9da84a91"; // freellmapi key
+
+  return createOpenAI({
+    baseURL,
+    apiKey,
+    fetch: createPatchedFetch(fetch),
+>>>>>>> Stashed changes
   });
 }
 
@@ -258,7 +269,11 @@ Use this profile to provide highly personalized career advice. Reference their s
       }
 
       const result = streamText({
+<<<<<<< Updated upstream
         model: openai.chat(ENV.llmModel),
+=======
+        model: openai.chat("auto"),
+>>>>>>> Stashed changes
         system: systemPrompt,
         messages: modelMessages,
         tools: careerTools,
