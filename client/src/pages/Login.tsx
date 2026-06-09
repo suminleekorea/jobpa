@@ -64,7 +64,16 @@ export default function Login() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium block mb-1.5">Password</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-sm font-medium">Password</label>
+                <button
+                  type="button"
+                  onClick={() => setLocation("/forgot-password")}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Forgot password?
+                </button>
+              </div>
               <input
                 type="password"
                 required

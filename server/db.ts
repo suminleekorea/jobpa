@@ -6,7 +6,7 @@ import {
   userXP, xpEvents, dailyChecklist, journal,
   consultants, consultingApplications, consultingSessions, userCredits, creditTransactions,
   chatSessions, chatMessages, resumeAnalysisResults, reviews,
-  userProfiles,
+  userProfiles, passwordResetTokens,
   type InsertSurvey, type InsertApplication, type Survey, type Application,
   type InsertUserXP, type InsertDailyChecklistItem, type InsertJournalEntry,
   type InsertUserProfile,
@@ -648,4 +648,36 @@ export async function upsertUserProfile(userId: number, data: Omit<InsertUserPro
     const inserted = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId)).limit(1);
     return inserted[0];
   }
+}
+
+// ─── Password Reset Token helpers ────────────────────────────────────────────
+
+export async function createPasswordResetToken(userId: number, token: string, expiresAt: Date): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  // Delete any existing tokens for this user first
+  await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
+  await db.insert(passwordResetTokens).values({ userId, token, expiresAt });
+}
+
+export async function getPasswordResetToken(token: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(passwordResetTokens)
+    .where(eq(passwordResetTokens.token, token)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function markPasswordResetTokenUsed(token: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(passwordResetTokens)
+    .set({ usedAt: new Date() })
+    .where(eq(passwordResetTokens.token, token));
+}
+
+export async function updateUserPassword(userId: number, passwordHash: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, userId));
 }
