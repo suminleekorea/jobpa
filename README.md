@@ -4,7 +4,7 @@ Agentic AI Career Ops for international job seekers.
 
 JobPA is an AI career operating system that helps cross-border talent find better roles, evaluate fit, tailor resumes, prepare interviews, and track applications without turning the job search into blind mass applying.
 
-[Live demo](https://jobpa2.manus.space)
+[Live demo](https://job-pa.com)
 
 ## Why JobPA
 
@@ -125,7 +125,7 @@ JobPA is designed as guidance software.
 
 Built by Sumin Lee for international talent navigating Singapore-first cross-border careers.
 
-- Website: [jobpa2.manus.space](https://jobpa2.manus.space)
+- Website: [job-pa.com](https://job-pa.com)
 - LinkedIn: [linkedin.com/in/suminlee-apac](https://linkedin.com/in/suminlee-apac)
 
 ## License
