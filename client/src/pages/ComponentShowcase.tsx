@@ -158,8 +158,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTheme } from "@/contexts/ThemeContext";
-import { format } from "date-fns";
-import { zhCN } from "date-fns/locale";
 import {
   AlertCircle,
   CalendarIcon,
@@ -172,6 +170,26 @@ import {
 import { useState } from "react";
 import { toast as sonnerToast } from "sonner";
 import { AIChatBox } from "@/components/AIChatBox";
+
+function format(date: Date, pattern: string, _options?: unknown) {
+  if (pattern === "HH:mm") {
+    return date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
+  }
+  if (pattern.includes("yyyy/MM/dd")) {
+    const day = date.toLocaleDateString("en-CA").replace(/-/g, "/");
+    const time = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
+    return `${day}  ${time}`;
+  }
+  return date.toLocaleString("en-SG", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+const zhCN = undefined;
 
 export default function ComponentsShowcase() {
   const { theme, toggleTheme } = useTheme();

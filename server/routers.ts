@@ -6,13 +6,45 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
+import type { User } from "../drizzle/schema";
 import * as db from "./db";
-import { fetchAllJobs } from "./jobFetcher";
+import {
+  createApplication as adapterCreateApplication,
+  createJobFitEvaluation as adapterCreateJobFitEvaluation,
+  fetchJobs as adapterFetchJobs,
+  getUserProfile as adapterGetUserProfile,
+  saveJob as adapterSaveJob,
+  saveUserProfile as adapterSaveUserProfile,
+  updateApplicationStatus as adapterUpdateApplicationStatus,
+} from "./jobpaAdapter";
+import {
+  applicationAgent,
+  careerManagerAgent,
+  intakeAgent,
+  interviewAgent,
+  jobFitAgent,
+  marketVisaAgent,
+  qaErrorAgent,
+} from "./agents";
+import { evaluateManualJob, runCareerOpsScan, saveCareerOpsJob } from "./careerOps";
+
+function toPublicUser(user: User | null | undefined) {
+  if (!user) return null;
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    loginMethod: user.loginMethod,
+    createdAt: user.createdAt,
+    lastSignedIn: user.lastSignedIn,
+  };
+}
 
 export const appRouter = router({
   system: systemRouter,
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
+    me: publicProcedure.query(opts => toPublicUser(opts.ctx.user)),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -30,10 +62,32 @@ export const appRouter = router({
       preferredLocations: z.array(z.string()).optional(),
       salaryExpectation: z.string().optional(),
       needsVisaSponsorship: z.boolean().optional(),
+      preferredLanguage: z.string().optional(),
       preferredJobTypes: z.array(z.string()).optional(),
       howHeardAbout: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
-      return db.saveSurvey({ userId: ctx.user.id, ...input });
+      const profileDraft = intakeAgent.buildCareerProfile(input);
+      const { preferredLanguage: _preferredLanguage, ...surveyInput } = input;
+      const [surveyResult, profileResult] = await Promise.all([
+        db.saveSurvey({ userId: ctx.user.id, ...surveyInput }).catch(error => {
+          console.warn("[survey.save] Survey write skipped:", error?.message || error);
+          return null;
+        }),
+        adapterSaveUserProfile(ctx.user.id, profileDraft).catch(error => {
+          console.warn("[survey.save] Profile write skipped:", error?.message || error);
+          return null;
+        }),
+      ]);
+
+      if (!surveyResult && !profileResult) {
+        return {
+          offline: true,
+          message: "Database unavailable. Your onboarding can continue, but this profile was not persisted.",
+          profile: profileDraft,
+        };
+      }
+
+      return surveyResult ?? profileResult;
     }),
     get: protectedProcedure.query(async ({ ctx }) => {
       const survey = await db.getSurveyByUserId(ctx.user.id);
@@ -53,20 +107,30 @@ export const appRouter = router({
       visaType: z.string().optional(),
       notes: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
-      return db.saveApplication({ userId: ctx.user.id, ...input });
+      return adapterCreateApplication(ctx.user.id, input);
     }),
     list: protectedProcedure.query(async ({ ctx }) => {
-      return db.getApplicationsByUserId(ctx.user.id);
+      const applications = await db.getApplicationsByUserId(ctx.user.id).catch(error => {
+        console.warn("[application.list] Database unavailable:", error?.message || error);
+        return [];
+      });
+      return applications.map((application: any) => ({
+        ...application,
+        nextActions: applicationAgent.nextActions(application.status),
+      }));
     }),
     updateStatus: protectedProcedure.input(z.object({
       id: z.number(),
       status: z.enum(["applied", "interview", "offer", "rejected", "withdrawn", "bookmarked"]),
       notes: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
-      return db.updateApplicationStatus(input.id, ctx.user.id, input.status, input.notes);
+      return adapterUpdateApplicationStatus(ctx.user.id, input.id, input.status, input.notes);
     }),
     remove: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
-      return db.deleteApplication(input.id, ctx.user.id);
+      return db.deleteApplication(input.id, ctx.user.id).catch(error => {
+        console.warn("[application.remove] Delete skipped:", error?.message || error);
+        return { success: false, mode: "offline" as const, message: "Database unavailable. Delete was not persisted." };
+      });
     }),
   }),
 
@@ -88,20 +152,34 @@ export const appRouter = router({
 
   fit: router({
     evaluate: protectedProcedure.input(z.object({
+      jobId: z.string().optional(),
       targetRole: z.string().optional(),
-      jobDescription: z.string(),
+      jobTitle: z.string().optional(),
+      company: z.string().optional(),
+      jobDescription: z.string().min(20),
     })).mutation(async ({ ctx, input }) => {
-      // Validate resume exists
-      const resume = await db.getResumeByUserId(ctx.user.id);
-      if (!resume || !resume.analysisResult) {
-        throw new Error("Please upload and analyze your resume first.");
-      }
-      // Save evaluation placeholder (AI analysis would go here)
-      return db.saveFitEvaluation(ctx.user.id, {
+      const [profile, latestResume] = await Promise.all([
+        adapterGetUserProfile(ctx.user.id).catch(() => null),
+        db.getLatestResumeAnalysis(ctx.user.id).catch(() => null),
+      ]);
+      const evaluation = jobFitAgent.evaluate({
+        profile,
+        resumeAnalysis: latestResume,
         targetRole: input.targetRole,
+        jobTitle: input.jobTitle,
+        company: input.company,
         jobDescription: input.jobDescription,
-        fitScore: undefined,
-        result: undefined,
+      });
+      await db.awardXP(ctx.user.id, "fit", "Created a job fit evaluation").catch(() => undefined);
+      return adapterCreateJobFitEvaluation(ctx.user.id, {
+        jobId: input.jobId,
+        targetRole: input.targetRole,
+        jobTitle: input.jobTitle,
+        company: input.company,
+        jobDescription: input.jobDescription,
+        fitScore: evaluation.fitScore,
+        status: "success",
+        result: evaluation.result,
       });
     }),
     history: protectedProcedure.query(async ({ ctx }) => {
@@ -114,22 +192,35 @@ export const appRouter = router({
       return db.getReportsByUserId(ctx.user.id);
     }),
     generate: protectedProcedure.mutation(async ({ ctx }) => {
-      // Gather user data for personalized report
-      const [applications, latestResume, goal, checklist] = await Promise.all([
-        db.getApplicationsByUserId(ctx.user.id),
-        db.getLatestResumeAnalysis(ctx.user.id),
-        db.getGoalByUserId(ctx.user.id),
-        db.getChecklistByDate(ctx.user.id, new Date().toISOString().split("T")[0]),
+      const today = new Date().toISOString().split("T")[0];
+      const [applications, latestResume, goal, checklist, profile] = await Promise.all([
+        db.getApplicationsByUserId(ctx.user.id).catch(() => []),
+        db.getLatestResumeAnalysis(ctx.user.id).catch(() => null),
+        db.getGoalByUserId(ctx.user.id).catch(() => null),
+        db.getChecklistByDate(ctx.user.id, today).catch(() => []),
+        adapterGetUserProfile(ctx.user.id).catch(() => null),
       ]);
 
-      const baseURL = `${process.env.BUILT_IN_FORGE_API_URL}/v1`;
-      const openai = createOpenAI({ apiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "", baseURL });
-
-      const appSummary = applications?.slice(0, 5).map((a: any) => `${a.company} - ${a.position} (${a.status})`).join(", ") || "No applications yet";
-      const resumeScore = latestResume?.overallScore ? `${latestResume.overallScore}/100` : "Not analyzed yet";
-      const goalText = goal?.targetRole ? `Target: ${goal.targetRole} in ${goal.targetJobType || "any field"}` : "No goal set";
       const checklistDone = checklist?.filter((c: any) => c.isCompleted).length || 0;
       const checklistTotal = checklist?.length || 0;
+      const fallbackContent = careerManagerAgent.buildReport({
+        applications,
+        resumeScore: latestResume?.overallScore ?? null,
+        checklistDone,
+        checklistTotal,
+        targetRole: profile?.targetRole ?? goal?.targetRole ?? null,
+      });
+      let content = fallbackContent;
+
+      const llmBaseUrl = ENV.llmBaseUrl || process.env.BUILT_IN_FORGE_API_URL || "";
+      const baseURL = llmBaseUrl
+        ? (llmBaseUrl.endsWith("/v1") ? llmBaseUrl : `${llmBaseUrl}/v1`)
+        : undefined;
+      const openai = createOpenAI({ apiKey: ENV.llmApiKey || process.env.BUILT_IN_FORGE_API_KEY || "", baseURL });
+
+      const appSummary = applications?.slice(0, 5).map((a: any) => `${a.company} - ${a.jobTitle} (${a.status})`).join(", ") || "No applications yet";
+      const resumeScore = latestResume?.overallScore ? `${latestResume.overallScore}/100` : "Not analyzed yet";
+      const goalText = goal?.targetRole ? `Target: ${goal.targetRole} in ${goal.targetJobType || "any field"}` : "No goal set";
 
       const prompt = `You are a career coach AI. Generate a concise, encouraging daily career report for a job seeker.
 
@@ -149,23 +240,32 @@ Keep it concise (under 300 words). Use markdown formatting. Be specific and acti
 
       try {
         const { text } = await generateText({
-          model: openai.chat("gemini-2.5-flash"),
+          model: openai.chat(ENV.llmModel || "gemini-2.5-flash"),
           prompt,
           maxOutputTokens: 500,
         });
-
-        return db.saveReport(ctx.user.id, {
-          title: `Daily Report - ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`,
-          content: text,
-          reportType: "daily",
-        });
-      } catch {
-        return db.saveReport(ctx.user.id, {
-          title: `Daily Report - ${new Date().toLocaleDateString()}`,
-          content: `## Today's Career Progress\n\nYour job search is on track! Keep applying consistently.\n\n**Applications:** ${appSummary}\n\n**Resume Score:** ${resumeScore}\n\n**Goal:** ${goalText}\n\n**Checklist:** ${checklistDone}/${checklistTotal} tasks completed today.`,
-          reportType: "daily",
-        });
+        content = `${text}\n\n_AI guidance only; employment, salary, and visa outcomes are not guaranteed._`;
+      } catch (error) {
+        console.warn("[report.generate] AI generation unavailable; using deterministic report:", error);
       }
+
+      const title = `Daily Report - ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+      return db.saveReport(ctx.user.id, {
+        title,
+        content,
+        reportType: "daily",
+      }).catch(error => {
+        console.warn("[report.generate] Report persistence skipped:", error?.message || error);
+        return {
+          id: -Date.now(),
+          userId: ctx.user.id,
+          title,
+          content,
+          reportType: "daily",
+          offline: true,
+          createdAt: new Date(),
+        };
+      });
     }),
   }),
 
@@ -216,15 +316,98 @@ Keep it concise (under 300 words). Use markdown formatting. Be specific and acti
   jobs: router({
     list: publicProcedure.input(z.object({
       search: z.string().optional(),
+      keyword: z.string().optional(),
       location: z.string().optional(),
+      page: z.number().optional(),
       limit: z.number().optional(),
     }).optional()).query(async ({ input }) => {
-      const result = await fetchAllJobs({
-        search: input?.search,
+      return adapterFetchJobs({
+        search: input?.search || input?.keyword,
         location: input?.location,
         limit: input?.limit || 100,
       });
-      return result;
+    }),
+    save: protectedProcedure.input(z.object({
+      id: z.string(),
+      title: z.string(),
+      company: z.string(),
+      location: z.string(),
+      salary: z.string().optional(),
+      source: z.string(),
+      applyUrl: z.string(),
+      visa: z.boolean().optional(),
+      type: z.string().optional(),
+      experience: z.string().optional(),
+      industry: z.string().optional(),
+      posted: z.number().optional(),
+      remote: z.boolean().optional(),
+      description: z.string().optional(),
+      closingDate: z.string().optional(),
+      skills: z.array(z.string()).optional(),
+      notes: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      return adapterSaveJob(ctx.user.id, {
+        id: input.id,
+        title: input.title,
+        company: input.company,
+        location: input.location,
+        salary: input.salary,
+        source: input.source as any,
+        applyUrl: input.applyUrl,
+        visa: input.visa ?? false,
+        type: input.type ?? "fulltime",
+        experience: input.experience ?? "mid",
+        industry: input.industry ?? "others",
+        posted: input.posted ?? 0,
+        remote: input.remote ?? false,
+        description: input.description ?? "",
+        closingDate: input.closingDate,
+        skills: input.skills,
+      }, input.notes);
+    }),
+  }),
+
+  careerOps: router({
+    scan: protectedProcedure.input(z.object({
+      search: z.string().optional(),
+      location: z.string().optional(),
+      limit: z.number().min(3).max(20).optional(),
+    })).mutation(async ({ ctx, input }) => {
+      return runCareerOpsScan(ctx.user.id, input);
+    }),
+    evaluateManual: protectedProcedure.input(z.object({
+      jobTitle: z.string().optional(),
+      company: z.string().optional(),
+      targetRole: z.string().optional(),
+      jobDescription: z.string().min(20),
+    })).mutation(async ({ ctx, input }) => {
+      return evaluateManualJob(ctx.user.id, input);
+    }),
+    saveJob: protectedProcedure.input(z.object({
+      job: z.object({
+        id: z.string(),
+        title: z.string(),
+        company: z.string(),
+        location: z.string(),
+        salary: z.string().optional(),
+        source: z.string(),
+        applyUrl: z.string(),
+        visa: z.boolean(),
+        type: z.string(),
+        experience: z.string(),
+        industry: z.string(),
+        posted: z.number(),
+        remote: z.boolean(),
+        description: z.string(),
+        closingDate: z.string().optional(),
+        skills: z.array(z.string()).optional(),
+      }),
+      notes: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      return saveCareerOpsJob(ctx.user.id, {
+        job: input.job as any,
+        notes: input.notes,
+      });
     }),
   }),
 
@@ -449,7 +632,7 @@ Keep it concise (under 300 words). Use markdown formatting. Be specific and acti
   }),
   profile: router({
     get: protectedProcedure.query(async ({ ctx }) => {
-      return db.getUserProfile(ctx.user.id);
+      return adapterGetUserProfile(ctx.user.id);
     }),
     upsert: protectedProcedure.input(z.object({
       fullName: z.string().optional(),
@@ -478,7 +661,79 @@ Keep it concise (under 300 words). Use markdown formatting. Be specific and acti
       portfolioUrl: z.string().optional(),
       summary: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
-      return db.upsertUserProfile(ctx.user.id, input);
+      return adapterSaveUserProfile(ctx.user.id, input);
+    }),
+  }),
+
+  interview: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return db.getInterviewPrepsByUserId(ctx.user.id).catch(error => {
+        console.warn("[interview.list] Database unavailable:", error?.message || error);
+        return [];
+      });
+    }),
+    prep: protectedProcedure.input(z.object({
+      applicationId: z.number().optional(),
+      jobTitle: z.string().optional(),
+      company: z.string().optional(),
+      stage: z.string().optional(),
+      notes: z.string().optional(),
+      targetMarket: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const [application, profile] = await Promise.all([
+        input.applicationId ? db.getApplicationById(input.applicationId, ctx.user.id).catch(() => undefined) : Promise.resolve(undefined),
+        adapterGetUserProfile(ctx.user.id).catch(() => null),
+      ]);
+      const prep = interviewAgent.createPrep({
+        jobTitle: input.jobTitle ?? application?.jobTitle,
+        company: input.company ?? application?.company,
+        targetMarket: input.targetMarket ?? profile?.targetLocation ?? "singapore",
+        notes: input.notes ?? application?.notes ?? undefined,
+      });
+
+      const saved = await db.saveInterviewPrep({
+        userId: ctx.user.id,
+        applicationId: input.applicationId,
+        jobTitle: prep.role,
+        company: prep.company,
+        stage: input.stage ?? "interview",
+        prep,
+        followUpEmail: prep.followUpEmail,
+      }).catch(error => {
+        console.warn("[interview.prep] Persistence skipped:", error?.message || error);
+        return { offline: true, message: "Database unavailable. Interview prep was not persisted." };
+      });
+
+      return { prep, saved };
+    }),
+  }),
+
+  market: router({
+    guidance: publicProcedure.input(z.object({
+      country: z.string().optional(),
+    }).optional()).query(({ input }) => {
+      return marketVisaAgent.guidance(input?.country);
+    }),
+  }),
+
+  agent: router({
+    workflow: protectedProcedure.query(async ({ ctx }) => {
+      const [profile, applications, latestResume, interviewPreps, jobs] = await Promise.all([
+        adapterGetUserProfile(ctx.user.id).catch(() => null),
+        db.getApplicationsByUserId(ctx.user.id).catch(() => []),
+        db.getLatestResumeAnalysis(ctx.user.id).catch(() => null),
+        db.getInterviewPrepsByUserId(ctx.user.id).catch(() => []),
+        adapterFetchJobs({ limit: 5 }).catch(() => ({ jobs: [], mode: "offline" })),
+      ]);
+      return qaErrorAgent.audit({
+        hasProfile: Boolean(profile?.targetRole || profile?.fullName),
+        hasJobs: Boolean((jobs as any).jobs?.length),
+        hasResumeAnalysis: Boolean(latestResume),
+        hasApplications: applications.length > 0,
+        hasInterviewPrep: interviewPreps.length > 0,
+        jobDataMode: (jobs as any).mode,
+        resumeStatus: latestResume ? "success" : null,
+      });
     }),
   }),
 
@@ -487,8 +742,11 @@ Keep it concise (under 300 words). Use markdown formatting. Be specific and acti
       sector: z.string().optional(),
       region: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
-      const baseURL2 = `${process.env.BUILT_IN_FORGE_API_URL}/v1`;
-      const openai = createOpenAI({ apiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "", baseURL: baseURL2 });
+      const llmBaseUrl = ENV.llmBaseUrl || process.env.BUILT_IN_FORGE_API_URL || "";
+      const baseURL2 = llmBaseUrl
+        ? (llmBaseUrl.endsWith("/v1") ? llmBaseUrl : `${llmBaseUrl}/v1`)
+        : undefined;
+      const openai = createOpenAI({ apiKey: ENV.llmApiKey || process.env.BUILT_IN_FORGE_API_KEY || "", baseURL: baseURL2 });
       const sector = input.sector || "all sectors";
       const region = input.region || "Singapore, Korea, India";
       const today = new Date().toISOString().split("T")[0];
@@ -513,11 +771,34 @@ Key observations about the job market and opportunities for Korean and Indian pr
 
 Be specific, data-driven, and practical. Use real company names and realistic figures.`;
 
-      const { text } = await generateText({
-        model: openai("gemini-2.5-flash"),
-        prompt,
-        maxOutputTokens: 1200,
-      });
+      let text: string;
+      try {
+        const result = await generateText({
+          model: openai.chat(ENV.llmModel || "gemini-2.5-flash"),
+          prompt,
+          maxOutputTokens: 1200,
+        });
+        text = result.text;
+      } catch (error) {
+        console.warn("[trend.generate] AI trend generation unavailable; using local fallback:", error);
+        text = `## Hot Skills in Demand
+- Data literacy, AI workflow design, CRM analytics, stakeholder communication, and market research remain practical differentiators.
+
+## Salary Trends
+Ranges vary heavily by company and visa status. Use this as directional guidance only and verify with current official or employer sources.
+
+## Top Hiring Companies
+Check official career pages and approved APIs for employers in ${region}. Do not rely on scraped listings.
+
+## Market Insights
+Candidates with cross-border communication, analytics, and AI-enabled productivity examples can position strongly for ${sector}.
+
+## Action Items
+- Build one market-specific resume variant.
+- Save five target roles and run fit evaluations.
+- Prepare STAR stories with quantified outcomes.
+- Verify visa/legal topics with official sources.`;
+      }
 
       return {
         content: text,

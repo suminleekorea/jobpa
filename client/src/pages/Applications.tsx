@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/contexts/i18nContext";
+import { getExternalHref } from "@/lib/externalLinks";
 import { trpc } from "@/lib/trpc";
 import {
   Bookmark, Briefcase, Building2, Calendar, ExternalLink, MapPin,
@@ -31,7 +32,7 @@ export default function Applications() {
   const { t } = useI18n();
   const [, setLocation] = useLocation();
   const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [notesModal, setNotesModal] = useState<{ id: number; notes: string } | null>(null);
+  const [notesModal, setNotesModal] = useState<{ id: number; notes: string; status: any } | null>(null);
 
   const { data: apps, isLoading } = trpc.application.list.useQuery();
   const utils = trpc.useUtils();
@@ -72,7 +73,7 @@ export default function Applications() {
           <Bookmark className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
           <h3 className="font-medium">{t.applications.noApps}</h3>
           <p className="text-sm text-muted-foreground mt-1 mb-4">{t.applications.noAppsDesc}</p>
-          <Button onClick={() => setLocation("/dashboard")} className="gap-2">
+          <Button onClick={() => setLocation("/dashboard/jobs")} className="gap-2">
             {t.applications.goToJobs}
             <ArrowRight className="h-4 w-4" />
           </Button>
@@ -143,6 +144,11 @@ export default function Applications() {
                   )}
                 </div>
                 <div className="flex items-center gap-1">
+                  {app.status === "interview" && (
+                    <Button size="sm" variant="outline" onClick={() => setLocation("/dashboard/interview")}>
+                      Prep
+                    </Button>
+                  )}
                   <Select
                     value={app.status}
                     onValueChange={(val) => updateStatus.mutate({ id: app.id, status: val as any })}
@@ -163,14 +169,16 @@ export default function Applications() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setNotesModal({ id: app.id, notes: app.notes || "" })}>
+                      <DropdownMenuItem onClick={() => setNotesModal({ id: app.id, notes: app.notes || "", status: app.status })}>
                         <StickyNote className="mr-2 h-4 w-4" />
                         {t.applications.notes}
                       </DropdownMenuItem>
-                      {app.applyUrl && (
-                        <DropdownMenuItem onClick={() => window.open(app.applyUrl!, "_blank")}>
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          {t.jobs.applyExternal}
+                      {getExternalHref(app.applyUrl) && (
+                        <DropdownMenuItem asChild>
+                          <a href={getExternalHref(app.applyUrl)!} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            {t.jobs.applyExternal}
+                          </a>
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuItem onClick={() => removeApp.mutate({ id: app.id })} className="text-destructive">
@@ -203,7 +211,7 @@ export default function Applications() {
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setNotesModal(null)}>{t.common.cancel}</Button>
                 <Button
-                  onClick={() => saveNotes.mutate({ id: notesModal.id, status: "applied", notes: notesModal.notes })}
+                  onClick={() => saveNotes.mutate({ id: notesModal.id, status: notesModal.status, notes: notesModal.notes })}
                   disabled={saveNotes.isPending}
                 >
                   {t.common.save}

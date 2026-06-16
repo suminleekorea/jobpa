@@ -1,10 +1,19 @@
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import crypto from "node:crypto";
 import type { Express, Request, Response } from "express";
+import { parse as parseCookieHeader } from "cookie";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
+import {
+  buildGoogleAuthUrl,
+  exchangeGoogleCode,
+  fetchGoogleProfile,
+  isGoogleOAuthConfigured,
+} from "./googleOAuth";
 import { sdk } from "./sdk";
 import { notifyOwner } from "./notification";
+
+const GOOGLE_AUTH_STATE_COOKIE = "jobpa_google_oauth_state";
 
 function hashPassword(password: string, salt: string): string {
   return crypto.scryptSync(password, salt, 64).toString("hex");
@@ -25,7 +34,95 @@ function verifyPassword(password: string, stored: string): boolean {
 
 const RESET_TOKEN_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 
+function redirectWithAuthError(res: Response, code: string) {
+  res.redirect(`/login?authError=${encodeURIComponent(code)}`);
+}
+
+function getCookie(req: Request, name: string) {
+  return parseCookieHeader(req.headers.cookie || "")[name];
+}
+
+function setStateCookie(req: Request, res: Response, name: string, value: string) {
+  res.cookie(name, value, {
+    ...getSessionCookieOptions(req),
+    sameSite: "lax",
+    maxAge: 10 * 60 * 1000,
+  });
+}
+
+function clearStateCookie(req: Request, res: Response, name: string) {
+  res.clearCookie(name, {
+    ...getSessionCookieOptions(req),
+    sameSite: "lax",
+    maxAge: -1,
+  });
+}
+
 export function registerAuthRoutes(app: Express) {
+  app.get("/api/auth/google", (req: Request, res: Response) => {
+    if (!isGoogleOAuthConfigured()) {
+      redirectWithAuthError(res, "google_not_configured");
+      return;
+    }
+
+    const state = crypto.randomBytes(24).toString("hex");
+    setStateCookie(req, res, GOOGLE_AUTH_STATE_COOKIE, state);
+    res.redirect(buildGoogleAuthUrl(req, "login", state));
+  });
+
+  app.get("/api/auth/google/callback", async (req: Request, res: Response) => {
+    if (!isGoogleOAuthConfigured()) {
+      redirectWithAuthError(res, "google_not_configured");
+      return;
+    }
+
+    const code = typeof req.query.code === "string" ? req.query.code : "";
+    const state = typeof req.query.state === "string" ? req.query.state : "";
+    const providerError = typeof req.query.error === "string" ? req.query.error : "";
+    const expectedState = getCookie(req, GOOGLE_AUTH_STATE_COOKIE);
+    clearStateCookie(req, res, GOOGLE_AUTH_STATE_COOKIE);
+
+    if (providerError) {
+      redirectWithAuthError(res, providerError);
+      return;
+    }
+    if (!code) {
+      redirectWithAuthError(res, "missing_google_code");
+      return;
+    }
+    if (!state || !expectedState || state !== expectedState) {
+      redirectWithAuthError(res, "invalid_google_state");
+      return;
+    }
+
+    try {
+      const token = await exchangeGoogleCode(req, "login", code);
+      const profile = await fetchGoogleProfile(token.access_token);
+      if (!profile.email || profile.email_verified === false) {
+        redirectWithAuthError(res, "google_email_unverified");
+        return;
+      }
+
+      const user = await db.upsertOAuthUser({
+        provider: "google",
+        providerUserId: profile.sub,
+        email: profile.email.toLowerCase(),
+        name: profile.name,
+        scopes: token.scope,
+      });
+      const session = await sdk.signSession({
+        userId: user.id,
+        email: user.email || profile.email,
+        name: user.name || profile.name || "",
+      });
+      res.cookie(COOKIE_NAME, session, { ...getSessionCookieOptions(req), maxAge: ONE_YEAR_MS });
+      res.redirect("/dashboard");
+    } catch (error) {
+      console.error("[Auth] Google OAuth failed:", error);
+      redirectWithAuthError(res, "google_login_failed");
+    }
+  });
+
   app.post("/api/auth/register", async (req: Request, res: Response) => {
     const { email, password, name } = req.body ?? {};
     if (!email || !password) {

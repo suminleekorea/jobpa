@@ -45,7 +45,10 @@ describe("auth.me", () => {
     const caller = appRouter.createCaller(createMockContext());
     const user = await caller.auth.me();
     expect(user).toBeDefined();
-    expect(user?.openId).toBe("test-user-123");
+    expect(user?.id).toBe(1);
+    expect(user?.email).toBe("test@example.com");
+    expect(user).not.toHaveProperty("openId");
+    expect(user).not.toHaveProperty("passwordHash");
   });
 
   it("returns null for unauthenticated context", async () => {

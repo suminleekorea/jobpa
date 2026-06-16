@@ -64,6 +64,20 @@
       "when": 1780973012423,
       "tag": "0008_tired_edwin_jarvis",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1781192400000,
+      "tag": "0009_jobpa_career_os",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1781278800000,
+      "tag": "0010_google_auth_email",
+      "breakpoints": true
     }
   ]
 }

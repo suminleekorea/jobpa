@@ -22,17 +22,17 @@ function Navbar() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50">
-      <div className="container flex items-center justify-between h-16">
-        <button onClick={() => setLocation("/")} className="flex items-center gap-2.5">
+      <div className="container flex h-16 min-w-0 items-center justify-between gap-2">
+        <button onClick={() => setLocation("/")} className="flex min-w-0 items-center gap-2.5">
           <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
             <Bot className="h-4.5 w-4.5 text-primary-foreground" />
           </div>
-          <div className="flex items-baseline gap-1.5">
+          <div className="flex min-w-0 items-baseline gap-1.5">
             <span className="text-lg font-bold tracking-tight">{t.brand.name}</span>
-            <span className="text-sm text-muted-foreground font-medium">{t.brand.tagline}</span>
+            <span className="hidden truncate text-sm font-medium text-muted-foreground sm:inline">{t.brand.tagline}</span>
           </div>
         </button>
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <LanguageSelector />
           {isAuthenticated ? (
             <Button onClick={() => setLocation("/dashboard")} size="sm">
@@ -64,22 +64,22 @@ function HeroSection() {
   ];
 
   return (
-    <section className="pt-32 pb-20 relative overflow-hidden">
+    <section className="relative overflow-hidden px-0 pb-16 pt-28 sm:pb-20 sm:pt-32">
       {/* Subtle dot grid texture */}
       <div className="absolute inset-0 opacity-[0.4]" style={{ backgroundImage: "radial-gradient(circle, #e5e7eb 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
       <div className="container relative">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+        <div className="mx-auto max-w-3xl text-center">
+          <div className="mb-6 inline-flex max-w-full items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
             <Sparkles className="h-3.5 w-3.5" />
-            {t.hero.badge}
+            <span className="truncate">{t.hero.badge}</span>
           </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight whitespace-pre-line">
+          <h1 className="break-words text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
             {t.hero.title}
           </h1>
-          <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto whitespace-pre-line leading-relaxed">
+          <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
             {t.hero.subtitle}
           </p>
-          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-sm">
+          <div className="mt-4 inline-flex max-w-full items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-left text-sm text-amber-700">
             <Zap className="h-4 w-4 shrink-0" />
             <span>{t.hero.note}</span>
           </div>
@@ -107,7 +107,7 @@ function HeroSection() {
           </div>
         </div>
         {/* Dashboard Preview Screenshot */}
-        <div className="mt-16 relative mx-auto max-w-5xl px-4">
+        <div className="relative mx-auto mt-12 max-w-5xl px-0 sm:mt-16 sm:px-4">
           <div className="absolute -inset-2 bg-gradient-to-r from-primary/20 via-primary/5 to-primary/20 rounded-3xl blur-2xl opacity-70" />
           <div className="relative rounded-2xl overflow-hidden border border-border/40 shadow-2xl shadow-primary/10">
             <img

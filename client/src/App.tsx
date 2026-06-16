@@ -22,8 +22,13 @@ import Trends from "./pages/Trends";
 import ChatBot from "./pages/ChatBot";
 import DashboardLayout from "./components/DashboardLayout";
 import FloatingChatButton from "./components/FloatingChatButton";
+import ThemeToggle from "./components/ThemeToggle";
 import DailyGoalNudge from "./components/DailyGoalNudge";
 import { lazy, Suspense } from "react";
+import SavedJobs from "./pages/SavedJobs";
+import InterviewPrep from "./pages/InterviewPrep";
+import EmailCenter from "./pages/EmailCenter";
+import CareerOps from "./pages/CareerOps";
 const Checklist = lazy(() => import("./pages/Checklist"));
 const Journal = lazy(() => import("./pages/Journal"));
 const Level = lazy(() => import("./pages/Level"));
@@ -52,11 +57,23 @@ function Router() {
       <Route path="/dashboard/applications">
         <DashboardPage><Applications /></DashboardPage>
       </Route>
+      <Route path="/dashboard/saved">
+        <DashboardPage><SavedJobs /></DashboardPage>
+      </Route>
+      <Route path="/dashboard/career-ops">
+        <DashboardPage><CareerOps /></DashboardPage>
+      </Route>
       <Route path="/dashboard/resume">
         <DashboardPage><ResumeAnalysis /></DashboardPage>
       </Route>
       <Route path="/dashboard/fit">
         <DashboardPage><JobFit /></DashboardPage>
+      </Route>
+      <Route path="/dashboard/interview">
+        <DashboardPage><InterviewPrep /></DashboardPage>
+      </Route>
+      <Route path="/dashboard/email">
+        <DashboardPage><EmailCenter /></DashboardPage>
       </Route>
       <Route path="/dashboard/reports">
         <DashboardPage><Reports /></DashboardPage>
@@ -97,10 +114,11 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="dark">
+      <ThemeProvider defaultTheme="dark" switchable>
         <TooltipProvider>
           <Toaster />
           <Router />
+          <ThemeToggle />
           <FloatingChatButton />
           <DailyGoalNudge />
         </TooltipProvider>

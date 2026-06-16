@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Bot } from "lucide-react";
+import { Bot, Mail } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -53,7 +53,25 @@ export default function Register() {
 
         <div className="rounded-xl border bg-card p-6 shadow-sm">
           <h1 className="text-xl font-semibold mb-1">Create account</h1>
-          <p className="text-sm text-muted-foreground mb-6">Start your career journey for free</p>
+          <p className="text-sm text-muted-foreground mb-6">
+            Create an email account or continue with Google.
+          </p>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full gap-2"
+            onClick={() => { window.location.href = "/api/auth/google"; }}
+          >
+            <Mail className="h-4 w-4" />
+            Continue with Google
+          </Button>
+
+          <div className="my-5 flex items-center gap-3">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs text-muted-foreground">or</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -97,7 +115,7 @@ export default function Register() {
             )}
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating account…" : "Create account"}
+              {isLoading ? "Creating account..." : "Create account"}
             </Button>
           </form>
 

@@ -3,15 +3,20 @@ import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, surveys, applications, resumes, fitEvaluations,
   reports, goals, emailAlerts, consultingWaitlist,
+  oauthAccounts, emailAccounts, emailMessages,
   userXP, xpEvents, dailyChecklist, journal,
   consultants, consultingApplications, consultingSessions, userCredits, creditTransactions,
   chatSessions, chatMessages, resumeAnalysisResults, reviews,
-  userProfiles, passwordResetTokens,
+  userProfiles, passwordResetTokens, careerProfiles, jobs, savedJobs, resumeAnalyses, jobFitEvaluations,
+  interviewPreps, agentTasks, apiHealthLogs,
   type InsertSurvey, type InsertApplication, type Survey, type Application,
   type InsertUserXP, type InsertDailyChecklistItem, type InsertJournalEntry,
-  type InsertUserProfile,
+  type InsertUserProfile, type InsertCareerProfile, type InsertJob,
+  type InsertSavedJob, type InsertResumeAnalysis, type InsertJobFitEvaluation,
+  type InsertInterviewPrep, type InsertAgentTask, type InsertApiHealthLog,
+  type InsertEmailAccount, type InsertEmailMessage,
 } from "../drizzle/schema";
-import { ENV } from './_core/env';
+import { isAdminEmail } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -24,31 +29,128 @@ export async function getDb() {
   return _db;
 }
 
+function roleForEmail(email?: string | null): "admin" | "user" {
+  return isAdminEmail(email) ? "admin" : "user";
+}
+
 export async function getUserById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+  const user = result[0];
+  if (!user) return undefined;
+  if (isAdminEmail(user.email) && user.role !== "admin") {
+    await db.update(users).set({ role: "admin" }).where(eq(users.id, id));
+    return { ...user, role: "admin" as const };
+  }
+  return user;
 }
 
 export async function getUserByEmail(email: string) {
   const db = await getDb();
   if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+  const user = result[0];
+  if (!user) return undefined;
+  if (isAdminEmail(user.email) && user.role !== "admin") {
+    await db.update(users).set({ role: "admin" }).where(eq(users.id, user.id));
+    return { ...user, role: "admin" as const };
+  }
+  return user;
 }
 
 export async function createUserWithPassword(data: { email: string; passwordHash: string; name?: string }): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
+  const email = data.email.trim().toLowerCase();
   const result = await db.insert(users).values({
-    email: data.email,
+    email,
     passwordHash: data.passwordHash,
     name: data.name ?? null,
     loginMethod: "email",
+    role: roleForEmail(email),
     lastSignedIn: new Date(),
   });
   return (result[0] as any).insertId as number;
+}
+
+function mergeLoginMethod(existing: string | null | undefined, provider: string) {
+  const parts = new Set((existing || "").split("+").filter(Boolean));
+  parts.add(provider);
+  return Array.from(parts).join("+");
+}
+
+export async function upsertOAuthUser(data: {
+  provider: string;
+  providerUserId: string;
+  email: string;
+  name?: string;
+  scopes?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const email = data.email.trim().toLowerCase();
+  const role = roleForEmail(email);
+
+  const linked = await db.select().from(oauthAccounts).where(
+    and(eq(oauthAccounts.provider, data.provider), eq(oauthAccounts.providerUserId, data.providerUserId))
+  ).limit(1);
+
+  if (linked.length > 0) {
+    const user = await getUserById(linked[0].userId);
+    if (!user) throw new Error("Linked OAuth user not found");
+    await db.update(users).set({
+      email: user.email || email,
+      name: user.name || data.name || null,
+      loginMethod: mergeLoginMethod(user.loginMethod, data.provider),
+      role: role === "admin" ? "admin" : user.role,
+      lastSignedIn: new Date(),
+    }).where(eq(users.id, user.id));
+    await db.update(oauthAccounts).set({
+      email,
+      scopes: data.scopes,
+    }).where(eq(oauthAccounts.id, linked[0].id));
+    return (await getUserById(user.id))!;
+  }
+
+  let user = await getUserByEmail(email);
+  if (!user) {
+    const result = await db.insert(users).values({
+      email,
+      name: data.name ?? null,
+      loginMethod: data.provider,
+      role,
+      lastSignedIn: new Date(),
+    });
+    const insertedId = (result[0] as any).insertId as number;
+    user = await getUserById(insertedId);
+  } else {
+    await db.update(users).set({
+      name: user.name || data.name || null,
+      loginMethod: mergeLoginMethod(user.loginMethod, data.provider),
+      role: role === "admin" ? "admin" : user.role,
+      lastSignedIn: new Date(),
+    }).where(eq(users.id, user.id));
+    user = await getUserById(user.id);
+  }
+
+  if (!user) throw new Error("OAuth user could not be created");
+
+  await db.insert(oauthAccounts).values({
+    userId: user.id,
+    provider: data.provider,
+    providerUserId: data.providerUserId,
+    email,
+    scopes: data.scopes,
+  }).onDuplicateKeyUpdate({
+    set: {
+      userId: user.id,
+      email,
+      scopes: data.scopes,
+    },
+  });
+
+  return user;
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
@@ -67,6 +169,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     textFields.forEach(assignNullable);
     if (user.lastSignedIn !== undefined) { values.lastSignedIn = user.lastSignedIn; updateSet.lastSignedIn = user.lastSignedIn; }
     if (user.role !== undefined) { values.role = user.role; updateSet.role = user.role; }
+    if (isAdminEmail(values.email ?? user.email)) { values.role = "admin"; updateSet.role = "admin"; }
     if (!values.lastSignedIn) values.lastSignedIn = new Date();
     if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
     await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
@@ -214,20 +317,284 @@ export async function getConsultingWaitlist() {
 
 // Admin helpers
 export async function getAdminStats() {
-  const db = await getDb(); if (!db) return { totalUsers: 0, totalApplications: 0, totalResumes: 0, totalWaitlist: 0, recentSignups: [] as any[] };
-  const [userCount] = await db.select({ count: sql<number>`count(*)` }).from(users);
-  const [appCount] = await db.select({ count: sql<number>`count(*)` }).from(applications);
-  const [resumeCount] = await db.select({ count: sql<number>`count(*)` }).from(resumes);
-  const [waitlistCount] = await db.select({ count: sql<number>`count(*)` }).from(consultingWaitlist);
+  const emptyAdminStats = {
+    totalUsers: 0,
+    totalApplications: 0,
+    totalResumes: 0,
+    totalResumeAnalyses: 0,
+    totalJobFitEvaluations: 0,
+    totalInterviewPreps: 0,
+    totalReports: 0,
+    totalChecklistItems: 0,
+    totalJournalEntries: 0,
+    totalChatSessions: 0,
+    totalChatMessages: 0,
+    totalAgentTasks: 0,
+    totalEmailAccounts: 0,
+    totalEmailMessages: 0,
+    totalSavedJobs: 0,
+    totalWaitlist: 0,
+    active7: 0,
+    active30: 0,
+    profileManagedUsers: 0,
+    resumeManagedUsers: 0,
+    applicationUsers: 0,
+    savedJobUsers: 0,
+    fitUsers: 0,
+    interviewPrepUsers: 0,
+    longTermManagedUsers: 0,
+    aiAssistedUsers: 0,
+    journeyManagementScore: 0,
+    applicationStatusCounts: { bookmarked: 0, applied: 0, interview: 0, offer: 0, rejected: 0, withdrawn: 0 },
+    journeyFunnel: [] as Array<{ key: string; label: string; count: number; percent: number; description: string }>,
+    agentTaskBreakdown: [] as Array<{ agent: string | null; status: string | null; count: number }>,
+    apiHealthBreakdown: [] as Array<{ service: string | null; status: string | null; fallbackUsed: boolean; count: number }>,
+    qualitativeInsights: ["Database is unavailable, so admin analytics are showing an offline empty state."],
+    recentSignups: [] as any[],
+  };
+  const db = await getDb(); if (!db) return emptyAdminStats;
+  const safeCount = async (table: any) => {
+    try {
+      const [row] = await db.select({ count: sql<number>`count(*)` }).from(table);
+      return Number(row?.count ?? 0);
+    } catch (error) {
+      console.warn("[Admin] Count skipped:", error);
+      return 0;
+    }
+  };
+  const safeDistinctUsers = async (table: any, column: any) => {
+    try {
+      const [row] = await db.select({ count: sql<number>`count(distinct ${column})` }).from(table);
+      return Number(row?.count ?? 0);
+    } catch (error) {
+      console.warn("[Admin] Distinct user count skipped:", error);
+      return 0;
+    }
+  };
+  const safePercent = (value: number, total: number) => total > 0 ? Math.round((value / total) * 100) : 0;
+
+  const [
+    totalUsers,
+    totalApplications,
+    totalResumes,
+    totalResumeAnalyses,
+    totalJobFitEvaluations,
+    totalInterviewPreps,
+    totalReports,
+    totalChecklistItems,
+    totalJournalEntries,
+    totalChatSessions,
+    totalChatMessages,
+    totalAgentTasks,
+    totalEmailAccounts,
+    totalEmailMessages,
+    totalSavedJobs,
+    totalWaitlist,
+    profileUsers,
+    careerProfileUsers,
+    resumeUsersLegacy,
+    resumeAnalysisUsers,
+    applicationUsers,
+    savedJobUsers,
+    fitUsers,
+    interviewPrepUsers,
+    reportUsers,
+    checklistUsers,
+    journalUsers,
+    chatUsers,
+    emailConnectedUsers,
+  ] = await Promise.all([
+    safeCount(users),
+    safeCount(applications),
+    safeCount(resumes),
+    safeCount(resumeAnalyses),
+    safeCount(jobFitEvaluations),
+    safeCount(interviewPreps),
+    safeCount(reports),
+    safeCount(dailyChecklist),
+    safeCount(journal),
+    safeCount(chatSessions),
+    safeCount(chatMessages),
+    safeCount(agentTasks),
+    safeCount(emailAccounts),
+    safeCount(emailMessages),
+    safeCount(savedJobs),
+    safeCount(consultingWaitlist),
+    safeDistinctUsers(userProfiles, userProfiles.userId),
+    safeDistinctUsers(careerProfiles, careerProfiles.userId),
+    safeDistinctUsers(resumes, resumes.userId),
+    safeDistinctUsers(resumeAnalyses, resumeAnalyses.userId),
+    safeDistinctUsers(applications, applications.userId),
+    safeDistinctUsers(savedJobs, savedJobs.userId),
+    safeDistinctUsers(jobFitEvaluations, jobFitEvaluations.userId),
+    safeDistinctUsers(interviewPreps, interviewPreps.userId),
+    safeDistinctUsers(reports, reports.userId),
+    safeDistinctUsers(dailyChecklist, dailyChecklist.userId),
+    safeDistinctUsers(journal, journal.userId),
+    safeDistinctUsers(chatSessions, chatSessions.userId),
+    safeDistinctUsers(emailAccounts, emailAccounts.userId),
+  ]);
+
+  const [active7, active30] = await Promise.all([
+    db.select({ count: sql<number>`count(*)` }).from(users).where(sql`${users.lastSignedIn} >= DATE_SUB(NOW(), INTERVAL 7 DAY)`).then(([row]) => Number(row?.count ?? 0)).catch(() => 0),
+    db.select({ count: sql<number>`count(*)` }).from(users).where(sql`${users.lastSignedIn} >= DATE_SUB(NOW(), INTERVAL 30 DAY)`).then(([row]) => Number(row?.count ?? 0)).catch(() => 0),
+  ]);
+
+  const applicationStatusRows = await db.select({
+    status: applications.status,
+    count: sql<number>`count(*)`,
+  }).from(applications).groupBy(applications.status).catch(() => []);
+  const applicationStatusCounts: Record<string, number> = {
+    bookmarked: 0,
+    applied: 0,
+    interview: 0,
+    offer: 0,
+    rejected: 0,
+    withdrawn: 0,
+  };
+  for (const row of applicationStatusRows) {
+    applicationStatusCounts[String(row.status)] = Number(row.count ?? 0);
+  }
+
+  const agentRows = await db.select({
+    agent: agentTasks.agent,
+    status: agentTasks.status,
+    count: sql<number>`count(*)`,
+  }).from(agentTasks).groupBy(agentTasks.agent, agentTasks.status).catch(() => []);
+
+  const apiHealthRows = await db.select({
+    service: apiHealthLogs.service,
+    status: apiHealthLogs.status,
+    fallbackUsed: apiHealthLogs.fallbackUsed,
+    count: sql<number>`count(*)`,
+  }).from(apiHealthLogs).groupBy(apiHealthLogs.service, apiHealthLogs.status, apiHealthLogs.fallbackUsed).catch(() => []);
+
   const recentSignups = await db.select({
     date: sql<string>`DATE(createdAt)`,
     count: sql<number>`count(*)`,
-  }).from(users).groupBy(sql`DATE(createdAt)`).orderBy(desc(sql`DATE(createdAt)`)).limit(30);
+  }).from(users).groupBy(sql`DATE(createdAt)`).orderBy(desc(sql`DATE(createdAt)`)).limit(30).catch(() => []);
+
+  const profileManagedUsers = Math.max(profileUsers, careerProfileUsers);
+  const resumeManagedUsers = Math.max(resumeUsersLegacy, resumeAnalysisUsers);
+  const longTermManagedUsers = Math.max(reportUsers, checklistUsers, journalUsers);
+  const aiAssistedUsers = Math.max(fitUsers, interviewPrepUsers, chatUsers, resumeAnalysisUsers);
+
+  const journeyFunnel = [
+    {
+      key: "profile",
+      label: "Profile understood",
+      count: profileManagedUsers,
+      percent: safePercent(profileManagedUsers, totalUsers),
+      description: "Career profile, onboarding, goals, salary/visa/language context",
+    },
+    {
+      key: "job_discovery",
+      label: "Jobs saved",
+      count: savedJobUsers,
+      percent: safePercent(savedJobUsers, totalUsers),
+      description: "Saved jobs and target opportunity curation",
+    },
+    {
+      key: "resume",
+      label: "Resume analyzed",
+      count: resumeManagedUsers,
+      percent: safePercent(resumeManagedUsers, totalUsers),
+      description: "Resume analysis, gaps, keywords, and paste/upload fallback",
+    },
+    {
+      key: "application",
+      label: "Applications tracked",
+      count: applicationUsers,
+      percent: safePercent(applicationUsers, totalUsers),
+      description: "Applied, interview, offer, rejection, and saved workflows",
+    },
+    {
+      key: "fit",
+      label: "Job fit evaluated",
+      count: fitUsers,
+      percent: safePercent(fitUsers, totalUsers),
+      description: "Role/profile/resume fit scoring and strategy",
+    },
+    {
+      key: "interview",
+      label: "Interview prepared",
+      count: interviewPrepUsers,
+      percent: safePercent(interviewPrepUsers, totalUsers),
+      description: "Likely questions, STAR stories, and follow-up emails",
+    },
+    {
+      key: "career_management",
+      label: "Long-term managed",
+      count: longTermManagedUsers,
+      percent: safePercent(longTermManagedUsers, totalUsers),
+      description: "Reports, checklists, journal, and ongoing next actions",
+    },
+  ];
+
+  const journeyManagementScore = Math.round(
+    journeyFunnel.reduce((sum, item) => sum + item.percent, 0) / Math.max(journeyFunnel.length, 1)
+  );
+
+  const qualitativeInsights = [
+    totalUsers === 0
+      ? "No users yet. Keep the app in internal/staging review until auth, database, and onboarding are verified."
+      : `${safePercent(active30, totalUsers)}% of users were active in the last 30 days; weekly active coverage is ${safePercent(active7, totalUsers)}%.`,
+    profileManagedUsers < totalUsers
+      ? "Some users have not completed career context. Push onboarding/profile CTAs before job recommendations."
+      : "All tracked users have some profile context, so agent guidance can be role/market-aware.",
+    resumeManagedUsers < applicationUsers
+      ? "Some applicants are tracking jobs before resume analysis. Recommend resume upload or paste-text fallback earlier."
+      : "Resume coverage is aligned with or ahead of application tracking.",
+    applicationStatusCounts.interview > totalInterviewPreps
+      ? "Interview-stage applications exceed generated prep. Surface Interview Prep as the next required action."
+      : "Interview prep coverage is keeping pace with interview-stage activity.",
+    totalReports + totalChecklistItems + totalJournalEntries > 0
+      ? "Long-term career management is active through reports, checklists, or journal entries."
+      : "Long-term management is not active yet. Add weekly reports and post-interview follow-up prompts.",
+  ];
+
   return {
-    totalUsers: userCount.count,
-    totalApplications: appCount.count,
-    totalResumes: resumeCount.count,
-    totalWaitlist: waitlistCount.count,
+    totalUsers,
+    totalApplications,
+    totalResumes,
+    totalResumeAnalyses,
+    totalJobFitEvaluations,
+    totalInterviewPreps,
+    totalReports,
+    totalChecklistItems,
+    totalJournalEntries,
+    totalChatSessions,
+    totalChatMessages,
+    totalAgentTasks,
+    totalEmailAccounts,
+    totalEmailMessages,
+    totalSavedJobs,
+    totalWaitlist,
+    active7,
+    active30,
+    profileManagedUsers,
+    resumeManagedUsers,
+    applicationUsers,
+    savedJobUsers,
+    fitUsers,
+    interviewPrepUsers,
+    longTermManagedUsers,
+    aiAssistedUsers,
+    journeyManagementScore,
+    applicationStatusCounts,
+    journeyFunnel,
+    agentTaskBreakdown: agentRows.map(row => ({
+      agent: row.agent,
+      status: row.status,
+      count: Number(row.count ?? 0),
+    })),
+    apiHealthBreakdown: apiHealthRows.map(row => ({
+      service: row.service,
+      status: row.status,
+      fallbackUsed: Boolean(row.fallbackUsed),
+      count: Number(row.count ?? 0),
+    })),
+    qualitativeInsights,
     recentSignups,
   };
 }
@@ -238,6 +605,7 @@ export async function getAllUsers() {
     id: users.id,
     name: users.name,
     email: users.email,
+    loginMethod: users.loginMethod,
     role: users.role,
     createdAt: users.createdAt,
     lastSignedIn: users.lastSignedIn,
@@ -680,4 +1048,217 @@ export async function updateUserPassword(userId: number, passwordHash: string): 
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, userId));
+}
+
+// Career OS adapter helpers. These are deliberately additive and defensive so a
+// missing migration or database outage does not break the local review app.
+export async function upsertCareerProfile(userId: number, data: Omit<InsertCareerProfile, "id" | "userId" | "createdAt" | "updatedAt">) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const existing = await db.select().from(careerProfiles).where(eq(careerProfiles.userId, userId)).limit(1);
+  if (existing.length > 0) {
+    await db.update(careerProfiles).set(data).where(eq(careerProfiles.userId, userId));
+    const updated = await db.select().from(careerProfiles).where(eq(careerProfiles.userId, userId)).limit(1);
+    return updated[0];
+  }
+  await db.insert(careerProfiles).values({ userId, ...data });
+  const inserted = await db.select().from(careerProfiles).where(eq(careerProfiles.userId, userId)).limit(1);
+  return inserted[0];
+}
+
+export async function getCareerProfile(userId: number) {
+  const db = await getDb(); if (!db) return null;
+  const result = await db.select().from(careerProfiles).where(eq(careerProfiles.userId, userId)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function upsertCachedJobs(jobRows: InsertJob[]) {
+  const db = await getDb(); if (!db || jobRows.length === 0) return;
+  for (const job of jobRows) {
+    await db.insert(jobs).values(job).onDuplicateKeyUpdate({
+      set: {
+        title: job.title,
+        company: job.company,
+        location: job.location,
+        salary: job.salary,
+        source: job.source,
+        applyUrl: job.applyUrl,
+        visa: job.visa,
+        type: job.type,
+        experience: job.experience,
+        industry: job.industry,
+        posted: job.posted,
+        remote: job.remote,
+        description: job.description,
+        closingDate: job.closingDate,
+        skills: job.skills,
+        raw: job.raw,
+        fetchedAt: new Date(),
+      },
+    });
+  }
+}
+
+export async function getCachedJobs(options?: { search?: string; location?: string; limit?: number }) {
+  const db = await getDb(); if (!db) return [];
+  const limit = Math.min(options?.limit ?? 100, 500);
+  const rows = await db.select().from(jobs).orderBy(desc(jobs.updatedAt)).limit(500);
+  const search = options?.search?.trim().toLowerCase();
+  const location = options?.location && options.location !== "all" ? options.location : undefined;
+  return rows
+    .filter(job => !location || job.location === location || job.remote)
+    .filter(job => {
+      if (!search) return true;
+      const haystack = `${job.title} ${job.company} ${job.description ?? ""} ${(job.skills ?? []).join(" ")}`.toLowerCase();
+      return haystack.includes(search);
+    })
+    .slice(0, limit);
+}
+
+export async function saveSavedJob(userId: number, data: Omit<InsertSavedJob, "id" | "userId" | "createdAt" | "updatedAt">) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(savedJobs).values({ userId, ...data }).$returningId();
+  return result;
+}
+
+export async function getSavedJobsByUserId(userId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(savedJobs).where(eq(savedJobs.userId, userId)).orderBy(desc(savedJobs.createdAt));
+}
+
+export async function createResumeAnalysis(data: InsertResumeAnalysis) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(resumeAnalyses).values(data).$returningId();
+  return result;
+}
+
+export async function getResumeAnalysesByUserId(userId: number, limit = 10) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(resumeAnalyses)
+    .where(eq(resumeAnalyses.userId, userId))
+    .orderBy(desc(resumeAnalyses.createdAt))
+    .limit(limit);
+}
+
+export async function createJobFitEvaluation(data: InsertJobFitEvaluation) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(jobFitEvaluations).values(data).$returningId();
+  return result;
+}
+
+export async function getApplicationById(id: number, userId: number) {
+  const db = await getDb(); if (!db) return undefined;
+  const result = await db.select().from(applications)
+    .where(and(eq(applications.id, id), eq(applications.userId, userId)))
+    .limit(1);
+  return result[0];
+}
+
+export async function saveInterviewPrep(data: InsertInterviewPrep) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(interviewPreps).values(data).$returningId();
+  return result;
+}
+
+export async function getInterviewPrepsByUserId(userId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(interviewPreps)
+    .where(eq(interviewPreps.userId, userId))
+    .orderBy(desc(interviewPreps.createdAt))
+    .limit(20);
+}
+
+export async function recordAgentTask(data: InsertAgentTask) {
+  const db = await getDb(); if (!db) return undefined;
+  try {
+    const [result] = await db.insert(agentTasks).values(data).$returningId();
+    return result;
+  } catch (error) {
+    console.warn("[Database] Could not record agent task:", error);
+    return undefined;
+  }
+}
+
+export async function recordApiHealth(data: InsertApiHealthLog) {
+  const db = await getDb(); if (!db) return undefined;
+  try {
+    const [result] = await db.insert(apiHealthLogs).values(data).$returningId();
+    return result;
+  } catch (error) {
+    console.warn("[Database] Could not record API health:", error);
+    return undefined;
+  }
+}
+
+export async function saveEmailAccount(data: InsertEmailAccount) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const existing = await db.select().from(emailAccounts)
+    .where(and(
+      eq(emailAccounts.userId, data.userId),
+      eq(emailAccounts.provider, data.provider ?? "gmail"),
+      eq(emailAccounts.email, data.email)
+    ))
+    .limit(1);
+
+  if (existing.length > 0) {
+    await db.update(emailAccounts).set({
+      scopes: data.scopes,
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken ?? existing[0].refreshToken,
+      tokenExpiresAt: data.tokenExpiresAt,
+      status: data.status ?? "connected",
+    }).where(eq(emailAccounts.id, existing[0].id));
+    const updated = await db.select().from(emailAccounts).where(eq(emailAccounts.id, existing[0].id)).limit(1);
+    return updated[0];
+  }
+
+  const [result] = await db.insert(emailAccounts).values(data).$returningId();
+  const inserted = await db.select().from(emailAccounts).where(eq(emailAccounts.id, result.id)).limit(1);
+  return inserted[0];
+}
+
+export async function getPrimaryEmailAccount(userId: number, provider = "gmail") {
+  const db = await getDb(); if (!db) return null;
+  const result = await db.select().from(emailAccounts)
+    .where(and(eq(emailAccounts.userId, userId), eq(emailAccounts.provider, provider), eq(emailAccounts.status, "connected")))
+    .orderBy(desc(emailAccounts.updatedAt))
+    .limit(1);
+  return result[0] ?? null;
+}
+
+export async function updateEmailAccountTokens(accountId: number, data: {
+  accessToken?: string | null;
+  refreshToken?: string | null;
+  tokenExpiresAt?: Date | null;
+  status?: string;
+}) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.update(emailAccounts).set(data).where(eq(emailAccounts.id, accountId));
+}
+
+export async function markEmailAccountSynced(accountId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.update(emailAccounts).set({ lastSyncedAt: new Date() }).where(eq(emailAccounts.id, accountId));
+}
+
+export async function saveEmailMessage(data: InsertEmailMessage) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.insert(emailMessages).values(data).onDuplicateKeyUpdate({
+    set: {
+      threadId: data.threadId,
+      fromEmail: data.fromEmail,
+      toEmail: data.toEmail,
+      subject: data.subject,
+      snippet: data.snippet,
+      receivedAt: data.receivedAt,
+      rawMetadata: data.rawMetadata,
+    },
+  });
+}
+
+export async function getEmailMessages(userId: number, limit = 20) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(emailMessages)
+    .where(eq(emailMessages.userId, userId))
+    .orderBy(desc(emailMessages.receivedAt))
+    .limit(limit);
 }

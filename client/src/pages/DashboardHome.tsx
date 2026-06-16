@@ -32,6 +32,7 @@ export default function DashboardHome() {
   const { data: chatSessions } = trpc.chat.sessions.useQuery();
   const { data: xpProfile } = trpc.gamification.profile.useQuery();
   const { data: savedResume } = trpc.resume.get.useQuery();
+  const { data: profile } = trpc.profile.get.useQuery();
 
   const totalApps = applications?.length ?? 0;
   const activeApps = applications?.filter(a => ["applied", "interview"].includes(a.status)).length ?? 0;
@@ -49,6 +50,16 @@ export default function DashboardHome() {
   const xpLevel = xpProfile?.level ?? 1;
   const xpTotal = xpProfile?.totalXP ?? 0;
   const xpBadges = (xpProfile?.badges as string[] | undefined) ?? [];
+  const savedJobs = applications?.filter(a => a.status === "bookmarked").length ?? 0;
+
+  const journeySteps = [
+    { label: "Build profile", done: Boolean((profile as any)?.targetRole || (profile as any)?.fullName), path: "/dashboard/profile" },
+    { label: "Find target jobs", done: savedJobs > 0 || totalApps > 0, path: "/dashboard/jobs" },
+    { label: "Analyze resume", done: resumeScore !== null, path: "/dashboard/resume" },
+    { label: "Evaluate fit", done: false, path: "/dashboard/fit" },
+    { label: "Prepare interview", done: interviewApps > 0, path: "/dashboard/interview" },
+  ];
+  const nextJourneyStep = journeySteps.find(step => !step.done) ?? { label: "Generate report", done: false, path: "/dashboard/reports" };
 
   const greeting = () => {
     const hour = new Date().getHours();
@@ -58,19 +69,19 @@ export default function DashboardHome() {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6 overflow-hidden px-3 py-4 sm:px-4 md:px-6 md:py-6">
       {/* Welcome Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="break-words text-2xl font-bold text-foreground">
             {greeting()}{user?.name ? `, ${user.name.split(" ")[0]}` : ""}! 👋
           </h1>
-          <p className="text-gray-500 mt-1 text-sm">
+          <p className="mt-1 text-sm text-muted-foreground">
             {t.dashboard.todayOverview}
           </p>
         </div>
         <Button
-          onClick={() => setLocation("/dashboard")}
+          onClick={() => setLocation("/dashboard/jobs")}
           className="gap-2 hidden sm:flex"
           size="sm"
         >
@@ -78,6 +89,40 @@ export default function DashboardHome() {
           {t.dashboard.browseJobs}
         </Button>
       </div>
+
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-primary">Agentic AI Career Ops</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Next step: <span className="font-medium text-foreground">{nextJourneyStep.label}</span>
+              </p>
+            </div>
+            <div className="flex min-w-0 flex-wrap gap-2">
+              {journeySteps.map(step => (
+                <button
+                  key={step.label}
+                  onClick={() => setLocation(step.path)}
+                  className={`max-w-full rounded-full border px-3 py-1 text-left text-xs font-medium ${
+                    step.done
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : step.label === nextJourneyStep.label
+                        ? "border-primary bg-background text-primary"
+                        : "border-border bg-background text-muted-foreground"
+                  }`}
+                >
+                  {step.done ? "Done" : "Next"} · {step.label}
+                </button>
+              ))}
+            </div>
+            <Button onClick={() => setLocation(nextJourneyStep.path)} size="sm" className="w-full gap-2 sm:w-auto">
+              Continue
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stats Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -211,7 +256,7 @@ export default function DashboardHome() {
             </CardHeader>
             <CardContent className="px-4 pb-4 space-y-2">
               {[
-                { icon: Briefcase, label: t.dashboard.browseJobsAction, path: "/dashboard" },
+                { icon: Briefcase, label: t.dashboard.browseJobsAction, path: "/dashboard/jobs" },
                 { icon: Target, label: t.dashboard.jobFitAction, path: "/dashboard/fit" },
                 { icon: BarChart3, label: t.dashboard.jobTrendsAction, path: "/dashboard/trends" },
                 { icon: Sparkles, label: t.dashboard.careerConsulting, path: "/dashboard/consulting" },
@@ -262,7 +307,7 @@ export default function DashboardHome() {
                     size="sm"
                     variant="outline"
                     className="mt-2 text-xs"
-                    onClick={() => setLocation("/dashboard")}
+                    onClick={() => setLocation("/dashboard/jobs")}
                   >
                     {t.dashboard.browseJobs}
                   </Button>

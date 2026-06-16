@@ -33,6 +33,7 @@ export default function Onboarding() {
   const [preferredLocations, setPreferredLocations] = useState<string[]>([]);
   const [salaryExpectation, setSalaryExpectation] = useState("");
   const [needsVisaSponsorship, setNeedsVisaSponsorship] = useState(false);
+  const [preferredLanguage, setPreferredLanguage] = useState("English");
   const [preferredJobTypes, setPreferredJobTypes] = useState<string[]>([]);
 
   const saveSurvey = trpc.survey.save.useMutation({
@@ -47,7 +48,7 @@ export default function Onboarding() {
     saveSurvey.mutate({
       lookingFor, targetRole, experienceLevel, interests,
       targetCompanies, preferredLocations, salaryExpectation,
-      needsVisaSponsorship, preferredJobTypes,
+      needsVisaSponsorship, preferredLanguage, preferredJobTypes,
     });
   };
 
@@ -225,6 +226,24 @@ export default function Onboarding() {
               <div className="flex items-center justify-between">
                 <Label className="text-sm">{t.jobs.visaSponsorship}</Label>
                 <Switch checked={needsVisaSponsorship} onCheckedChange={setNeedsVisaSponsorship} />
+              </div>
+              <div>
+                <Label className="text-sm">Preferred guidance language</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {["English", "Korean", "Bilingual"].map((language) => (
+                    <button
+                      key={language}
+                      onClick={() => setPreferredLanguage(language)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
+                        preferredLanguage === language
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/30"
+                      }`}
+                    >
+                      {language}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div>
                 <Label className="text-sm">{t.onboarding.targetCompaniesPlaceholder?.split(",")[0]}</Label>

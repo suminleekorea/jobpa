@@ -43,6 +43,10 @@ interface AnalysisResult {
   analyzedAt?: number;
 }
 
+type AnalysisStatus = "idle" | "pending" | "success" | "partial" | "failed";
+
+const PARSE_FALLBACK_MESSAGE = "We could not fully parse this file. You can paste your resume text instead.";
+
 // ─── Region options ───────────────────────────────────────────────────────────
 const REGIONS = [
   { value: "singapore", label: "🇸🇬 Singapore", flag: "SG" },
@@ -162,6 +166,9 @@ export default function ResumeAnalysis() {
   const [showJD, setShowJD] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatus>("idle");
+  const [pasteText, setPasteText] = useState("");
+  const [showPasteFallback, setShowPasteFallback] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [parseInfo, setParseInfo] = useState<{ method: string; label: string | null; warning: string | null } | null>(null);
 
@@ -169,6 +176,7 @@ export default function ResumeAnalysis() {
   useEffect(() => {
     if (savedResume?.analysisResult && !result) {
       setResult(savedResume.analysisResult as AnalysisResult);
+      setAnalysisStatus("success");
     }
   }, [savedResume]);
   const [showAllImprovements, setShowAllImprovements] = useState(false);
@@ -176,7 +184,6 @@ export default function ResumeAnalysis() {
   const addChecklistItem = trpc.checklist.add.useMutation({
     onSuccess: () => utils.checklist.get.invalidate(),
   });
-  const saveResumeAnalysis = trpc.resumeAnalysis.save.useMutation();
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -199,6 +206,7 @@ export default function ResumeAnalysis() {
     }
     setIsAnalyzing(true);
     setAnalysisError(null);
+    setAnalysisStatus("pending");
     try {
       const formData = new FormData();
       formData.append("resume", file);
@@ -211,9 +219,10 @@ export default function ResumeAnalysis() {
         credentials: "include",
       });
 
+      const data = await response.json().catch(() => ({}));
+
       if (!response.ok) {
-        const err = await response.json().catch(() => ({ error: "" }));
-        const errMsg = err.error || "";
+        const errMsg = data.error || "";
         if (errMsg.includes("Only PDF") || errMsg.includes("not allowed")) {
           throw new Error(t.resume.errors.fileType);
         } else if (errMsg.includes("10MB") || errMsg.includes("LIMIT_FILE_SIZE") || errMsg.includes("too large")) {
@@ -227,25 +236,19 @@ export default function ResumeAnalysis() {
         }
       }
 
-      const data = await response.json();
+      if (!data.success) {
+        const msg = data.message || PARSE_FALLBACK_MESSAGE;
+        setAnalysisStatus("failed");
+        setAnalysisError(msg);
+        setShowPasteFallback(true);
+        toast.error(msg);
+        return;
+      }
+
+      setAnalysisStatus(data.status === "partial" ? "partial" : "success");
       setResult(data.analysis);
       if (data.parseInfo) setParseInfo(data.parseInfo);
       await refetch();
-      // Save analysis result to DB for dashboard history
-      try {
-        await saveResumeAnalysis.mutateAsync({
-          targetRole: data.analysis?.targetRole,
-          targetMarket: targetRegion,
-          overallScore: data.analysis?.overallScore,
-          summary: data.analysis?.summary,
-          strengths: data.analysis?.strengths,
-          improvements: data.analysis?.improvements?.map((i: any) => typeof i === 'string' ? i : i.title || ''),
-          keywords: data.analysis?.missingKeywords,
-          rawResult: data.analysis,
-        });
-      } catch {
-        // Non-critical: don't fail the whole analysis if save fails
-      }
       const parseLabel = data.parseInfo?.label;
       toast.success(
         parseLabel
@@ -254,6 +257,54 @@ export default function ResumeAnalysis() {
       );
     } catch (err: any) {
       const msg = err.message || t.resume.errors.default;
+      setAnalysisStatus("failed");
+      setAnalysisError(msg);
+      setShowPasteFallback(true);
+      toast.error(msg);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleAnalyzePaste = async () => {
+    if (pasteText.trim().length < 50) {
+      const msg = "Paste at least a few resume sections before retrying.";
+      setAnalysisError(msg);
+      toast.error(msg);
+      return;
+    }
+    setIsAnalyzing(true);
+    setAnalysisStatus("pending");
+    setAnalysisError(null);
+    try {
+      const response = await fetch("/api/resume/analyze-text", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          resumeText: pasteText,
+          targetRegion,
+          jobDescription,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Resume text analysis failed.");
+      if (!data.success) {
+        const msg = data.message || PARSE_FALLBACK_MESSAGE;
+        setAnalysisStatus("failed");
+        setAnalysisError(msg);
+        toast.error(msg);
+        return;
+      }
+      setResult(data.analysis);
+      setParseInfo(data.parseInfo ?? { method: "text", label: "Pasted text", warning: null });
+      setAnalysisStatus(data.status === "partial" ? "partial" : "success");
+      setShowPasteFallback(false);
+      await refetch();
+      toast.success(data.status === "partial" ? "Partial resume analysis created" : "Resume text analyzed");
+    } catch (err: any) {
+      const msg = err.message || "Resume text analysis failed.";
+      setAnalysisStatus("failed");
       setAnalysisError(msg);
       toast.error(msg);
     } finally {
@@ -374,6 +425,21 @@ export default function ResumeAnalysis() {
             )}
           </Button>
 
+          {analysisStatus !== "idle" && (
+            <div className={`rounded-lg border px-3 py-2 text-sm ${
+              analysisStatus === "success"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                : analysisStatus === "partial"
+                  ? "border-amber-200 bg-amber-50 text-amber-800"
+                  : analysisStatus === "failed"
+                    ? "border-destructive/40 bg-destructive/10 text-destructive"
+                    : "border-border bg-secondary/40 text-muted-foreground"
+            }`}>
+              Status: {analysisStatus === "pending" ? "pending" : analysisStatus}
+              {analysisStatus === "partial" && " - parsed with limited text. Paste text below for a fuller retry."}
+            </div>
+          )}
+
           {result && parseInfo?.label && (
             <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
               <CheckCircle2 className="h-3.5 w-3.5" />
@@ -400,10 +466,35 @@ export default function ResumeAnalysis() {
                 size="sm"
                 className="self-start gap-1 border-destructive/40 text-destructive hover:bg-destructive/10"
                 onClick={() => { setAnalysisError(null); handleAnalyze(); }}
+                disabled={!file || isAnalyzing}
               >
                 <RefreshCw className="h-3 w-3" />
                 {t.resume.retry}
               </Button>
+            </div>
+          )}
+
+          {(showPasteFallback || analysisStatus === "partial") && (
+            <div className="rounded-lg border bg-card p-4 space-y-3">
+              <div>
+                <Label className="text-sm font-medium">Paste resume text fallback</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {PARSE_FALLBACK_MESSAGE}
+                </p>
+              </div>
+              <Textarea
+                value={pasteText}
+                onChange={(event) => setPasteText(event.target.value)}
+                rows={8}
+                placeholder="Paste your resume text here, including summary, work experience, education, skills, and certifications..."
+              />
+              <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+                <span className="text-xs text-muted-foreground">{pasteText.trim().length} characters</span>
+                <Button onClick={handleAnalyzePaste} disabled={isAnalyzing || pasteText.trim().length < 50} className="gap-2">
+                  {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                  Analyze Pasted Text
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>

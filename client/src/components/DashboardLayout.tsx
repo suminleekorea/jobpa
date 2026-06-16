@@ -15,6 +15,7 @@ import {
   Briefcase, FileText, Target, BarChart3, Bookmark, Settings,
   LogOut, PanelLeft, Bot, Users, Sparkles, Shield, Languages,
   TrendingUp, MessageCircle, Trophy, CheckSquare, BookOpen, Home, UserCircle,
+  CalendarCheck, Mail, Radar,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation, Link } from "wouter";
@@ -74,9 +75,13 @@ function DashboardLayoutContent({ children, setSidebarWidth }: { children: React
   const coreMenuItems = [
     { icon: Home, label: t.nav.home, path: "/dashboard" },
     { icon: Briefcase, label: t.nav.jobs, path: "/dashboard/jobs" },
+    { icon: Radar, label: "Career Ops", path: "/dashboard/career-ops" },
+    { icon: Bookmark, label: "Saved Jobs", path: "/dashboard/saved" },
     { icon: Bookmark, label: t.nav.applications, path: "/dashboard/applications" },
     { icon: FileText, label: t.nav.resume, path: "/dashboard/resume" },
     { icon: Target, label: t.nav.fit, path: "/dashboard/fit" },
+    { icon: CalendarCheck, label: "Interview Prep", path: "/dashboard/interview" },
+    { icon: Mail, label: "Email Center", path: "/dashboard/email" },
     { icon: MessageCircle, label: t.chatbot.title, path: "/dashboard/chat" },
     { icon: Sparkles, label: t.nav.consulting, path: "/dashboard/consulting" },
     { icon: UserCircle, label: t.nav.myProfile, path: "/dashboard/profile" },

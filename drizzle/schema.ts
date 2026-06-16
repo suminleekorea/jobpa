@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, json, boolean, bigint } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, json, boolean, bigint, uniqueIndex } from "drizzle-orm/mysql-core";
 
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
@@ -15,6 +15,60 @@ export const users = mysqlTable("users", {
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+
+export const oauthAccounts = mysqlTable("oauth_accounts", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  provider: varchar("provider", { length: 32 }).notNull(),
+  providerUserId: varchar("provider_user_id", { length: 255 }).notNull(),
+  email: varchar("email", { length: 320 }),
+  scopes: text("scopes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+  uniqueIndex("oauth_accounts_provider_user_unique").on(table.provider, table.providerUserId),
+]);
+export type OAuthAccount = typeof oauthAccounts.$inferSelect;
+export type InsertOAuthAccount = typeof oauthAccounts.$inferInsert;
+
+export const emailAccounts = mysqlTable("email_accounts", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  provider: varchar("provider", { length: 32 }).notNull().default("gmail"),
+  email: varchar("email", { length: 320 }).notNull(),
+  scopes: text("scopes"),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  tokenExpiresAt: timestamp("token_expires_at"),
+  status: varchar("status", { length: 32 }).notNull().default("connected"),
+  lastSyncedAt: timestamp("last_synced_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+  uniqueIndex("email_accounts_user_provider_email_unique").on(table.userId, table.provider, table.email),
+]);
+export type EmailAccount = typeof emailAccounts.$inferSelect;
+export type InsertEmailAccount = typeof emailAccounts.$inferInsert;
+
+export const emailMessages = mysqlTable("email_messages", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  provider: varchar("provider", { length: 32 }).notNull().default("gmail"),
+  providerMessageId: varchar("provider_message_id", { length: 255 }).notNull(),
+  threadId: varchar("thread_id", { length: 255 }),
+  fromEmail: text("from_email"),
+  toEmail: text("to_email"),
+  subject: text("subject"),
+  snippet: text("snippet"),
+  receivedAt: timestamp("received_at"),
+  rawMetadata: json("raw_metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+  uniqueIndex("email_messages_user_provider_message_unique").on(table.userId, table.provider, table.providerMessageId),
+]);
+export type EmailMessage = typeof emailMessages.$inferSelect;
+export type InsertEmailMessage = typeof emailMessages.$inferInsert;
 
 export const surveys = mysqlTable("surveys", {
   id: int("id").autoincrement().primaryKey(),
@@ -367,3 +421,144 @@ export const passwordResetTokens = mysqlTable("passwordResetTokens", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+// Career OS profile maintained by the Profile Agent. This is additive to the
+// legacy userProfiles table so existing Manus/user data remains untouched.
+export const careerProfiles = mysqlTable("career_profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull().unique(),
+  interests: json("interests").$type<string[]>(),
+  targetCountries: json("target_countries").$type<string[]>(),
+  targetRole: varchar("target_role", { length: 255 }),
+  experienceLevel: varchar("experience_level", { length: 64 }),
+  salaryRange: varchar("salary_range", { length: 128 }),
+  visaStatus: varchar("visa_status", { length: 128 }),
+  preferredLanguage: varchar("preferred_language", { length: 64 }),
+  languages: json("languages").$type<string[]>(),
+  market: varchar("market", { length: 128 }),
+  profileSummary: text("profile_summary"),
+  agentState: json("agent_state"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type CareerProfile = typeof careerProfiles.$inferSelect;
+export type InsertCareerProfile = typeof careerProfiles.$inferInsert;
+
+export const jobs = mysqlTable("jobs", {
+  id: varchar("id", { length: 160 }).primaryKey(),
+  title: varchar("title", { length: 512 }).notNull(),
+  company: varchar("company", { length: 255 }).notNull(),
+  location: varchar("location", { length: 128 }),
+  salary: varchar("salary", { length: 128 }),
+  source: varchar("source", { length: 64 }),
+  applyUrl: text("apply_url"),
+  visa: boolean("visa").default(false),
+  type: varchar("type", { length: 64 }),
+  experience: varchar("experience", { length: 64 }),
+  industry: varchar("industry", { length: 128 }),
+  posted: int("posted").default(0),
+  remote: boolean("remote").default(false),
+  description: text("description"),
+  closingDate: varchar("closing_date", { length: 128 }),
+  skills: json("skills").$type<string[]>(),
+  raw: json("raw"),
+  fetchedAt: timestamp("fetched_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type Job = typeof jobs.$inferSelect;
+export type InsertJob = typeof jobs.$inferInsert;
+
+export const savedJobs = mysqlTable("saved_jobs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  jobId: varchar("job_id", { length: 160 }),
+  status: varchar("status", { length: 32 }).default("saved").notNull(),
+  notes: text("notes"),
+  snapshot: json("snapshot"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type SavedJob = typeof savedJobs.$inferSelect;
+export type InsertSavedJob = typeof savedJobs.$inferInsert;
+
+export const resumeAnalyses = mysqlTable("resume_analyses", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  resumeId: int("resume_id"),
+  source: varchar("source", { length: 32 }).default("upload").notNull(),
+  fileName: varchar("file_name", { length: 255 }),
+  resumeText: text("resume_text"),
+  targetRole: varchar("target_role", { length: 255 }),
+  targetMarket: varchar("target_market", { length: 64 }),
+  status: mysqlEnum("status", ["pending", "success", "partial", "failed"]).default("pending").notNull(),
+  parseMethod: varchar("parse_method", { length: 64 }),
+  parseWarning: text("parse_warning"),
+  errorMessage: text("error_message"),
+  overallScore: int("overall_score"),
+  summary: text("summary"),
+  strengths: json("strengths"),
+  improvements: json("improvements"),
+  keywords: json("keywords"),
+  rawResult: json("raw_result"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type ResumeAnalysis = typeof resumeAnalyses.$inferSelect;
+export type InsertResumeAnalysis = typeof resumeAnalyses.$inferInsert;
+
+export const jobFitEvaluations = mysqlTable("job_fit_evaluations", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  jobId: varchar("job_id", { length: 160 }),
+  targetRole: varchar("target_role", { length: 255 }),
+  jobTitle: varchar("job_title", { length: 512 }),
+  company: varchar("company", { length: 255 }),
+  jobDescription: text("job_description"),
+  fitScore: int("fit_score"),
+  status: varchar("status", { length: 32 }).default("success"),
+  result: json("result"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type JobFitEvaluation = typeof jobFitEvaluations.$inferSelect;
+export type InsertJobFitEvaluation = typeof jobFitEvaluations.$inferInsert;
+
+export const interviewPreps = mysqlTable("interview_preps", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  applicationId: int("application_id"),
+  jobTitle: varchar("job_title", { length: 512 }),
+  company: varchar("company", { length: 255 }),
+  stage: varchar("stage", { length: 64 }).default("interview"),
+  prep: json("prep"),
+  followUpEmail: text("follow_up_email"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type InterviewPrep = typeof interviewPreps.$inferSelect;
+export type InsertInterviewPrep = typeof interviewPreps.$inferInsert;
+
+export const agentTasks = mysqlTable("agent_tasks", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id"),
+  agent: varchar("agent", { length: 64 }).notNull(),
+  taskType: varchar("task_type", { length: 128 }),
+  status: varchar("status", { length: 32 }).default("pending").notNull(),
+  input: json("input"),
+  output: json("output"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type AgentTask = typeof agentTasks.$inferSelect;
+export type InsertAgentTask = typeof agentTasks.$inferInsert;
+
+export const apiHealthLogs = mysqlTable("api_health_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  service: varchar("service", { length: 128 }).notNull(),
+  status: varchar("status", { length: 32 }).notNull(),
+  message: text("message"),
+  responseMs: int("response_ms"),
+  fallbackUsed: boolean("fallback_used").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type ApiHealthLog = typeof apiHealthLogs.$inferSelect;
+export type InsertApiHealthLog = typeof apiHealthLogs.$inferInsert;

@@ -23,6 +23,16 @@ export default function Disclaimer() {
       </div>
 
       <div className="container py-10 max-w-3xl">
+        <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+          <h2 className="font-semibold mb-2">AI, Privacy, and Visa Limitations</h2>
+          <p className="leading-relaxed">
+            JobPA provides career guidance, workflow support, and demo/staging job discovery. It does not guarantee employment,
+            interviews, offers, salary outcomes, or visa approval. Visa, immigration, tax, and legal topics are general guidance only;
+            verify decisions with official government sources, employers, or qualified professionals. Use sanitized demo data for review
+            and do not deploy publicly without explicit approval.
+          </p>
+        </div>
+
         {/* Sections */}
         <div className="space-y-8 mb-16">
           {d.sections.map((section: { heading: string; body: string }, i: number) => (

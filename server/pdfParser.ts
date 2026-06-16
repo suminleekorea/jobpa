@@ -10,7 +10,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { generateText } from "ai";
 import { ENV } from "./_core/env";
 
-export type ParseMethod = "pdfjs" | "gemini-vision";
+export type ParseMethod = "pymupdf" | "pdf-parse" | "pdfjs" | "gemini-vision";
 
 export interface PdfParseResult {
   text: string;
@@ -150,6 +150,10 @@ export function getParseMethodLabel(method: ParseMethod): string {
   switch (method) {
     case "pdfjs":
       return "PDF text parser";
+    case "pymupdf":
+      return "LaTeX-optimized parser";
+    case "pdf-parse":
+      return "Standard PDF parser";
     case "gemini-vision":
       return "AI Vision parser (scanned PDF)";
   }

@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useI18n } from "@/contexts/i18nContext";
+import { getExternalHref } from "@/lib/externalLinks";
 import { trpc } from "@/lib/trpc";
 import {
   Search, MapPin, Building2, Clock, ExternalLink, Filter, X,
@@ -115,11 +116,12 @@ function ApplyConfirmModal({ open, onClose, job }: ApplyModalProps) {
   if (!job) return null;
 
   const handleApplied = () => {
+    const applyUrl = getExternalHref(job.applyUrl) ?? job.applyUrl;
     saveApp.mutate({
       jobTitle: job.title,
       company: job.company,
       location: job.location,
-      applyUrl: job.applyUrl,
+      applyUrl,
       source: job.source,
       status: "applied",
       salary: job.salary,
@@ -127,11 +129,12 @@ function ApplyConfirmModal({ open, onClose, job }: ApplyModalProps) {
   };
 
   const handleBookmark = () => {
+    const applyUrl = getExternalHref(job.applyUrl) ?? job.applyUrl;
     saveApp.mutate({
       jobTitle: job.title,
       company: job.company,
       location: job.location,
-      applyUrl: job.applyUrl,
+      applyUrl,
       source: job.source,
       status: "bookmarked",
       salary: job.salary,
@@ -205,6 +208,8 @@ export default function Jobs() {
   );
 
   const allJobs: JobItem[] = (jobsData?.jobs as JobItem[]) || [];
+  const dataMode = (jobsData as any)?.mode as string | undefined;
+  const dataMessage = (jobsData as any)?.message as string | undefined;
 
   const locations = [
     { id: "all", label: t.applications.all },
@@ -261,9 +266,14 @@ export default function Jobs() {
   }, [searchInput]);
 
   const handleApplyClick = (job: JobItem) => {
-    window.open(job.applyUrl, "_blank");
     setSelectedJob(job);
     setApplyModalOpen(true);
+  };
+
+  const handleMissingApplyUrl = (job: JobItem) => {
+    setSelectedJob(job);
+    setApplyModalOpen(true);
+    toast.error("This posting does not include a direct external apply link yet.");
   };
 
   const clearFilters = () => {
@@ -311,6 +321,17 @@ export default function Jobs() {
           </div>
         )}
       </div>
+
+      {dataMessage && (
+        <div className={`rounded-lg border p-3 text-sm ${
+          dataMode === "demo"
+            ? "border-amber-200 bg-amber-50 text-amber-800"
+            : "border-blue-200 bg-blue-50 text-blue-800"
+        }`}>
+          <span className="font-medium">{dataMode === "demo" ? "Demo data mode" : "Limited data mode"}:</span>{" "}
+          {dataMessage}
+        </div>
+      )}
 
       {/* Smart Filter Quick Buttons */}
       <div className="flex flex-wrap gap-2">
@@ -611,6 +632,7 @@ export default function Jobs() {
                 const isLinkedIn = (job.source || "").toLowerCase().includes("linkedin");
                 const isMNC = isMNCJob(job);
                 const isHighSalary = isHighSalaryJob(job);
+                const applyHref = getExternalHref(job.applyUrl);
                 return (
                   <Card
                     key={job.id}
@@ -693,14 +715,28 @@ export default function Jobs() {
                             )}
                           </div>
                         </div>
-                        <Button
-                          onClick={() => handleApplyClick(job)}
-                          className={`gap-2 shrink-0 ${isLinkedIn ? "bg-[#0A66C2] hover:bg-[#004182] text-white" : ""}`}
-                          size="sm"
-                        >
-                          <ExternalLink className="h-3.5 w-3.5" />
-                          {t.jobs.applyExternal}
-                        </Button>
+                        {applyHref ? (
+                          <Button
+                            asChild
+                            className={`gap-2 shrink-0 ${isLinkedIn ? "bg-[#0A66C2] hover:bg-[#004182] text-white" : ""}`}
+                            size="sm"
+                          >
+                            <a href={applyHref} target="_blank" rel="noopener noreferrer" onClick={() => handleApplyClick(job)}>
+                              <ExternalLink className="h-3.5 w-3.5" />
+                              {t.jobs.applyExternal}
+                            </a>
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={() => handleMissingApplyUrl(job)}
+                            className="gap-2 shrink-0"
+                            size="sm"
+                            variant="outline"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            {t.jobs.applyExternal}
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
