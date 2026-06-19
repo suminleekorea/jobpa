@@ -125,7 +125,7 @@ function UploadZone({ onFile, file, isDragging, onDragOver, onDragLeave, onDrop 
       <input
         ref={inputRef}
         type="file"
-        accept=".pdf,.docx,.txt"
+        accept=".pdf,.doc,.docx,.txt,.rtf,.md,.markdown,.html,.htm,.csv,.tsv"
         className="hidden"
         onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
       />
@@ -141,7 +141,7 @@ function UploadZone({ onFile, file, isDragging, onDragOver, onDragLeave, onDrop 
           <p className="font-medium">Drop your resume here</p>
           <p className="text-sm text-muted-foreground">or click to browse</p>
           <div className="flex items-center gap-2 mt-2">
-            {["PDF", "DOCX", "TXT"].map(f => (
+            {["PDF", "DOCX", "DOC", "TXT", "RTF", "MD"].map(f => (
               <span key={f} className="px-2 py-0.5 rounded bg-secondary text-xs font-medium">{f}</span>
             ))}
             <span className="text-xs text-muted-foreground">· max 10MB</span>

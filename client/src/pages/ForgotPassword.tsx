@@ -1,4 +1,5 @@
-import { Bot, ArrowLeft, Mail, CheckCircle } from "lucide-react";
+import { BrandLogo } from "@/components/BrandLogo";
+import { ArrowLeft, Mail, CheckCircle } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -37,10 +38,7 @@ export default function ForgotPassword() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm">
         <div className="flex items-center justify-center gap-2.5 mb-8">
-          <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
-            <Bot className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <span className="text-xl font-bold tracking-tight">JobPA</span>
+          <BrandLogo size="md" />
         </div>
 
         <div className="rounded-xl border bg-card p-6 shadow-sm">

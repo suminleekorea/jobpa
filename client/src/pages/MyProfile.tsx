@@ -15,6 +15,10 @@ import {
 type ExperienceItem = { company: string; role: string; period: string; description: string };
 type EducationItem = { school: string; degree: string; field: string; period: string };
 
+const PROFILE_FIELD_CLASS =
+  "bg-white text-gray-900 placeholder:text-gray-400 border-gray-200 dark:bg-white dark:text-gray-900 dark:placeholder:text-gray-400";
+const PROFILE_TEXTAREA_CLASS = `${PROFILE_FIELD_CLASS} resize-none`;
+
 export default function MyProfile() {
   const { t } = useI18n();
   const p = t.myProfile;
@@ -139,8 +143,8 @@ export default function MyProfile() {
     <div className="max-w-3xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">{p.title}</h1>
-        <p className="text-gray-500 mt-1 text-sm">{p.subtitle}</p>
+        <h1 className="text-2xl font-bold text-foreground">{p.title}</h1>
+        <p className="text-muted-foreground mt-1 text-sm">{p.subtitle}</p>
       </div>
 
       {/* Info banners */}
@@ -165,36 +169,36 @@ export default function MyProfile() {
             <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm text-gray-600 mb-1 block">{p.fullName}</Label>
-                <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Kim Minjun" />
+                <Input className={PROFILE_FIELD_CLASS} value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Kim Minjun" />
               </div>
               <div>
                 <Label className="text-sm text-gray-600 mb-1 block">{p.headline}</Label>
-                <Input value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="Senior Software Engineer @ Google" />
+                <Input className={PROFILE_FIELD_CLASS} value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="Senior Software Engineer @ Google" />
               </div>
               <div>
                 <Label className="text-sm text-gray-600 mb-1 block">{p.email}</Label>
-                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+                <Input className={PROFILE_FIELD_CLASS} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
               </div>
               <div>
                 <Label className="text-sm text-gray-600 mb-1 block">{p.phone}</Label>
-                <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+65 9123 4567" />
+                <Input className={PROFILE_FIELD_CLASS} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+65 9123 4567" />
               </div>
               <div>
                 <Label className="text-sm text-gray-600 mb-1 block">{p.location}</Label>
-                <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Singapore" />
+                <Input className={PROFILE_FIELD_CLASS} value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Singapore" />
               </div>
               <div>
                 <Label className="text-sm text-gray-600 mb-1 block">{p.linkedinUrl}</Label>
                 <div className="relative">
                   <Linkedin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                  <Input className="pl-9" value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} placeholder="https://linkedin.com/in/..." />
+                  <Input className={`${PROFILE_FIELD_CLASS} pl-9`} value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} placeholder="https://linkedin.com/in/..." />
                 </div>
               </div>
               <div className="sm:col-span-2">
                 <Label className="text-sm text-gray-600 mb-1 block">{p.portfolioUrl}</Label>
                 <div className="relative">
                   <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input className="pl-9" value={portfolioUrl} onChange={(e) => setPortfolioUrl(e.target.value)} placeholder="https://yourportfolio.com" />
+                  <Input className={`${PROFILE_FIELD_CLASS} pl-9`} value={portfolioUrl} onChange={(e) => setPortfolioUrl(e.target.value)} placeholder="https://yourportfolio.com" />
                 </div>
               </div>
               <div className="sm:col-span-2">
@@ -204,7 +208,7 @@ export default function MyProfile() {
                   onChange={(e) => setSummary(e.target.value)}
                   rows={4}
                   placeholder="Briefly describe your background, strengths, and career goals..."
-                  className="resize-none"
+                  className={PROFILE_TEXTAREA_CLASS}
                 />
               </div>
             </div>
@@ -224,7 +228,7 @@ export default function MyProfile() {
                   onChange={(e) => setSkillInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSkill(); } }}
                   placeholder={p.skillsPlaceholder}
-                  className="flex-1"
+                  className={`${PROFILE_FIELD_CLASS} flex-1`}
                 />
                 <Button type="button" variant="outline" onClick={addSkill} size="sm">
                   <Plus className="w-4 h-4" />
@@ -263,15 +267,15 @@ export default function MyProfile() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs text-gray-500 mb-1 block">{p.company}</Label>
-                      <Input value={exp.company} onChange={(e) => updateExp(i, "company", e.target.value)} placeholder="Google" />
+                      <Input className={PROFILE_FIELD_CLASS} value={exp.company} onChange={(e) => updateExp(i, "company", e.target.value)} placeholder="Google" />
                     </div>
                     <div>
                       <Label className="text-xs text-gray-500 mb-1 block">{p.role}</Label>
-                      <Input value={exp.role} onChange={(e) => updateExp(i, "role", e.target.value)} placeholder="Software Engineer" />
+                      <Input className={PROFILE_FIELD_CLASS} value={exp.role} onChange={(e) => updateExp(i, "role", e.target.value)} placeholder="Software Engineer" />
                     </div>
                     <div className="sm:col-span-2">
                       <Label className="text-xs text-gray-500 mb-1 block">{p.period}</Label>
-                      <Input value={exp.period} onChange={(e) => updateExp(i, "period", e.target.value)} placeholder="Jan 2021 - Dec 2023" />
+                      <Input className={PROFILE_FIELD_CLASS} value={exp.period} onChange={(e) => updateExp(i, "period", e.target.value)} placeholder="Jan 2021 - Dec 2023" />
                     </div>
                     <div className="sm:col-span-2">
                       <Label className="text-xs text-gray-500 mb-1 block">{p.description}</Label>
@@ -280,7 +284,7 @@ export default function MyProfile() {
                         onChange={(e) => updateExp(i, "description", e.target.value)}
                         rows={3}
                         placeholder="Key responsibilities and achievements..."
-                        className="resize-none text-sm"
+                        className={`${PROFILE_TEXTAREA_CLASS} text-sm`}
                       />
                     </div>
                   </div>
@@ -313,19 +317,19 @@ export default function MyProfile() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs text-gray-500 mb-1 block">{p.school}</Label>
-                      <Input value={edu.school} onChange={(e) => updateEdu(i, "school", e.target.value)} placeholder="National University of Singapore" />
+                      <Input className={PROFILE_FIELD_CLASS} value={edu.school} onChange={(e) => updateEdu(i, "school", e.target.value)} placeholder="National University of Singapore" />
                     </div>
                     <div>
                       <Label className="text-xs text-gray-500 mb-1 block">{p.degree}</Label>
-                      <Input value={edu.degree} onChange={(e) => updateEdu(i, "degree", e.target.value)} placeholder="Bachelor of Science" />
+                      <Input className={PROFILE_FIELD_CLASS} value={edu.degree} onChange={(e) => updateEdu(i, "degree", e.target.value)} placeholder="Bachelor of Science" />
                     </div>
                     <div>
                       <Label className="text-xs text-gray-500 mb-1 block">{p.field}</Label>
-                      <Input value={edu.field} onChange={(e) => updateEdu(i, "field", e.target.value)} placeholder="Computer Science" />
+                      <Input className={PROFILE_FIELD_CLASS} value={edu.field} onChange={(e) => updateEdu(i, "field", e.target.value)} placeholder="Computer Science" />
                     </div>
                     <div>
                       <Label className="text-xs text-gray-500 mb-1 block">{p.period}</Label>
-                      <Input value={edu.period} onChange={(e) => updateEdu(i, "period", e.target.value)} placeholder="2017 - 2021" />
+                      <Input className={PROFILE_FIELD_CLASS} value={edu.period} onChange={(e) => updateEdu(i, "period", e.target.value)} placeholder="2017 - 2021" />
                     </div>
                   </div>
                 </div>
@@ -347,19 +351,19 @@ export default function MyProfile() {
             <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm text-gray-600 mb-1 block">{p.targetRole}</Label>
-                <Input value={targetRole} onChange={(e) => setTargetRole(e.target.value)} placeholder="Senior Product Manager" />
+                <Input className={PROFILE_FIELD_CLASS} value={targetRole} onChange={(e) => setTargetRole(e.target.value)} placeholder="Senior Product Manager" />
               </div>
               <div>
                 <Label className="text-sm text-gray-600 mb-1 block">{p.targetLocation}</Label>
-                <Input value={targetLocation} onChange={(e) => setTargetLocation(e.target.value)} placeholder="Singapore, Seoul" />
+                <Input className={PROFILE_FIELD_CLASS} value={targetLocation} onChange={(e) => setTargetLocation(e.target.value)} placeholder="Singapore, Seoul" />
               </div>
               <div>
                 <Label className="text-sm text-gray-600 mb-1 block">{p.targetSalary}</Label>
-                <Input value={targetSalary} onChange={(e) => setTargetSalary(e.target.value)} placeholder="SGD 8,000 - 12,000" />
+                <Input className={PROFILE_FIELD_CLASS} value={targetSalary} onChange={(e) => setTargetSalary(e.target.value)} placeholder="SGD 8,000 - 12,000" />
               </div>
               <div>
                 <Label className="text-sm text-gray-600 mb-1 block">{p.visaStatus}</Label>
-                <Input value={visaStatus} onChange={(e) => setVisaStatus(e.target.value)} placeholder="Employment Pass (EP)" />
+                <Input className={PROFILE_FIELD_CLASS} value={visaStatus} onChange={(e) => setVisaStatus(e.target.value)} placeholder="Employment Pass (EP)" />
               </div>
             </div>
           )}

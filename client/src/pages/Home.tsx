@@ -1,11 +1,15 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { BrandLogo } from "@/components/BrandLogo";
+import { PublicSeo } from "@/components/PublicSeo";
+import { DashboardPreviewMockup } from "@/components/marketing/DashboardPreviewMockup";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useI18n } from "@/contexts/i18nContext";
+import { industryPages, rolePages } from "@/lib/marketingPages";
 import {
   TrendingUp, FileText, Target, BarChart3, Bookmark,
   ArrowRight, ChevronDown, ChevronUp, Globe, Sparkles, Zap,
-  Bot, Users, Languages, DollarSign, MessageCircle, Newspaper
+  Users, DollarSign, MessageCircle, Newspaper, Bot
 } from "lucide-react";
 import { useState } from "react";
 import { LanguageSelector } from "@/components/LanguageSelector";
@@ -24,13 +28,8 @@ function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50">
       <div className="container flex h-16 min-w-0 items-center justify-between gap-2">
         <button onClick={() => setLocation("/")} className="flex min-w-0 items-center gap-2.5">
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-            <Bot className="h-4.5 w-4.5 text-primary-foreground" />
-          </div>
-          <div className="flex min-w-0 items-baseline gap-1.5">
-            <span className="text-lg font-bold tracking-tight">{t.brand.name}</span>
-            <span className="hidden truncate text-sm font-medium text-muted-foreground sm:inline">{t.brand.tagline}</span>
-          </div>
+          <BrandLogo size="sm" />
+          <span className="hidden truncate text-sm font-medium text-muted-foreground sm:inline">{t.brand.tagline}</span>
         </button>
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <LanguageSelector />
@@ -57,10 +56,16 @@ function HeroSection() {
   const [, setLocation] = useLocation();
 
   const stats = [
-    { icon: Bot, value: "5+", label: t.hero.stats.agents },
-    { icon: BarChart3, value: "6+", label: t.hero.stats.analyses },
-    { icon: Languages, value: "4", label: t.hero.stats.languages },
-    { icon: DollarSign, value: "$0", label: t.hero.stats.price },
+    { icon: BarChart3, value: "23", label: t.hero.stats.agents },
+    { icon: Zap, value: "14", label: t.hero.stats.analyses },
+    { icon: FileText, value: "6", label: t.hero.stats.languages },
+    { icon: DollarSign, value: "S$0", label: t.hero.stats.price },
+  ];
+
+  const proof = [
+    "Candidate-side AI, not recruiter software",
+    "Role fit, resume gaps, applications, and follow-ups in one loop",
+    "Paid consulting path when users need human strategy",
   ];
 
   return (
@@ -79,6 +84,9 @@ function HeroSection() {
           <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
             {t.hero.subtitle}
           </p>
+          <div className="mx-auto mt-5 max-w-2xl rounded-2xl border border-primary/20 bg-primary/5 px-5 py-4 text-sm font-semibold text-primary shadow-sm">
+            AI Career Ops that tracks, tailors, and improves every application.
+          </div>
           <div className="mt-4 inline-flex max-w-full items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-left text-sm text-amber-700">
             <Zap className="h-4 w-4 shrink-0" />
             <span>{t.hero.note}</span>
@@ -105,19 +113,250 @@ function HeroSection() {
               </div>
             ))}
           </div>
+          <div className="mx-auto mt-8 grid max-w-4xl gap-3 text-left md:grid-cols-3">
+            {proof.map((item) => (
+              <div key={item} className="rounded-2xl border bg-card/80 p-4 text-sm font-medium shadow-sm">
+                <Users className="mb-3 h-4 w-4 text-primary" />
+                {item}
+              </div>
+            ))}
+          </div>
         </div>
         {/* Dashboard Preview Screenshot */}
         <div className="relative mx-auto mt-12 max-w-5xl px-0 sm:mt-16 sm:px-4">
           <div className="absolute -inset-2 bg-gradient-to-r from-primary/20 via-primary/5 to-primary/20 rounded-3xl blur-2xl opacity-70" />
           <div className="relative rounded-2xl overflow-hidden border border-border/40 shadow-2xl shadow-primary/10">
             <img
-              src="https://d2xsxph8kpxj0f.cloudfront.net/310519663393467842/7CDWVFFxWiw496tEAbvLTL/jobpa_hero_preview-5Gbawz8jxTjXQ8L9akENvz.png"
+              src="/jobpa-dashboard-preview-job-pa.png"
               alt="JobPA Dashboard"
               className="w-full h-auto object-contain block"
               loading="lazy"
             />
           </div>
-          <p className="mt-3 text-xs text-muted-foreground text-center">✨ Live dashboard — resume score, job trends, AI chat, XP all in one place</p>
+          <p className="mt-3 text-xs text-muted-foreground text-center">Live dashboard preview with job-pa.com, resume score, market trends, AI chat, and application pipeline.</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CareerOpsPositioningSection() {
+  const loops = [
+    {
+      title: "Find signal",
+      desc: "Scan roles by market, role fit, visa signal, salary, and company context before wasting applications.",
+    },
+    {
+      title: "Tailor proof",
+      desc: "Turn each JD into resume gaps, keyword coverage, and interview stories tied to the role.",
+    },
+    {
+      title: "Move pipeline",
+      desc: "Track applications, follow-ups, prep tasks, and decisions like a personal operating system.",
+    },
+  ];
+
+  return (
+    <section className="overflow-hidden bg-slate-950 py-20 text-white">
+      <div className="container">
+        <div className="grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+          <div>
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-sm font-medium text-cyan-100">
+              <Sparkles className="h-3.5 w-3.5" />
+              Agentic AI Career Ops
+            </div>
+            <h2 className="text-3xl font-black leading-tight tracking-tight sm:text-5xl">
+              Not another job board. Your job search operating system.
+            </h2>
+            <p className="mt-5 text-base leading-relaxed text-slate-300 sm:text-lg">
+              JobPA helps job seekers run the whole pipeline: discover roles, score fit, tailor resumes, track applications, and prepare the next action.
+            </p>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <Button asChild size="lg" className="bg-cyan-400 text-slate-950 hover:bg-cyan-300">
+                <Link href="/career-ops">
+                  Explore Career Ops <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="border-white/20 bg-transparent text-white hover:bg-white/10">
+                <Link href="/dashboard-preview">View dashboard preview</Link>
+              </Button>
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
+            {loops.map((loop, index) => (
+              <div key={loop.title} className="rounded-2xl border border-white/10 bg-white/[0.05] p-5">
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400 text-lg font-black text-slate-950">
+                  {index + 1}
+                </div>
+                <h3 className="text-lg font-semibold">{loop.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-400">{loop.desc}</p>
+              </div>
+            ))}
+            <div className="sm:col-span-3 lg:col-span-1">
+              <DashboardPreviewMockup compact />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ProductFocusSection() {
+  const products = [
+    {
+      icon: BarChart3,
+      eyebrow: "Product 01",
+      title: "Career Ops Dashboard",
+      desc: "A command center for applications, fit scores, resume gaps, follow-ups, and next-best actions.",
+      points: ["Track every application", "Prioritize realistic roles", "Move from saved job to interview prep"],
+      href: "/dashboard-preview",
+      cta: "View dashboard",
+    },
+    {
+      icon: Bot,
+      eyebrow: "Product 02",
+      title: "AI Career Assistant",
+      desc: "A friendly agent that answers career questions, turns advice into actions, and routes high-stakes moments to consulting.",
+      points: ["Ask about role strategy", "Tailor resume and interview proof", "Escalate to paid expert support"],
+      href: "/login",
+      cta: "Start free",
+    },
+  ];
+
+  return (
+    <section className="bg-background py-20">
+      <div className="container">
+        <div className="mx-auto mb-12 max-w-3xl text-center">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
+            <Sparkles className="h-3.5 w-3.5" />
+            Two products, one workflow
+          </div>
+          <h2 className="text-3xl font-black tracking-tight sm:text-5xl">Keep JobPA simple: dashboard plus assistant.</h2>
+          <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
+            Resume analysis, job fit, interview prep, reports, and consulting are modules inside the Career Ops workflow, not separate products.
+          </p>
+        </div>
+        <div className="grid gap-5 lg:grid-cols-2">
+          {products.map((product) => (
+            <Card key={product.title} className="overflow-hidden border-primary/10 bg-card shadow-sm">
+              <CardContent className="p-0">
+                <div className="grid min-h-full gap-0 sm:grid-cols-[0.78fr_1.22fr]">
+                  <div className="flex flex-col justify-between bg-slate-950 p-6 text-white">
+                    <div>
+                      <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-3xl bg-cyan-400 text-slate-950">
+                        <product.icon className="h-7 w-7" />
+                      </div>
+                      <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-200">{product.eyebrow}</p>
+                      <h3 className="mt-3 text-2xl font-black leading-tight">{product.title}</h3>
+                    </div>
+                    <Button asChild className="mt-8 bg-cyan-400 text-slate-950 hover:bg-cyan-300">
+                      <Link href={product.href}>
+                        {product.cta} <ArrowRight className="ml-2 h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </div>
+                  <div className="p-6">
+                    <p className="text-base leading-relaxed text-muted-foreground">{product.desc}</p>
+                    <div className="mt-6 space-y-3">
+                      {product.points.map((point) => (
+                        <div key={point} className="flex items-center gap-3 rounded-2xl border bg-background p-3 text-sm font-medium">
+                          <span className="h-2.5 w-2.5 rounded-full bg-primary" />
+                          {point}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function AIAssistantLayerSection() {
+  const assistantFlows = [
+    {
+      title: "Ask the AI Assistant",
+      desc: "Get direct help on role strategy, resume positioning, visa context, salary questions, and follow-up timing.",
+    },
+    {
+      title: "Turn advice into actions",
+      desc: "The assistant converts questions into next steps: tailor this resume, prep this story, follow up with this company.",
+    },
+    {
+      title: "Escalate to human consulting",
+      desc: "When stakes are high, route from AI guidance into paid expert help for resume, interview, visa, or strategy review.",
+    },
+  ];
+
+  return (
+    <section className="bg-gradient-to-br from-cyan-50 via-white to-slate-50 py-20">
+      <div className="container">
+        <div className="grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+          <div>
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-cyan-100 px-3 py-1 text-sm font-semibold text-cyan-800">
+              <Bot className="h-3.5 w-3.5" />
+              AI Career Assistant inside Career Ops
+            </div>
+            <h2 className="text-3xl font-black tracking-tight sm:text-5xl">
+              A career assistant that sits in the middle of every application.
+            </h2>
+            <p className="mt-5 text-base leading-relaxed text-muted-foreground sm:text-lg">
+              Career Ops is the system. The AI Assistant is the friendly agent that explains what to do next, why it matters, and when to ask for human support.
+            </p>
+          </div>
+          <div className="grid gap-4">
+            {assistantFlows.map((flow, index) => (
+              <div key={flow.title} className="rounded-3xl border bg-background p-5 shadow-sm">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-lg font-black text-primary-foreground">
+                  {index + 1}
+                </div>
+                <h3 className="text-lg font-bold">{flow.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{flow.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SeoEntryPointsSection() {
+  const featuredPages = [...rolePages.slice(0, 5), ...industryPages.slice(0, 5)];
+
+  return (
+    <section className="py-20">
+      <div className="container">
+        <div className="mx-auto mb-12 max-w-3xl text-center">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+            <Globe className="h-3.5 w-3.5" />
+            Role and industry playbooks
+          </div>
+          <h2 className="text-3xl font-bold tracking-tight">Built for how candidates actually search</h2>
+          <p className="mt-3 text-muted-foreground">
+            Dedicated Career Ops pages target high-intent searches across business, marketing, CS, analytics, SaaS, fintech, consulting, healthcare, and AI startups.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {featuredPages.map((page) => (
+            <Link
+              key={page.path}
+              href={page.path}
+              className="group rounded-2xl border bg-card p-5 shadow-sm transition hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg"
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{page.kind}</p>
+              <h3 className="mt-3 min-h-12 text-base font-semibold leading-snug">{page.title}</h3>
+              <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{page.description}</p>
+              <span className="mt-5 inline-flex items-center text-sm font-medium text-primary">
+                Open page <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
+              </span>
+            </Link>
+          ))}
         </div>
       </div>
     </section>
@@ -410,10 +649,7 @@ function Footer() {
     <footer className="py-8 border-t">
       <div className="container flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
         <div className="flex items-center gap-2">
-          <div className="h-6 w-6 rounded bg-primary flex items-center justify-center">
-            <Bot className="h-3.5 w-3.5 text-primary-foreground" />
-          </div>
-          <span className="font-medium text-foreground">{t.brand.full}</span>
+          <BrandLogo size="sm" textClassName="text-sm" />
         </div>
         <div className="flex items-center gap-4 flex-wrap justify-center">
           <span>{t.footer.madeBy}</span>
@@ -430,10 +666,19 @@ function Footer() {
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
+      <PublicSeo
+        title="JobPA - Agentic AI Career Ops for Job Seekers"
+        description="JobPA is AI Career Ops with an AI Career Assistant that tracks, tailors, and improves every application with fit scoring, resume tailoring, application tracking, and consulting paths."
+        path="/"
+        keywords={["agentic AI career ops", "AI career assistant", "AI job search", "application tracker", "resume tailoring", "career consulting", "Singapore jobs"]}
+      />
       <Navbar />
       <main>
         <HeroSection />
-        <FeaturesSection />
+        <ProductFocusSection />
+        <CareerOpsPositioningSection />
+        <AIAssistantLayerSection />
+        <SeoEntryPointsSection />
         <HowItWorksSection />
         <ConsultingTeaser />
         <ReviewsSection />

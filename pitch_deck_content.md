@@ -116,7 +116,7 @@
 ```
 ✅ NOW (Q2 2026)
    Live MVP · First 100 users · Consulting marketplace
-   → jobpa2.manus.space
+   → job-pa.com
 
 🔄 Q3 2026
    Premium subscription launch
@@ -139,7 +139,7 @@
 > 3. 👤 **Early adopters** — Korean professionals in SG, try JobPA today
 > 4. 💬 **Feedback** on pricing: would you pay $9.99/mo?
 
-**Visual**: Clean timeline graphic, QR code to jobpa2.manus.space
+**Visual**: Clean timeline graphic, QR code to job-pa.com
 
 ---
 
@@ -149,10 +149,10 @@
 
 **Large text**: Try JobPA now
 
-**QR Code**: Links to https://jobpa2.manus.space
+**QR Code**: Links to https://job-pa.com
 
 **Contact**:
-- 🌐 jobpa2.manus.space
+- 🌐 job-pa.com
 - 📧 [founder email]
 - 💼 LinkedIn: [founder LinkedIn]
 

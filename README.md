@@ -1,46 +1,64 @@
 # JobPA
 
-Agentic AI Career Ops for international job seekers.
+**Agentic AI Career Ops for job seekers.**
 
-JobPA is an AI career operating system that helps cross-border talent find better roles, evaluate fit, tailor resumes, prepare interviews, and track applications without turning the job search into blind mass applying.
+JobPA helps candidates track, tailor, and improve every job application with a Career Ops dashboard and an AI Career Assistant. It is built for international job seekers managing multiple roles, markets, resumes, follow-ups, and interview stages.
 
-[Live demo](https://job-pa.com)
+[Live demo](https://job-pa.com) · [Dashboard preview](https://job-pa.com/dashboard-preview) · [Career Ops page](https://job-pa.com/career-ops)
 
-## Why JobPA
+![JobPA dashboard preview](client/public/jobpa-dashboard-preview-job-pa.png)
 
-International job seekers do not just need another job board. They need operational support:
+## The Product
 
-- Which roles are actually worth applying to?
-- Is the job visa-friendly and realistic for my background?
-- Which resume version should I use?
-- What should I say in the cover letter or interview?
-- What is the next action in my job pipeline?
+JobPA is intentionally packaged as two products:
 
-JobPA turns those repeated decisions into an agent-assisted workflow while keeping the human in control.
+| Product | What it does |
+| --- | --- |
+| **Career Ops Dashboard** | Tracks applications, role fit, resume gaps, follow-ups, interview prep, and next-best actions in one operating view. |
+| **AI Career Assistant** | Answers career questions, explains strategy, helps with resume/interview positioning, and routes high-stakes moments to consulting. |
 
-## Core Features
+Resume analysis, job fit scoring, interview prep, reports, email support, and consulting are modules inside this workflow, not separate products.
 
-- **Career Ops Center**: agentic job scan, A-F fit grading, matched evidence, gaps, strategy, interview hooks, and tailored resume drafts.
-- **Resume Analysis**: PDF, DOCX, TXT, and paste-text support with structured feedback and target-role scoring.
-- **Job Fit Evaluation**: compare a resume/profile against a job description and identify missing keywords.
-- **Application Tracker**: save jobs, track applications, interviews, offers, and follow-up status.
-- **Interview Prep**: convert a target role into practice questions and talking points.
-- **AI Career Chat**: personal career guidance with saved profile context.
-- **Multi-market Support**: built for Singapore-first job search with Korea, Dubai, Hong Kong, and remote expansion.
-- **Dark/Light Mode**: coding-style dark mode plus white reading mode for mobile and presentation usage.
+## Why It Exists
 
-## What Makes It Different
+Most job seekers do not need another job board. They need operational support:
 
-JobPA is not an auto-apply bot. It is an agentic career workflow layer.
+- Which roles are worth applying to?
+- Is this role realistic for my background, visa situation, and target salary?
+- How should I tailor my resume for this job description?
+- What should I prepare before the interview?
+- What is the next action in my application pipeline?
 
-- Agents recommend, rank, draft, and organize.
-- Users review and approve important actions.
-- Job-board scraping and login bypassing are not part of the product.
-- Visa, salary, and employment guidance is treated as decision support, not legal advice.
+JobPA turns those repeated decisions into an agent-assisted workflow while keeping the candidate in control.
 
-## Screenshots
+## Positioning
 
-<img src="docs/assets/jobpa-mobile-home.png" alt="JobPA mobile homepage" width="320" />
+JobPA is **not** recruiter software and **not** an auto-apply bot.
+
+- Candidate-side Career Ops, not enterprise ATS or sourcing CRM.
+- Human-in-the-loop guidance, not blind mass applying.
+- AI support for fit, tailoring, prep, and follow-up.
+- Paid consulting path for resume, interview, visa, and career strategy support.
+
+## B2B Page
+
+JobPA also has a lightweight company page for partners:
+
+[JobPA for Companies](https://job-pa.com/companies)
+
+The B2B angle is candidate success infrastructure for universities, bootcamps, communities, and employers that want candidates to become application-ready. It is not positioned as a recruiting marketplace.
+
+## Core Modules
+
+- Application tracking
+- Resume parsing and analysis
+- Job fit evaluation
+- AI career chat
+- Interview preparation
+- Career Ops scans
+- Market and role SEO playbooks
+- Consulting conversion flow
+- Dark and light mode
 
 ## Tech Stack
 
@@ -54,6 +72,7 @@ JobPA is not an auto-apply bot. It is an agentic career workflow layer.
 - Drizzle ORM
 - MySQL/TiDB
 - Vitest
+- Vercel
 
 ## Local Setup
 
@@ -81,6 +100,9 @@ GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
 GOOGLE_GMAIL_REDIRECT_URI=http://localhost:3000/api/integrations/gmail/callback
+LLM_BASE_URL=
+LLM_API_KEY=
+LLM_MODEL=
 ```
 
 ## Development Commands
@@ -101,25 +123,28 @@ shared/      Shared schemas and i18n
 drizzle/     Database schema and migrations
 api/         Vercel API entrypoint
 scripts/     Demo seed and helper scripts
+docs/        Launch assets and QA notes
 ```
 
 ## Safety Policy
 
-JobPA is designed as guidance software.
+JobPA is guidance software.
 
 - No automatic job submissions.
 - No credential collection for third-party job boards.
 - No bypassing job-board logins or terms.
 - AI outputs must be verified for visa, salary, employment, immigration, tax, and legal decisions.
 
-## Roadmap
+## Launch Checklist
 
-- Public screenshots and product demo video
-- GitHub issue templates and contribution guide
-- More approved job-source integrations
-- Better mobile-first dashboard interactions
-- Region-specific salary and visa intelligence
-- Consultant marketplace workflow
+- [x] Public dashboard preview
+- [x] Custom domain: [job-pa.com](https://job-pa.com)
+- [x] SEO pages for roles and industries
+- [x] B2B company page
+- [ ] Short demo GIF or video
+- [ ] Product Hunt launch copy
+- [ ] GitHub issue templates
+- [ ] Contribution guide
 
 ## Founder
 

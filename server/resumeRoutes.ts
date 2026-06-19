@@ -3,9 +3,14 @@ import multer from "multer";
 import { storagePut } from "./storage";
 import * as db from "./db";
 import { sdk } from "./_core/sdk";
-import { extractTextFromPdf, getParseMethodLabel, type ParseMethod } from "./pdfParser";
 import { createResumeAnalysis } from "./jobpaAdapter";
 import { resumeAgent, type AnalysisStatus } from "./agents";
+import {
+  detectResumeFileKind,
+  extractTextFromResumeFile,
+  getResumeParseMethodLabel,
+  type ResumeExtractResult,
+} from "./resumeTextExtractor";
 
 const FALLBACK_MESSAGE = "We could not fully parse this file. You can paste your resume text instead.";
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -16,68 +21,27 @@ const upload = multer({
   fileFilter: (_req, _file, cb) => cb(null, true),
 });
 
-interface ExtractResult {
-  text: string;
-  method: ParseMethod | "text" | "docx";
-  warning?: string;
-}
-
-function detectSupportedMime(file: Express.Multer.File) {
-  const originalName = (file.originalname || "").toLowerCase();
-  if (file.mimetype === "application/pdf" || originalName.endsWith(".pdf")) return "application/pdf";
-  if (
-    file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-    originalName.endsWith(".docx")
-  ) {
-    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+function contentTypeForKind(kind: ResumeExtractResult["kind"], fallback?: string) {
+  switch (kind) {
+    case "pdf":
+      return "application/pdf";
+    case "docx":
+      return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    case "legacy-doc":
+      return "application/msword";
+    case "rtf":
+      return "application/rtf";
+    case "html":
+      return "text/html; charset=utf-8";
+    case "markdown":
+      return "text/markdown; charset=utf-8";
+    case "csv":
+      return "text/csv; charset=utf-8";
+    case "text":
+      return "text/plain; charset=utf-8";
+    default:
+      return fallback || "application/octet-stream";
   }
-  if (file.mimetype === "text/plain" || originalName.endsWith(".txt")) return "text/plain";
-  return null;
-}
-
-async function extractTextFromBuffer(buffer: Buffer, mimetype: string): Promise<ExtractResult> {
-  if (mimetype === "text/plain") {
-    return { text: buffer.toString("utf-8"), method: "text" };
-  }
-
-  if (mimetype === "application/pdf") {
-    const result = await extractTextFromPdf(buffer);
-    return {
-      text: result.text,
-      method: result.method,
-      warning: result.warning,
-    };
-  }
-
-  if (mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-    try {
-      const mammoth = await import("mammoth");
-      const result = await mammoth.extractRawText({ buffer });
-      if (result.value && result.value.trim().length > 0) {
-        return {
-          text: result.value,
-          method: "docx",
-          warning: result.messages?.length ? "DOCX parser reported minor formatting warnings." : undefined,
-        };
-      }
-    } catch (error) {
-      console.warn("[ResumeRoutes] DOCX parser failed:", error);
-    }
-
-    return {
-      text: "",
-      method: "docx",
-      warning: "DOCX parsing failed or produced no readable text.",
-    };
-  }
-
-  return { text: "", method: "text", warning: "Unsupported file type." };
-}
-
-function parseLabel(method: ExtractResult["method"]) {
-  if (method === "text") return "Plain text parser";
-  if (method === "docx") return "DOCX text parser";
-  return getParseMethodLabel(method);
 }
 
 async function authenticate(req: any) {
@@ -226,8 +190,8 @@ export function registerResumeRoutes(app: Express) {
       return res.status(200).json(fallbackResponse({ code: "empty_file" }));
     }
 
-    const supportedMime = detectSupportedMime(file);
-    if (!supportedMime) {
+    const detectedKind = detectResumeFileKind(file);
+    if (!detectedKind) {
       await persistFailure(user.id, {
         source: "upload",
         fileName: file.originalname,
@@ -237,13 +201,13 @@ export function registerResumeRoutes(app: Express) {
       });
       return res.status(200).json(fallbackResponse({
         code: "unsupported_file",
-        detail: "Supported formats are PDF, DOCX, and TXT.",
+        detail: "Supported formats include PDF, DOCX, DOC, TXT, RTF, Markdown, HTML, and CSV.",
       }));
     }
 
-    let extractResult: ExtractResult;
+    let extractResult: ResumeExtractResult;
     try {
-      extractResult = await extractTextFromBuffer(file.buffer, supportedMime);
+      extractResult = await extractTextFromResumeFile(file);
     } catch (error: any) {
       await persistFailure(user.id, {
         source: "upload",
@@ -271,7 +235,7 @@ export function registerResumeRoutes(app: Express) {
 
     const safeFileName = (file.originalname || "resume").replace(/[\\/]/g, "-");
     const fileKey = `resumes/${user.id}/${Date.now()}-${safeFileName}`;
-    const stored = await storagePut(fileKey, file.buffer, supportedMime).catch(error => {
+    const stored = await storagePut(fileKey, file.buffer, contentTypeForKind(extractResult.kind, file.mimetype)).catch(error => {
       console.warn("[ResumeRoutes] File storage skipped:", error?.message || error);
       return { key: undefined, url: undefined };
     });
@@ -320,7 +284,7 @@ export function registerResumeRoutes(app: Express) {
       fileUrl: stored.url,
       parseInfo: {
         method: extractResult.method,
-        label: parseLabel(extractResult.method),
+        label: getResumeParseMethodLabel(extractResult.method),
         warning: extractResult.warning ?? null,
       },
     });

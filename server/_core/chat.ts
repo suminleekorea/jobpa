@@ -4,10 +4,16 @@
  * Express endpoint for AI SDK streaming chat customized for JobPA career guidance.
  */
 
-import { streamText, stepCountIs, convertToModelMessages } from "ai";
+import {
+  streamText,
+  stepCountIs,
+  convertToModelMessages,
+  createUIMessageStream,
+  pipeUIMessageStreamToResponse,
+} from "ai";
 import { tool } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import type { Express } from "express";
+import type { Express, Response } from "express";
 import { z } from "zod/v4";
 import { ENV } from "./env";
 import * as db from "../db";
@@ -15,14 +21,105 @@ import { sdk } from "./sdk";
 import { createPatchedFetch } from "./patchedFetch";
 
 function createLLMProvider() {
-  // Use Manus Forge API (built-in LLM access)
-  const baseURL = `${process.env.BUILT_IN_FORGE_API_URL}/v1`;
-  const apiKey = process.env.BUILT_IN_FORGE_API_KEY ?? "";
+  const configuredBaseUrl = ENV.llmBaseUrl || process.env.BUILT_IN_FORGE_API_URL || "";
+  const baseURL = normalizeLLMBaseUrl(configuredBaseUrl);
+  const apiKey = ENV.llmApiKey || process.env.BUILT_IN_FORGE_API_KEY || process.env.OPENAI_API_KEY || "";
+  const usesForge = Boolean(
+    configuredBaseUrl &&
+    process.env.BUILT_IN_FORGE_API_URL &&
+    configuredBaseUrl === process.env.BUILT_IN_FORGE_API_URL
+  );
 
-  return createOpenAI({
-    baseURL,
-    apiKey,
-    fetch: createPatchedFetch(fetch),
+  return {
+    openai: createOpenAI({
+      ...(baseURL ? { baseURL } : {}),
+      apiKey,
+      ...(usesForge ? { fetch: createPatchedFetch(fetch) } : {}),
+    }),
+    configured: Boolean(apiKey),
+    model: baseURL ? (ENV.llmModel || "gemini-2.5-flash") : (process.env.OPENAI_MODEL || "gpt-4o-mini"),
+  };
+}
+
+function normalizeLLMBaseUrl(value?: string | null) {
+  const trimmed = value?.trim();
+  if (!trimmed || trimmed === "undefined" || trimmed === "null") {
+    return undefined;
+  }
+  const withoutTrailingSlash = trimmed.replace(/\/+$/, "");
+  return withoutTrailingSlash.endsWith("/v1") ? withoutTrailingSlash : `${withoutTrailingSlash}/v1`;
+}
+
+function extractMessageText(content: unknown): string {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+  return content
+    .map(part => {
+      if (typeof part === "string") return part;
+      if (!part || typeof part !== "object") return "";
+      const maybeText = part as { text?: unknown; type?: unknown };
+      return typeof maybeText.text === "string" ? maybeText.text : "";
+    })
+    .join("");
+}
+
+function getLastUserText(messages: Array<{ role?: unknown; content?: unknown }>) {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message?.role === "user") {
+      return extractMessageText(message.content).trim();
+    }
+  }
+  return "";
+}
+
+function buildFallbackCareerReply(prompt: string) {
+  const context = prompt ? `\n\nYour question: ${prompt}` : "";
+  return [
+    "The AI provider is not configured yet, so I am giving a local fallback answer instead of failing the chat.",
+    context,
+    "",
+    "For a Business Strategy Consultant path in Singapore as a foreigner, position yourself around `India PMO experience + Singapore academic signal + stakeholder-led execution`.",
+    "",
+    "Best-fit target roles:",
+    "- Business Strategy Consultant",
+    "- Strategy Analyst / Associate",
+    "- Business Operations or Revenue Operations",
+    "- Transformation Consultant",
+    "- PMO / Program Manager",
+    "- Customer Strategy or GTM Operations in SaaS/fintech",
+    "",
+    "Action plan:",
+    "- Rewrite your resume around quantified PMO impact: budget size, stakeholder count, delivery timeline, cost savings, process improvement, and business outcomes.",
+    "- Put your SMU Singapore experience near the top because it reduces perceived relocation and market-fit risk.",
+    "- Target consulting firms, banks, tech scaleups, government-linked firms, and transformation teams, not only classic strategy consulting.",
+    "- Build a networking list from SMU alumni, India-to-SG operators, and consulting managers before applying cold.",
+    "- For visa and employment eligibility, verify with MOM and the employer. This is general guidance, not legal or visa advice.",
+    "",
+    "Use JobPA Resume Analysis, Job Fit, and Career Consulting to turn this into a role-by-role application plan.",
+  ].join("\n");
+}
+
+function pipeFallbackReply(res: Response, text: string) {
+  const stream = createUIMessageStream({
+    execute({ writer }) {
+      const id = "fallback-text";
+      const chunks = text.match(/[\s\S]{1,90}/g) ?? [text];
+      writer.write({ type: "start" });
+      writer.write({ type: "start-step" });
+      writer.write({ type: "text-start", id });
+      for (const delta of chunks) {
+        writer.write({ type: "text-delta", id, delta });
+      }
+      writer.write({ type: "text-end", id });
+      writer.write({ type: "finish-step" });
+      writer.write({ type: "finish", finishReason: "stop" });
+    },
+  });
+
+  pipeUIMessageStreamToResponse({
+    response: res,
+    stream,
   });
 }
 
@@ -192,8 +289,6 @@ Important guidelines:
 - Keep responses concise but helpful. Use bullet points for clarity.`;
 
 export function registerChatRoutes(app: Express) {
-  const openai = createLLMProvider();
-
   app.post("/api/chat", async (req, res) => {
     try {
       // AIChatBox sends { message: lastMessage, chatId, userId } via prepareSendMessagesRequest
@@ -260,8 +355,14 @@ Use this profile to provide highly personalized career advice. Reference their s
         // Profile fetch failed, use default system prompt
       }
 
+      const llm = createLLMProvider();
+      if (!llm.configured) {
+        pipeFallbackReply(res, buildFallbackCareerReply(getLastUserText(modelMessages)));
+        return;
+      }
+
       const result = streamText({
-        model: openai.chat("auto"),
+        model: llm.openai.chat(llm.model),
         system: systemPrompt,
         messages: modelMessages,
         tools: careerTools,
@@ -272,7 +373,7 @@ Use this profile to provide highly personalized career advice. Reference their s
     } catch (error) {
       console.error("[/api/chat] Error:", error);
       if (!res.headersSent) {
-        res.status(500).json({ error: "Internal server error" });
+        pipeFallbackReply(res, buildFallbackCareerReply(""));
       }
     }
   });

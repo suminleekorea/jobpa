@@ -39,7 +39,7 @@
 - Consulting marketplace: book 1:1 sessions with career consultants
 
 ### Traction (current)
-- Live product at jobpa2.manus.space
+- Live product at job-pa.com
 - Gamification: XP, streaks, badges
 - Job journal, mood tracking, daily action plans
 - Consulting marketplace with real consultant profiles

@@ -3,7 +3,7 @@
 ## Project Overview
 JobPA is a **niche AI-powered resume optimizer** targeting IT foreign talent seeking jobs in Singapore, Korea, and the US. It is NOT a general job board — the core value is AI-driven resume building, regional format conversion (Singapore ATS / Korea Saramin / US Tech), and job-specific tailoring.
 
-**Live URL:** https://jobpa2.manus.space  
+**Live URL:** https://job-pa.com  
 **GitHub:** https://github.com/suminleekorea/jobpa  
 **Stack:** React 19 + Tailwind 4 + Express 4 + tRPC 11 + Drizzle ORM + MySQL/TiDB
 

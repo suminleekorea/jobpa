@@ -9,7 +9,7 @@ import { useI18n } from "@/contexts/i18nContext";
 import {
   FileText, Briefcase, MessageCircle, Trophy, TrendingUp,
   ArrowRight, Sparkles, Target, CheckCircle2, Clock, Star,
-  ChevronRight, Bot, BarChart3, Zap
+  ChevronRight, Bot, BarChart3, Zap, ArrowUpRight, Send, ClipboardCheck, Radar
 } from "lucide-react";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -60,6 +60,65 @@ export default function DashboardHome() {
     { label: "Prepare interview", done: interviewApps > 0, path: "/dashboard/interview" },
   ];
   const nextJourneyStep = journeySteps.find(step => !step.done) ?? { label: "Generate report", done: false, path: "/dashboard/reports" };
+  const pipelineStages = [
+    {
+      label: "Saved leads",
+      count: savedJobs,
+      helper: "Jobs to qualify",
+      path: "/dashboard/saved",
+      bar: "bg-sky-500",
+      bg: "bg-sky-50",
+      text: "text-sky-700",
+    },
+    {
+      label: "Applied",
+      count: applications?.filter(a => a.status === "applied").length ?? 0,
+      helper: "Waiting for signal",
+      path: "/dashboard/applications",
+      bar: "bg-cyan-500",
+      bg: "bg-cyan-50",
+      text: "text-cyan-700",
+    },
+    {
+      label: "Interview",
+      count: interviewApps,
+      helper: "Prep required",
+      path: "/dashboard/interview",
+      bar: "bg-emerald-500",
+      bg: "bg-emerald-50",
+      text: "text-emerald-700",
+    },
+    {
+      label: "Offer",
+      count: offerApps,
+      helper: "Negotiate close",
+      path: "/dashboard/applications",
+      bar: "bg-amber-500",
+      bg: "bg-amber-50",
+      text: "text-amber-700",
+    },
+  ];
+  const maxPipelineCount = Math.max(1, ...pipelineStages.map(stage => stage.count));
+  const nextBestActions = [
+    {
+      label: `Continue: ${nextJourneyStep.label}`,
+      detail: "Your agent picked this as the next bottleneck.",
+      icon: ArrowRight,
+      path: nextJourneyStep.path,
+    },
+    {
+      label: interviewApps > 0 ? "Prep interview stories" : "Score fit for target roles",
+      detail: interviewApps > 0 ? `${interviewApps} interview-stage role${interviewApps === 1 ? "" : "s"} need prep.` : "Prioritize roles before applying.",
+      icon: ClipboardCheck,
+      path: interviewApps > 0 ? "/dashboard/interview" : "/dashboard/fit",
+    },
+    {
+      label: activeApps > 0 ? "Send follow-up nudges" : "Source 5 qualified leads",
+      detail: activeApps > 0 ? "Keep active applications moving." : "Build a pipeline before tailoring.",
+      icon: Send,
+      path: activeApps > 0 ? "/dashboard/applications" : "/dashboard/jobs",
+    },
+  ];
 
   const greeting = () => {
     const hour = new Date().getHours();
@@ -163,6 +222,68 @@ export default function DashboardHome() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="overflow-hidden border-cyan-200/60 bg-gradient-to-br from-white via-cyan-50/40 to-slate-50 shadow-sm">
+        <CardContent className="p-4 sm:p-5">
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <Radar className="h-4 w-4 text-cyan-600" />
+                <p className="text-sm font-bold text-slate-900">Career Pipeline CRM</p>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Manage each opportunity like a sales pipeline: source, apply, follow up, interview, close.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => setLocation("/dashboard/career-ops")}>
+              Open Career Ops
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-4">
+            {pipelineStages.map((stage) => (
+              <button
+                key={stage.label}
+                onClick={() => setLocation(stage.path)}
+                className={`group rounded-2xl border border-white/70 ${stage.bg} p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md`}
+              >
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div>
+                    <p className={`text-xs font-bold uppercase tracking-[0.14em] ${stage.text}`}>{stage.label}</p>
+                    <p className="mt-1 text-xs text-slate-500">{stage.helper}</p>
+                  </div>
+                  <span className={`text-2xl font-black ${stage.text}`}>{stage.count}</span>
+                </div>
+                <div className="h-2 rounded-full bg-white/70">
+                  <div
+                    className={`h-full rounded-full ${stage.bar} transition-all`}
+                    style={{ width: `${Math.max(10, Math.round((stage.count / maxPipelineCount) * 100))}%` }}
+                  />
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-4 grid gap-3 lg:grid-cols-3">
+            {nextBestActions.map(({ icon: Icon, label, detail, path }) => (
+              <button
+                key={label}
+                onClick={() => setLocation(path)}
+                className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white/80 p-3 text-left shadow-sm transition hover:border-cyan-300 hover:bg-white"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-950 text-cyan-300">
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-slate-900">{label}</span>
+                  <span className="mt-0.5 block text-xs leading-relaxed text-slate-500">{detail}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

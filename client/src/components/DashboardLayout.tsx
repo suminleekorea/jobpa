@@ -1,5 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { BrandLogo } from "@/components/BrandLogo";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -44,9 +45,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
-          <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center">
-            <Bot className="h-6 w-6 text-primary-foreground" />
-          </div>
+          <BrandLogo size="lg" showWordmark={false} />
           <h1 className="text-2xl font-semibold tracking-tight text-center">Sign in to continue</h1>
           <p className="text-sm text-muted-foreground text-center">Access to the dashboard requires authentication.</p>
           <Button onClick={() => { window.location.href = getLoginUrl(); }} size="lg" className="w-full">Sign in</Button>
@@ -139,12 +138,7 @@ function DashboardLayoutContent({ children, setSidebarWidth }: { children: React
                 <PanelLeft className="h-4 w-4 text-muted-foreground" />
               </button>
               {!isCollapsed && (
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="h-6 w-6 rounded-md bg-primary flex items-center justify-center shrink-0">
-                    <Bot className="h-3.5 w-3.5 text-primary-foreground" />
-                  </div>
-                  <span className="text-sm font-semibold tracking-tight truncate">{t.brand.name}</span>
-                </div>
+                <BrandLogo size="sm" textClassName="text-sm" />
               )}
             </div>
           </SidebarHeader>

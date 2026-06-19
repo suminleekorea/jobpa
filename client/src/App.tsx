@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Analytics } from "./components/Analytics";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -29,6 +30,7 @@ import SavedJobs from "./pages/SavedJobs";
 import InterviewPrep from "./pages/InterviewPrep";
 import EmailCenter from "./pages/EmailCenter";
 import CareerOps from "./pages/CareerOps";
+import MarketingRoute from "./pages/MarketingLanding";
 const Checklist = lazy(() => import("./pages/Checklist"));
 const Journal = lazy(() => import("./pages/Journal"));
 const Level = lazy(() => import("./pages/Level"));
@@ -48,6 +50,11 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/onboarding" component={Onboarding} />
+      <Route path="/career-ops" component={MarketingRoute} />
+      <Route path="/companies" component={MarketingRoute} />
+      <Route path="/dashboard-preview" component={MarketingRoute} />
+      <Route path="/roles/:slug" component={MarketingRoute} />
+      <Route path="/industries/:slug" component={MarketingRoute} />
       <Route path="/dashboard">
         <DashboardPage><DashboardHome /></DashboardPage>
       </Route>
@@ -116,6 +123,7 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark" switchable>
         <TooltipProvider>
+          <Analytics />
           <Toaster />
           <Router />
           <ThemeToggle />

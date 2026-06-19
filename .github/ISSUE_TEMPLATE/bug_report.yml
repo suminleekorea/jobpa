@@ -1,0 +1,39 @@
+name: Bug report
+description: Report a reproducible JobPA issue.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is broken?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include route, browser, file type, or uploaded format if relevant.
+      placeholder: |
+        1. Go to ...
+        2. Upload/select ...
+        3. Click ...
+        4. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      placeholder: "iPhone 15 Safari, Chrome desktop, etc."
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or logs

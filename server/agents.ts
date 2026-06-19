@@ -49,6 +49,14 @@ const COMMON_SKILLS = [
   "stakeholder", "project management", "product", "marketing", "crm", "seo",
   "paid media", "data visualization", "ai", "machine learning", "generative ai",
   "korean", "english", "mandarin", "salesforce", "hubspot", "figma",
+  "product management", "product marketing", "go-to-market", "gtm", "positioning",
+  "messaging", "growth marketing", "digital marketing", "marketing analytics",
+  "brand marketing", "campaign management", "content strategy", "copywriting",
+  "social media", "community", "customer success", "account management", "sales",
+  "business development", "partnerships", "strategy", "business operations",
+  "operations", "supply chain", "consulting", "financial modeling", "forecasting",
+  "budgeting", "market sizing", "competitive analysis", "user research",
+  "customer research", "lead generation", "pipeline", "notion", "jira",
 ];
 
 function unique(values: string[]) {

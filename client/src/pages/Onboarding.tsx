@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { BrandLogo } from "@/components/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/contexts/i18nContext";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, ArrowRight, Bot, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 
@@ -17,6 +18,24 @@ const LOCATIONS = [
   { id: "dubai", flag: "🇦🇪" },
   { id: "korea", flag: "🇰🇷" },
   { id: "remote", flag: "🌍" },
+];
+
+const TARGET_ROLE_SUGGESTIONS = [
+  "Product Marketing Manager",
+  "Customer Success Manager",
+  "Growth Marketer",
+  "Marketing Analyst",
+  "Business Analyst",
+  "Business Operations Analyst",
+  "Strategy Associate",
+  "Partnerships Manager",
+  "Account Manager",
+  "Sales / Business Development",
+  "Project Manager",
+  "Operations Specialist",
+  "Consultant",
+  "Financial Analyst",
+  "People Operations",
 ];
 
 export default function Onboarding() {
@@ -62,10 +81,7 @@ export default function Onboarding() {
     <div className="min-h-screen bg-background flex flex-col">
       <div className="container py-6">
         <button onClick={() => setLocation("/")} className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-            <Bot className="h-4.5 w-4.5 text-primary-foreground" />
-          </div>
-          <span className="text-lg font-bold">{t.brand.name}</span>
+          <BrandLogo size="sm" />
           <span className="text-sm text-muted-foreground">{t.brand.tagline}</span>
         </button>
       </div>
@@ -117,7 +133,7 @@ export default function Onboarding() {
 
           {/* Step 1: Target Role */}
           {step === 1 && (
-            <div className="space-y-4 max-w-md mx-auto">
+            <div className="space-y-4 max-w-2xl mx-auto">
               <Label className="text-base font-semibold">{t.onboarding.step1}</Label>
               <Input
                 value={targetRole}
@@ -125,6 +141,24 @@ export default function Onboarding() {
                 placeholder={t.onboarding.jobRolePlaceholder}
                 className="h-12 text-base"
               />
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Popular non-tech and business roles</p>
+                <div className="flex flex-wrap gap-2">
+                  {TARGET_ROLE_SUGGESTIONS.map((role) => (
+                    <button
+                      key={role}
+                      onClick={() => setTargetRole(role)}
+                      className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                        targetRole === role
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-secondary text-secondary-foreground hover:bg-accent"
+                      }`}
+                    >
+                      {role}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 

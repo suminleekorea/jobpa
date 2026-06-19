@@ -1,0 +1,33 @@
+name: Improvement
+description: Suggest a focused improvement within the Career Ops scope.
+title: "[Improvement]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What job-search workflow is currently unclear, slow, or broken?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Career Ops Dashboard
+        - AI Career Assistant
+        - Resume parsing
+        - Job fit scoring
+        - Mobile UI
+        - Documentation
+        - Safety or compliance
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed improvement
+      description: Keep it focused. JobPA is not adding auto-apply or recruiter CRM features.
+    validations:
+      required: true
