@@ -12,14 +12,22 @@ import {
   AlertTriangle,
   Bookmark,
   Briefcase,
+  CalendarCheck,
+  ChevronRight,
   ClipboardCheck,
+  Coffee,
+  Copy,
+  Crown,
   ExternalLink,
   FileDown,
+  Linkedin,
   Loader2,
+  MessageSquare,
   Radar,
   Search,
   ShieldCheck,
   Sparkles,
+  Wand2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -66,6 +74,111 @@ const gradeStyles: Record<string, string> = {
   D: "border-orange-300 bg-orange-50 text-orange-900",
   F: "border-red-300 bg-red-50 text-red-900",
 };
+
+const careerModules = [
+  {
+    id: "resume-analysis",
+    title: "Resume Analysis",
+    description: "Score the CV, find weak signals, and convert experience into role-ready proof.",
+    status: "Live",
+    tier: "Free",
+    icon: FileDown,
+    accent: "from-cyan-400 to-blue-500",
+  },
+  {
+    id: "job-recommendations",
+    title: "Weekly Job Recommendations",
+    description: "Curated roles based on target market, visa context, seniority, and fit.",
+    status: "Beta",
+    tier: "Free trial",
+    icon: Radar,
+    accent: "from-emerald-400 to-teal-500",
+  },
+  {
+    id: "linkedin-branding",
+    title: "LinkedIn Branding",
+    description: "Headline, About section, featured proof, and visibility plan.",
+    status: "Paid add-on",
+    tier: "Career+",
+    icon: Linkedin,
+    accent: "from-sky-400 to-indigo-500",
+  },
+  {
+    id: "coffee-chat",
+    title: "Coffee Chat Messages",
+    description: "Generate warm outreach messages for alumni, hiring managers, and insiders.",
+    status: "New",
+    tier: "Free",
+    icon: Coffee,
+    accent: "from-amber-300 to-orange-500",
+  },
+  {
+    id: "weekly-consultation",
+    title: "Weekly Consultation",
+    description: "Human strategy call for positioning, blockers, and next-week execution.",
+    status: "Paid add-on",
+    tier: "Career+",
+    icon: CalendarCheck,
+    accent: "from-fuchsia-400 to-rose-500",
+  },
+  {
+    id: "interview-prep",
+    title: "Interview Prep",
+    description: "Stories, role-specific questions, follow-ups, and negotiation framing.",
+    status: "Live",
+    tier: "Free",
+    icon: MessageSquare,
+    accent: "from-violet-400 to-purple-600",
+  },
+];
+
+const careerFlowStages = [
+  {
+    stage: "Profile",
+    question: "Who am I selling?",
+    moduleIds: ["resume-analysis", "linkedin-branding"],
+  },
+  {
+    stage: "Discover",
+    question: "Which roles are worth chasing?",
+    moduleIds: ["job-recommendations"],
+  },
+  {
+    stage: "Network",
+    question: "Who should I talk to?",
+    moduleIds: ["coffee-chat"],
+  },
+  {
+    stage: "Apply",
+    question: "How do I convert the JD?",
+    moduleIds: ["resume-analysis", "job-recommendations"],
+  },
+  {
+    stage: "Interview",
+    question: "How do I prove fit?",
+    moduleIds: ["interview-prep"],
+  },
+  {
+    stage: "Escalate",
+    question: "When do I need a human?",
+    moduleIds: ["weekly-consultation", "linkedin-branding"],
+  },
+];
+
+function buildCoffeeChatMessage(name: string, role: string, context: string) {
+  const recipient = name.trim() || "there";
+  const targetRole = role.trim() || "your career path";
+  const reason = context.trim() || "your experience in the space";
+
+  return `Hi ${recipient},
+
+I came across your profile and noticed ${reason}. I am currently exploring ${targetRole} opportunities and trying to understand the market from people who have actually been close to the work.
+
+Would you be open to a short 15-minute coffee chat sometime this or next week? I am not asking for a referral right away. I would really value your perspective on what skills matter, how teams evaluate candidates, and what mistakes to avoid when applying.
+
+Thank you,
+Sumin`;
+}
 
 function safeFileName(value: string) {
   return value.replace(/[^a-z0-9_-]+/gi, "_").replace(/^_+|_+$/g, "").slice(0, 80) || "career_ops_resume";
@@ -228,6 +341,10 @@ export default function CareerOps() {
   const [manualTitle, setManualTitle] = useState("");
   const [manualCompany, setManualCompany] = useState("");
   const [manualJd, setManualJd] = useState("");
+  const [selectedModules, setSelectedModules] = useState<string[]>(["resume-analysis", "job-recommendations", "coffee-chat"]);
+  const [coffeeName, setCoffeeName] = useState("");
+  const [coffeeRole, setCoffeeRole] = useState("business strategy / consulting roles in Singapore");
+  const [coffeeContext, setCoffeeContext] = useState("your Singapore consulting and business transformation experience");
   const utils = trpc.useUtils();
 
   const scan = trpc.careerOps.scan.useMutation({
@@ -265,6 +382,13 @@ export default function CareerOps() {
 
   const evaluations: CareerOpsItem[] = useMemo(() => scanResult?.evaluations ?? [], [scanResult]);
   const priorityCount = evaluations.filter(item => ["A", "A-", "B+"].includes(item.grade)).length;
+  const coffeeMessage = useMemo(
+    () => buildCoffeeChatMessage(coffeeName, coffeeRole, coffeeContext),
+    [coffeeName, coffeeRole, coffeeContext],
+  );
+  const selectedModuleLabels = careerModules
+    .filter((module) => selectedModules.includes(module.id))
+    .map((module) => module.title);
 
   const handleSave = (item: CareerOpsItem) => {
     saveJob.mutate({
@@ -285,6 +409,19 @@ export default function CareerOps() {
       salary: item.job.salary,
       notes: `Career Ops ${item.grade} (${item.fitScore}/100). ${item.decision?.summary ?? ""}`,
     });
+  };
+
+  const toggleModule = (moduleId: string) => {
+    setSelectedModules((current) =>
+      current.includes(moduleId)
+        ? current.filter((item) => item !== moduleId)
+        : [...current, moduleId],
+    );
+  };
+
+  const copyCoffeeMessage = async () => {
+    await navigator.clipboard.writeText(coffeeMessage);
+    toast.success("Coffee chat message copied");
   };
 
   return (
@@ -344,6 +481,227 @@ export default function CareerOps() {
           </span>
         </div>
       </div>
+
+      <Card className="overflow-hidden border-0 bg-slate-950 text-white shadow-2xl shadow-cyan-950/20">
+        <CardContent className="p-0">
+          <div className="grid gap-0 lg:grid-cols-[1fr_360px]">
+            <div className="min-w-0 space-y-6 p-5 sm:p-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <Badge className="mb-3 bg-cyan-300 text-slate-950 hover:bg-cyan-300">
+                    Whole Career Subscription
+                  </Badge>
+                  <h2 className="text-2xl font-black tracking-tight sm:text-3xl">
+                    Build your career journey flow like a Netflix queue.
+                  </h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">
+                    Start with the flow, then choose the modules inside each stage. JobPA should feel like a guided Career Ops subscription, not a scattered list of tools.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-200">Selected</p>
+                  <p className="mt-1 text-2xl font-black">{selectedModules.length}</p>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto pb-2">
+                <div className="flex min-w-[980px] items-stretch gap-3">
+                  {careerFlowStages.map((stage, index) => {
+                    const stageModules = careerModules.filter((module) => stage.moduleIds.includes(module.id));
+                    const stageSelected = stage.moduleIds.some((moduleId) => selectedModules.includes(moduleId));
+                    return (
+                      <div key={stage.stage} className="flex min-w-[155px] flex-1 items-stretch gap-3">
+                        <div className={`flex flex-1 flex-col rounded-3xl border p-3 transition ${
+                          stageSelected ? "border-cyan-300 bg-cyan-300 text-slate-950" : "border-white/10 bg-white/[0.05] text-white"
+                        }`}>
+                          <div className="mb-3 flex items-center justify-between gap-2">
+                            <span className={`rounded-full px-2 py-1 text-[10px] font-black ${
+                              stageSelected ? "bg-slate-950 text-cyan-200" : "bg-white/10 text-cyan-100"
+                            }`}>
+                              {String(index + 1).padStart(2, "0")}
+                            </span>
+                            <span className={`text-[10px] font-bold uppercase tracking-[0.14em] ${
+                              stageSelected ? "text-slate-600" : "text-slate-500"
+                            }`}>
+                              {stageSelected ? "Active" : "Optional"}
+                            </span>
+                          </div>
+                          <p className="text-base font-black">{stage.stage}</p>
+                          <p className={`mt-1 min-h-[34px] text-xs leading-relaxed ${stageSelected ? "text-slate-700" : "text-slate-400"}`}>
+                            {stage.question}
+                          </p>
+                          <div className="mt-4 space-y-2">
+                            {stageModules.map((module) => {
+                              const selected = selectedModules.includes(module.id);
+                              const Icon = module.icon;
+                              return (
+                                <button
+                                  key={`${stage.stage}-${module.id}`}
+                                  type="button"
+                                  onClick={() => toggleModule(module.id)}
+                                  className={`flex w-full items-center gap-2 rounded-2xl px-2.5 py-2 text-left text-xs font-bold transition ${
+                                    selected
+                                      ? "bg-slate-950 text-cyan-200"
+                                      : stageSelected
+                                        ? "bg-white/70 text-slate-700 hover:bg-white"
+                                        : "bg-white/[0.06] text-slate-300 hover:bg-white/[0.12]"
+                                  }`}
+                                >
+                                  <Icon className="h-3.5 w-3.5 shrink-0" />
+                                  <span className="min-w-0 truncate">{module.title}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        {index < careerFlowStages.length - 1 && (
+                          <div className="hidden items-center text-slate-500 xl:flex">
+                            <ChevronRight className="h-5 w-5" />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-sm font-black text-slate-200">Module shelf</p>
+                  <p className="text-xs text-slate-500">Tap cards to add/remove from the journey flow</p>
+                </div>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {careerModules.map((module) => {
+                  const Icon = module.icon;
+                  const selected = selectedModules.includes(module.id);
+                  return (
+                    <button
+                      key={module.id}
+                      type="button"
+                      onClick={() => toggleModule(module.id)}
+                      className={`group min-h-[190px] rounded-3xl border p-4 text-left transition hover:-translate-y-1 hover:shadow-xl ${
+                        selected
+                          ? "border-cyan-300 bg-white text-slate-950 shadow-cyan-900/20"
+                          : "border-white/10 bg-white/[0.045] text-white hover:bg-white/[0.08]"
+                      }`}
+                    >
+                      <div className="mb-4 flex items-start justify-between gap-3">
+                        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${module.accent} text-white shadow-lg`}>
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${
+                            selected ? "bg-slate-950 text-cyan-200" : "bg-white/10 text-cyan-100"
+                          }`}>
+                            {module.status}
+                          </span>
+                          <span className={`text-[11px] font-bold ${selected ? "text-slate-500" : "text-slate-400"}`}>
+                            {module.tier}
+                          </span>
+                        </div>
+                      </div>
+                      <h3 className="text-base font-black">{module.title}</h3>
+                      <p className={`mt-2 text-sm leading-relaxed ${selected ? "text-slate-600" : "text-slate-400"}`}>
+                        {module.description}
+                      </p>
+                      <div className={`mt-4 inline-flex rounded-full px-3 py-1 text-xs font-black ${
+                        selected ? "bg-cyan-100 text-cyan-800" : "bg-slate-900 text-slate-300"
+                      }`}>
+                        {selected ? "Included in my journey" : "Tap to add"}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              </div>
+            </div>
+
+            <div className="border-t border-white/10 bg-white/[0.035] p-5 sm:p-6 lg:border-l lg:border-t-0">
+              <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-5">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-300 text-slate-950">
+                    <Crown className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black">Career+ path</p>
+                    <p className="text-xs text-slate-400">Free AI tools first, paid consulting when needed.</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {selectedModuleLabels.map((label, index) => (
+                    <div key={label} className="flex items-center gap-3 rounded-2xl bg-white/[0.06] px-3 py-2">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-300 text-xs font-black text-slate-950">
+                        {index + 1}
+                      </span>
+                      <span className="text-sm font-semibold text-slate-100">{label}</span>
+                    </div>
+                  ))}
+                  {selectedModuleLabels.length === 0 && (
+                    <p className="rounded-2xl bg-white/[0.06] p-3 text-sm text-slate-400">
+                      Select modules to build a visible career journey.
+                    </p>
+                  )}
+                </div>
+                <div className="mt-5 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3 text-xs leading-relaxed text-amber-100">
+                  Paid modules are shown intentionally as future monetization paths. JobPA should sell scoped support, not guaranteed outcomes.
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="overflow-hidden border-amber-200 bg-gradient-to-br from-amber-50 via-white to-cyan-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Coffee className="h-5 w-5 text-amber-700" />
+            Coffee Chat Message Generator
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-5 lg:grid-cols-[360px_1fr]">
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm">Recipient name</Label>
+              <Input
+                value={coffeeName}
+                onChange={(event) => setCoffeeName(event.target.value)}
+                placeholder="Kim, Alex, hiring manager..."
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label className="text-sm">Target role / topic</Label>
+              <Input
+                value={coffeeRole}
+                onChange={(event) => setCoffeeRole(event.target.value)}
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label className="text-sm">Why this person</Label>
+              <Textarea
+                value={coffeeContext}
+                onChange={(event) => setCoffeeContext(event.target.value)}
+                rows={4}
+                className="mt-1.5"
+              />
+            </div>
+          </div>
+          <div className="flex min-w-0 flex-col rounded-3xl border bg-white p-4 shadow-sm">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Wand2 className="h-4 w-4 text-cyan-600" />
+                <p className="text-sm font-black">Generated outreach draft</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={copyCoffeeMessage} className="gap-2">
+                <Copy className="h-4 w-4" />
+                Copy
+              </Button>
+            </div>
+            <Textarea value={coffeeMessage} readOnly rows={10} className="min-h-[260px] resize-none border-0 bg-slate-50 text-sm leading-relaxed" />
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
