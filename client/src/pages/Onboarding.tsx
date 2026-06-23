@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/contexts/i18nContext";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, ArrowRight, BriefcaseBusiness, Check, Loader2, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, BriefcaseBusiness, Check, Loader2, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 
@@ -61,6 +61,52 @@ const TARGET_ROLE_SUGGESTIONS = [
   "People Operations",
 ];
 
+const APPLICATION_STAGES = [
+  { id: "exploring", label: "Exploring options", desc: "I am still deciding my target path." },
+  { id: "actively_applying", label: "Actively applying", desc: "I am applying now and need better conversion." },
+  { id: "interviewing", label: "Interviewing", desc: "I have interviews and need prep." },
+  { id: "stuck", label: "Stuck / no response", desc: "I have applied but am not getting callbacks." },
+  { id: "pivoting", label: "Career pivot", desc: "I want to move into a new function or industry." },
+];
+
+const URGENCY_OPTIONS = [
+  { id: "asap", label: "ASAP", desc: "Need momentum this month." },
+  { id: "1_3_months", label: "1-3 months", desc: "Structured search window." },
+  { id: "3_6_months", label: "3-6 months", desc: "Planning and positioning." },
+  { id: "passive", label: "Passive", desc: "Open to better opportunities." },
+];
+
+const WORK_AUTH_OPTIONS = [
+  { id: "no_sponsorship_needed", label: "No sponsorship needed" },
+  { id: "need_sponsorship", label: "Need sponsorship" },
+  { id: "student_pass", label: "Student pass / graduate visa" },
+  { id: "dependent_pass", label: "Dependent pass" },
+  { id: "not_sure", label: "Not sure yet" },
+];
+
+const SUPPORT_NEEDS = [
+  "Resume analysis",
+  "Role targeting",
+  "Weekly job recommendations",
+  "LinkedIn branding",
+  "Coffee chat messages",
+  "Interview prep",
+  "Salary negotiation",
+  "Visa / work pass context",
+  "1:1 career consultation",
+];
+
+const CAREER_MODULES = [
+  "Career Ops flow",
+  "Job recommendations",
+  "Resume tailoring",
+  "Job fit scoring",
+  "Application tracker",
+  "Coffee chat outreach",
+  "LinkedIn branding",
+  "Human consulting",
+];
+
 export default function Onboarding() {
   const { t } = useI18n();
   const { user } = useAuth();
@@ -78,6 +124,11 @@ export default function Onboarding() {
   const [needsVisaSponsorship, setNeedsVisaSponsorship] = useState(false);
   const [preferredLanguage, setPreferredLanguage] = useState("English");
   const [preferredJobTypes, setPreferredJobTypes] = useState<string[]>([]);
+  const [applicationStage, setApplicationStage] = useState("");
+  const [searchUrgency, setSearchUrgency] = useState("");
+  const [workAuthorization, setWorkAuthorization] = useState("");
+  const [supportNeeds, setSupportNeeds] = useState<string[]>([]);
+  const [careerModules, setCareerModules] = useState<string[]>([]);
 
   const saveSurvey = trpc.survey.save.useMutation({
     onSuccess: () => setLocation("/dashboard"),
@@ -89,20 +140,31 @@ export default function Onboarding() {
 
   const handleSubmit = () => {
     const audienceTag = `audience:${userType}`;
+    const structuredTags = [
+      audienceTag,
+      applicationStage ? `stage:${applicationStage}` : "",
+      searchUrgency ? `urgency:${searchUrgency}` : "",
+      workAuthorization ? `auth:${workAuthorization}` : "",
+      ...supportNeeds.map((need) => `support:${need}`),
+      ...careerModules.map((module) => `module:${module}`),
+    ].filter(Boolean);
     saveSurvey.mutate({
-      lookingFor: Array.from(new Set([audienceTag, ...lookingFor])), targetRole, experienceLevel, interests,
+      lookingFor: Array.from(new Set([...structuredTags, ...lookingFor])), targetRole, experienceLevel, interests,
       targetCompanies, preferredLocations, salaryExpectation,
-      needsVisaSponsorship, preferredLanguage, preferredJobTypes,
+      needsVisaSponsorship: needsVisaSponsorship || workAuthorization === "need_sponsorship",
+      preferredLanguage,
+      preferredJobTypes: Array.from(new Set([...preferredJobTypes, ...careerModules.map((module) => `module:${module}`)])),
     });
   };
 
-  const totalSteps = 6;
+  const totalSteps = 7;
   const selectedUserType = USER_TYPE_OPTIONS.find((option) => option.id === userType) ?? USER_TYPE_OPTIONS[0];
   const canNext = step === 0 ? userType.length > 0 :
     step === 1 ? lookingFor.length > 0 :
     step === 2 ? targetRole.length > 0 :
     step === 3 ? experienceLevel.length > 0 :
-    step === 4 ? interests.length > 0 : true;
+    step === 4 ? interests.length > 0 :
+    step === 5 ? applicationStage.length > 0 && searchUrgency.length > 0 && workAuthorization.length > 0 && supportNeeds.length > 0 : true;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -291,6 +353,119 @@ export default function Onboarding() {
 
           {/* Step 5: Additional Info */}
           {step === 5 && (
+            <div className="space-y-6 max-w-2xl mx-auto">
+              <div className="text-center">
+                <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <h2 className="text-xl font-semibold">Help JobPA understand your career workflow</h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  These structured answers make job recommendations, resume analysis, and AI guidance more accurate.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold">Current search stage</Label>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {APPLICATION_STAGES.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => setApplicationStage(item.id)}
+                      className={`rounded-2xl border p-3 text-left transition-all ${
+                        applicationStage === item.id ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border hover:border-primary/30"
+                      }`}
+                    >
+                      <p className="text-sm font-semibold">{item.label}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{item.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-5 md:grid-cols-2">
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Timeline / urgency</Label>
+                  <div className="grid gap-2">
+                    {URGENCY_OPTIONS.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => setSearchUrgency(item.id)}
+                        className={`rounded-xl border px-3 py-2 text-left transition-all ${
+                          searchUrgency === item.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
+                        }`}
+                      >
+                        <p className="text-sm font-semibold">{item.label}</p>
+                        <p className="text-xs text-muted-foreground">{item.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Work authorization / visa context</Label>
+                  <div className="grid gap-2">
+                    {WORK_AUTH_OPTIONS.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setWorkAuthorization(item.id);
+                          setNeedsVisaSponsorship(item.id === "need_sponsorship");
+                        }}
+                        className={`rounded-xl border px-3 py-2 text-left text-sm font-medium transition-all ${
+                          workAuthorization === item.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold">What do you want JobPA to help with?</Label>
+                <div className="flex flex-wrap gap-2">
+                  {SUPPORT_NEEDS.map((need) => (
+                    <button
+                      key={need}
+                      onClick={() => toggleItem(supportNeeds, setSupportNeeds, need)}
+                      className={`rounded-full px-3 py-2 text-sm font-medium transition-all ${
+                        supportNeeds.includes(need)
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-secondary text-secondary-foreground hover:bg-accent"
+                      }`}
+                    >
+                      {need}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold">Choose your Career Ops modules</Label>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {CAREER_MODULES.map((module) => (
+                    <button
+                      key={module}
+                      onClick={() => toggleItem(careerModules, setCareerModules, module)}
+                      className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm font-medium transition-all ${
+                        careerModules.includes(module) ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
+                      }`}
+                    >
+                      <div className={`flex h-5 w-5 items-center justify-center rounded-md ${
+                        careerModules.includes(module) ? "bg-primary text-primary-foreground" : "border border-muted-foreground/30"
+                      }`}>
+                        {careerModules.includes(module) && <Check className="h-3 w-3" />}
+                      </div>
+                      {module}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 6: Additional Info */}
+          {step === 6 && (
             <div className="space-y-6 max-w-md mx-auto">
               <div>
                 <Label className="text-sm font-medium">{t.onboarding.step4}</Label>
