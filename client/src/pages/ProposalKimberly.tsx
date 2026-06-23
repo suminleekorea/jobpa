@@ -1,7 +1,7 @@
 import { BrandLogo } from "@/components/BrandLogo";
 import { PublicSeo } from "@/components/PublicSeo";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CalendarDays, CheckCircle2, ClipboardList, FileText, Mail, MessageCircle, ShieldCheck, Sparkles, Target, UserRound } from "lucide-react";
+import { CalendarDays, CheckCircle2, ClipboardList, FileText, Mail, MessageCircle, ShieldCheck, Sparkles, Target, UserRound } from "lucide-react";
 import { useEffect } from "react";
 import { Link } from "wouter";
 
@@ -16,6 +16,7 @@ const client = {
 };
 
 const supportItems = [
+  "Complimentary resume analysis for first beta client",
   "CV positioning and resume refinement",
   "Singapore-specific role targeting",
   "Weekly curated job recommendations to test JobPA features",
@@ -100,7 +101,7 @@ function PageShell({ page, eyebrow, title, children }: { page: string; eyebrow: 
 
 function StatusPipeline() {
   const steps = [
-    { title: "1. CV + profile", body: "Review positioning and clarify target paths" },
+    { title: "1. Resume analysis", body: "Review CV positioning and clarify target paths" },
     { title: "2. Curated jobs", body: "10-20 roles/week to test JobPA recommendations" },
     { title: "3. Apply + feedback", body: "Kimberly applies and shares market response" },
     { title: "4. Weekly consult", body: "Complimentary paid support + LinkedIn branding" },
@@ -218,7 +219,7 @@ export default function ProposalKimberly() {
                   <p className="text-sm font-black uppercase tracking-[0.18em]">Product</p>
                   <h3 className="mt-2 text-3xl font-black">JobPA Beta Career Support</h3>
                   <p className="mt-4 text-sm font-semibold leading-relaxed text-slate-800">
-                    A 30-day beta tester cycle combining Career Ops, complimentary paid-support features, weekly job recommendations, and practical Singapore market navigation.
+                    A 30-day beta tester cycle combining Career Ops, complimentary resume analysis, paid-support features, weekly job recommendations, and practical Singapore market navigation.
                   </p>
                   <div className="mt-6 rounded-2xl bg-white/75 p-4 backdrop-blur">
                     <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Beta tester access</p>
@@ -245,6 +246,7 @@ export default function ProposalKimberly() {
                     <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />
                     <p className="text-sm font-semibold leading-relaxed">
                       JobPA provides structured guidance and support. It does not guarantee interviews, job offers, visa approval, salary outcomes, or employer responses.
+                      JobPA is not an employment agency, recruiter, immigration advisor, or legal advisor.
                     </p>
                   </div>
                 </div>
@@ -279,7 +281,7 @@ export default function ProposalKimberly() {
                   <p className="text-sm font-bold text-cyan-200">Next step</p>
                   <h3 className="mt-2 text-2xl font-black">Send latest CV via WhatsApp or email.</h3>
                   <p className="mt-3 text-sm leading-relaxed text-slate-300">
-                    After receiving the CV, JobPA will review current positioning, prepare initial CV feedback, build the first curated job list, and schedule the first weekly check-in.
+                    After receiving the CV, JobPA will prepare the complimentary resume analysis, review current positioning, build the first curated job list, and schedule the first weekly check-in.
                   </p>
                   <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                     <a className="inline-flex items-center justify-center rounded-2xl bg-cyan-300 px-4 py-3 text-sm font-black text-slate-950" href="mailto:leewaterfolk@gmail.com">
@@ -340,7 +342,7 @@ export default function ProposalKimberly() {
                   <p className="text-sm font-semibold text-slate-600">Weekly consultation and LinkedIn branding are normally paid support features, but are complimentary for Kimberly during the beta test.</p>
                 </div>
                 <div className="text-sm font-semibold text-slate-600 sm:max-w-md">
-                  Beta tester access includes complimentary weekly consultation, curated job recommendations to test the JobPA workflow, CV positioning, LinkedIn branding, and Singapore market navigation.
+                  Beta tester access includes complimentary resume analysis, weekly consultation, curated job recommendations to test the JobPA workflow, CV positioning, LinkedIn branding, and Singapore market navigation.
                 </div>
               </div>
             </div>
