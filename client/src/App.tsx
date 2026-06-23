@@ -31,6 +31,7 @@ import InterviewPrep from "./pages/InterviewPrep";
 import EmailCenter from "./pages/EmailCenter";
 import CareerOps from "./pages/CareerOps";
 import MarketingRoute from "./pages/MarketingLanding";
+import ProposalKimberly from "./pages/ProposalKimberly";
 const Checklist = lazy(() => import("./pages/Checklist"));
 const Journal = lazy(() => import("./pages/Journal"));
 const Level = lazy(() => import("./pages/Level"));
@@ -53,6 +54,8 @@ function Router() {
       <Route path="/career-ops" component={MarketingRoute} />
       <Route path="/companies" component={MarketingRoute} />
       <Route path="/dashboard-preview" component={MarketingRoute} />
+      <Route path="/proposal/kimberly" component={ProposalKimberly} />
+      <Route path="/proposal/template-v1" component={ProposalKimberly} />
       <Route path="/roles/:slug" component={MarketingRoute} />
       <Route path="/industries/:slug" component={MarketingRoute} />
       <Route path="/dashboard">
