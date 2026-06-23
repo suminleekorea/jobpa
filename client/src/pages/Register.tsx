@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/BrandLogo";
-import { Mail } from "lucide-react";
+import { BriefcaseBusiness, CheckCircle2, Mail, UserRound } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -52,9 +52,26 @@ export default function Register() {
         <div className="rounded-xl border bg-card p-6 shadow-sm">
           <h1 className="text-xl font-semibold mb-1">Create account</h1>
           <p className="text-sm text-muted-foreground mb-6">
-            Create an email account or continue with Google.
+            Create an account, then tell us whether you are a job seeker or a career consultant.
           </p>
 
+          <div className="mb-5 rounded-2xl border bg-secondary/40 p-4">
+            <p className="mb-3 text-sm font-semibold">What happens next</p>
+            <div className="space-y-3">
+              <div className="flex gap-3 text-sm">
+                <UserRound className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <span>Choose your role: job seeker or career consultant / coach.</span>
+              </div>
+              <div className="flex gap-3 text-sm">
+                <BriefcaseBusiness className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <span>Set target roles, markets, and support needs for Career Ops.</span>
+              </div>
+              <div className="flex gap-3 text-sm">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <span>Paid consulting and coach tools will stay clearly separated later.</span>
+              </div>
+            </div>
+          </div>
           <Button
             type="button"
             variant="outline"
