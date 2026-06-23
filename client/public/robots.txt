@@ -1,4 +1,5 @@
 User-agent: *
+Disallow: /proposal/
 Allow: /
 
 Sitemap: https://job-pa.com/sitemap.xml

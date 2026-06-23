@@ -2,6 +2,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { PublicSeo } from "@/components/PublicSeo";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CalendarDays, CheckCircle2, ClipboardList, FileText, Mail, MessageCircle, ShieldCheck, Sparkles, Target, UserRound } from "lucide-react";
+import { useEffect } from "react";
 import { Link } from "wouter";
 
 const client = {
@@ -10,17 +11,17 @@ const client = {
   goal: "Singapore job search strategy improvement",
   focus: "EAL / English teaching roles in international schools",
   adjacent: ["Academic Coordination", "Student Success", "Education Consulting", "Corporate Training", "Learning & Development", "Client / Stakeholder Engagement"],
-  price: "USD $30 / month",
+  price: "Complimentary beta tester access",
   duration: "30-day beta cycle",
 };
 
 const supportItems = [
   "CV positioning and resume refinement",
   "Singapore-specific role targeting",
-  "Weekly curated job recommendations",
-  "LinkedIn profile and content direction",
+  "Weekly curated job recommendations to test JobPA features",
+  "LinkedIn branding support - normally paid, complimentary during beta",
   "Adjacent role path testing beyond EAL teaching",
-  "Weekly progress review and next-step planning",
+  "Weekly consultation - normally paid, complimentary during beta",
 ];
 
 const milestones = [
@@ -37,6 +38,25 @@ const expectations = [
   { label: "Market fit", value: "Realistic SG role targeting" },
   { label: "Job list", value: "10-20 relevant roles / week" },
 ];
+
+function PrivateProposalNoIndex() {
+  useEffect(() => {
+    const rules = "noindex,nofollow,noarchive,noimageindex,nosnippet";
+    const setRobots = (name: string) => {
+      let meta = document.head.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
+      if (!meta) {
+        meta = document.createElement("meta");
+        meta.name = name;
+        document.head.appendChild(meta);
+      }
+      meta.content = rules;
+    };
+    setRobots("robots");
+    setRobots("googlebot");
+  }, []);
+
+  return null;
+}
 
 function Header() {
   return (
@@ -79,24 +99,33 @@ function PageShell({ page, eyebrow, title, children }: { page: string; eyebrow: 
 }
 
 function StatusPipeline() {
-  const steps = ["Discover", "Diagnose", "Position", "Apply", "Review"];
+  const steps = [
+    { title: "1. CV + profile", body: "Review positioning and clarify target paths" },
+    { title: "2. Curated jobs", body: "10-20 roles/week to test JobPA recommendations" },
+    { title: "3. Apply + feedback", body: "Kimberly applies and shares market response" },
+    { title: "4. Weekly consult", body: "Complimentary paid support + LinkedIn branding" },
+  ];
+
   return (
     <div className="rounded-3xl bg-slate-950 p-5 text-white">
       <div className="mb-5 flex items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-bold text-cyan-200">30-day Career Ops loop</p>
-          <p className="text-xs text-slate-400">A focused operating rhythm, not random job applications.</p>
+          <p className="text-sm font-bold text-cyan-200">Simple weekly beta flow</p>
+          <p className="text-xs text-slate-400">Kimberly tests JobPA while receiving complimentary paid-support features.</p>
         </div>
         <Sparkles className="h-5 w-5 text-cyan-300" />
       </div>
-      <div className="grid gap-3 sm:grid-cols-5">
+      <div className="grid gap-3 md:grid-cols-4">
         {steps.map((step, index) => (
-          <div key={step} className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-            <div className="mb-3 h-1.5 rounded-full bg-slate-800">
-              <div className="h-1.5 rounded-full bg-cyan-300" style={{ width: `${Math.max(35, (index + 1) * 18)}%` }} />
+          <div key={step.title} className="relative rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+            {index < steps.length - 1 && (
+              <div className="absolute -right-3 top-1/2 hidden h-0.5 w-6 -translate-y-1/2 bg-cyan-300 md:block" />
+            )}
+            <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-300 text-sm font-black text-slate-950">
+              {index + 1}
             </div>
-            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Step {index + 1}</p>
-            <p className="mt-1 text-sm font-bold">{step}</p>
+            <p className="text-sm font-black">{step.title}</p>
+            <p className="mt-2 text-xs leading-relaxed text-slate-400">{step.body}</p>
           </div>
         ))}
       </div>
@@ -109,10 +138,11 @@ export default function ProposalKimberly() {
     <div className="min-h-screen bg-slate-950 text-white print:bg-white">
       <PublicSeo
         title="JobPA Proposal for Kimberly Nguyen - Beta Career Support"
-        description="A two-page JobPA Beta Career Support proposal for Singapore job search strategy, CV positioning, and weekly curated job recommendations."
+        description="A private two-page JobPA Beta Career Support proposal for Singapore job search strategy, CV positioning, and weekly curated job recommendations."
         path="/proposal/kimberly"
         keywords={["JobPA proposal", "career support proposal", "Singapore job search", "career consulting"]}
       />
+      <PrivateProposalNoIndex />
       <Header />
 
       <main className="relative overflow-hidden py-10 sm:py-14 print:py-0">
@@ -126,7 +156,7 @@ export default function ProposalKimberly() {
               JobPA Beta Career Support Proposal
             </h1>
             <p className="mt-4 max-w-2xl text-lg text-slate-300">
-              A concise two-page proposal for Kimberly after the discovery call: situation, support scope, 30-day plan, pricing, and next step.
+              A concise two-page proposal for Kimberly after the discovery call: situation, beta tester scope, weekly flow, complimentary paid-support access, and next step.
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Button onClick={() => window.print()} className="bg-cyan-300 text-slate-950 hover:bg-cyan-200">
@@ -188,10 +218,10 @@ export default function ProposalKimberly() {
                   <p className="text-sm font-black uppercase tracking-[0.18em]">Product</p>
                   <h3 className="mt-2 text-3xl font-black">JobPA Beta Career Support</h3>
                   <p className="mt-4 text-sm font-semibold leading-relaxed text-slate-800">
-                    A 30-day support cycle combining Career Ops, human review, weekly job recommendations, and practical Singapore market navigation.
+                    A 30-day beta tester cycle combining Career Ops, complimentary paid-support features, weekly job recommendations, and practical Singapore market navigation.
                   </p>
                   <div className="mt-6 rounded-2xl bg-white/75 p-4 backdrop-blur">
-                    <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Beta monthly fee</p>
+                    <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Beta tester access</p>
                     <p className="mt-1 text-3xl font-black">{client.price}</p>
                     <p className="mt-1 text-sm font-semibold text-slate-600">{client.duration}</p>
                   </div>
@@ -307,10 +337,10 @@ export default function ProposalKimberly() {
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-700">Pricing</p>
                   <p className="mt-1 text-2xl font-black">{client.price}</p>
-                  <p className="text-sm font-semibold text-slate-600">Payment details can be shared once payment setup is ready.</p>
+                  <p className="text-sm font-semibold text-slate-600">Weekly consultation and LinkedIn branding are normally paid support features, but are complimentary for Kimberly during the beta test.</p>
                 </div>
                 <div className="text-sm font-semibold text-slate-600 sm:max-w-md">
-                  Beta package includes weekly consultation, curated jobs, CV positioning, LinkedIn branding, and Singapore market navigation.
+                  Beta tester access includes complimentary weekly consultation, curated job recommendations to test the JobPA workflow, CV positioning, LinkedIn branding, and Singapore market navigation.
                 </div>
               </div>
             </div>
