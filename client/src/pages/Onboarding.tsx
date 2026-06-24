@@ -33,14 +33,14 @@ const USER_TYPE_OPTIONS = [
     id: "job_seeker",
     icon: UserRound,
     title: "I am looking for a job",
-    desc: "Use JobPA to run your own Career Ops: search, resume, applications, interview prep, and consulting support.",
+    desc: "Use JobPA to run your own Career Ops: search, resume, applications, interview prep, and mentoring support.",
     badge: "Candidate workspace",
   },
   {
     id: "career_consultant",
     icon: BriefcaseBusiness,
-    title: "I am a career consultant or coach",
-    desc: "Use JobPA to support candidates, manage readiness signals, and prepare for future paid consulting workflows.",
+    title: "I am a career coach or mentor",
+    desc: "Use JobPA to support candidates, manage readiness signals, and prepare for future paid mentoring workflows.",
     badge: "Coach / partner workspace",
   },
 ];
@@ -48,7 +48,7 @@ const USER_TYPE_OPTIONS = [
 const TRUST_NOTES = [
   "AI guidance only: users stay in control of applications and decisions.",
   "Sensitive career data should be reviewed carefully before upload.",
-  "Paid consulting and coach workflows will be separated from free candidate tools.",
+  "Paid mentoring and coach workflows will be separated from free candidate tools.",
 ];
 
 const TARGET_ROLE_SUGGESTIONS = [
@@ -450,7 +450,7 @@ export default function Onboarding() {
                 </h2>
                 <p className="mt-2 text-sm text-muted-foreground">
                   {isCoach
-                    ? "These structured answers make client intake, proposal generation, and future paid consulting workflows easier to personalize."
+                    ? "These structured answers make client intake, proposal generation, and future paid mentoring workflows easier to personalize."
                     : "These structured answers make job recommendations, resume analysis, and AI guidance more accurate."}
                 </p>
               </div>

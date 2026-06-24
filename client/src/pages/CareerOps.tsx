@@ -586,7 +586,7 @@ export default function CareerOps() {
                   </div>
                   <div>
                     <p className="text-sm font-black">Career+ path</p>
-            <p className="text-xs text-slate-400">Free focus tools first, paid consulting when needed.</p>
+            <p className="text-xs text-slate-400">Free focus tools first, paid mentoring when needed.</p>
                   </div>
                 </div>
                 <div className="space-y-3">

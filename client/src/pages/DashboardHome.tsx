@@ -293,14 +293,14 @@ export default function DashboardHome() {
                 <Badge className="mb-3 bg-cyan-300 text-slate-950 hover:bg-cyan-300">Coach workspace beta</Badge>
                 <h2 className="text-xl font-black tracking-tight">Support candidates with JobPA Career Ops</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">
-                  This account is marked as a career consultant. Use JobPA to structure intake, resume and LinkedIn reviews,
-                  weekly consultation plans, and future paid service delivery without promising employment outcomes.
+                  This account is marked as a career coach. Use JobPA to structure intake, resume and LinkedIn reviews,
+                  weekly mentoring plans, and future paid service delivery without promising employment outcomes.
                 </p>
               </div>
               <div className="grid gap-2 sm:grid-cols-2 lg:w-[360px]">
                 <Button onClick={() => setLocation("/dashboard/consulting")} className="gap-2 bg-cyan-300 text-slate-950 hover:bg-cyan-200">
                   <Users className="h-4 w-4" />
-                  Consulting workspace
+                  Coach workspace
                 </Button>
                 <Button onClick={() => setLocation("/dashboard/career-ops")} variant="outline" className="gap-2 border-white/20 bg-white/10 text-white hover:bg-white/15">
                   <Radar className="h-4 w-4" />
@@ -312,7 +312,7 @@ export default function DashboardHome() {
               {[
                 ["Candidate intake", "Collect structured context before AI analysis."],
                 ["Review workflow", "Package resume, LinkedIn, and weekly check-ins."],
-                ["Paid funnel", "Separate free tools from scoped consulting support."],
+                ["Paid funnel", "Separate free tools from scoped mentoring support."],
               ].map(([title, body]) => (
                 <div key={title} className="rounded-2xl border border-white/10 bg-white/[0.06] p-3">
                   <p className="text-sm font-bold text-cyan-100">{title}</p>

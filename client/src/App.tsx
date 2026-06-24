@@ -53,6 +53,7 @@ function Router() {
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/career-ops" component={MarketingRoute} />
       <Route path="/companies" component={MarketingRoute} />
+      <Route path="/partners" component={MarketingRoute} />
       <Route path="/dashboard-preview" component={MarketingRoute} />
       <Route path="/proposal/kimberly" component={ProposalKimberly} />
       <Route path="/proposal/template-v1" component={ProposalKimberly} />

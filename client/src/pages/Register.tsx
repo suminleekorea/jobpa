@@ -52,7 +52,7 @@ export default function Register() {
         <div className="rounded-xl border bg-card p-6 shadow-sm">
           <h1 className="text-xl font-semibold mb-1">Create account</h1>
           <p className="text-sm text-muted-foreground mb-6">
-            Create an account, then tell us whether you are a job seeker or a career consultant.
+            Create an account, then tell us whether you are a job seeker or a career coach.
           </p>
 
           <div className="mb-5 rounded-2xl border bg-secondary/40 p-4">
@@ -60,7 +60,7 @@ export default function Register() {
             <div className="space-y-3">
               <div className="flex gap-3 text-sm">
                 <UserRound className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                <span>Choose your role: job seeker or career consultant / coach.</span>
+                <span>Choose your role: job seeker or career coach / mentor.</span>
               </div>
               <div className="flex gap-3 text-sm">
                 <BriefcaseBusiness className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
