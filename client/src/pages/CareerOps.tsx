@@ -13,7 +13,6 @@ import {
   AlertTriangle,
   Bookmark,
   Briefcase,
-  CalendarCheck,
   ChevronRight,
   ClipboardCheck,
   Coffee,
@@ -23,7 +22,6 @@ import {
   FileDown,
   Linkedin,
   Loader2,
-  MessageSquare,
   Radar,
   Search,
   ShieldCheck,
@@ -78,91 +76,40 @@ const gradeStyles: Record<string, string> = {
 
 const careerModules = [
   {
-    id: "resume-analysis",
-    title: "Resume Analysis",
-    description: "Score the CV, find weak signals, and convert experience into role-ready proof.",
+    id: "job-recommendations",
+    title: "Weekly Job Picks",
+    description: "Shortlist roles based on your target market, visa context, seniority, and resume fit.",
     status: "Live",
     tier: "Free",
-    icon: FileDown,
+    icon: Radar,
     accent: "from-cyan-400 to-blue-500",
   },
   {
-    id: "job-recommendations",
-    title: "Weekly Job Recommendations",
-    description: "Curated roles based on target market, visa context, seniority, and fit.",
-    status: "Beta",
-    tier: "Free trial",
-    icon: Radar,
-    accent: "from-emerald-400 to-teal-500",
-  },
-  {
-    id: "linkedin-branding",
-    title: "LinkedIn Branding",
-    description: "Headline, About section, featured proof, and visibility plan.",
-    status: "Paid add-on",
-    tier: "Career+",
-    icon: Linkedin,
-    accent: "from-sky-400 to-indigo-500",
-  },
-  {
-    id: "coffee-chat",
-    title: "Coffee Chat Messages",
-    description: "Generate warm outreach messages for alumni, hiring managers, and insiders.",
+    id: "linkedin-coffee-chat",
+    title: "Resume-Based LinkedIn Outreach",
+    description: "Turn your resume signals into a concise coffee chat message for LinkedIn.",
     status: "New",
     tier: "Free",
-    icon: Coffee,
+    icon: Linkedin,
     accent: "from-amber-300 to-orange-500",
-  },
-  {
-    id: "weekly-consultation",
-    title: "Weekly Consultation",
-    description: "Human strategy call for positioning, blockers, and next-week execution.",
-    status: "Paid add-on",
-    tier: "Career+",
-    icon: CalendarCheck,
-    accent: "from-fuchsia-400 to-rose-500",
-  },
-  {
-    id: "interview-prep",
-    title: "Interview Prep",
-    description: "Stories, role-specific questions, follow-ups, and negotiation framing.",
-    status: "Live",
-    tier: "Free",
-    icon: MessageSquare,
-    accent: "from-violet-400 to-purple-600",
   },
 ];
 
 const careerFlowStages = [
   {
-    stage: "Profile",
-    question: "Who am I selling?",
-    moduleIds: ["resume-analysis", "linkedin-branding"],
+    stage: "Resume signal",
+    question: "What proof can I lead with?",
+    moduleIds: ["linkedin-coffee-chat"],
   },
   {
-    stage: "Discover",
+    stage: "Target jobs",
     question: "Which roles are worth chasing?",
     moduleIds: ["job-recommendations"],
   },
   {
-    stage: "Network",
-    question: "Who should I talk to?",
-    moduleIds: ["coffee-chat"],
-  },
-  {
-    stage: "Apply",
-    question: "How do I convert the JD?",
-    moduleIds: ["resume-analysis", "job-recommendations"],
-  },
-  {
-    stage: "Interview",
-    question: "How do I prove fit?",
-    moduleIds: ["interview-prep"],
-  },
-  {
-    stage: "Escalate",
-    question: "When do I need a human?",
-    moduleIds: ["weekly-consultation", "linkedin-branding"],
+    stage: "Human support",
+    question: "When should I book a consult?",
+    moduleIds: ["job-recommendations", "linkedin-coffee-chat"],
   },
 ];
 
@@ -172,7 +119,7 @@ function buildCoffeeChatMessage(name: string, role: string, context: string, sen
   const opportunityText = /\b(opportunit|roles?|jobs?|positions?)\b/i.test(targetText)
     ? targetText
     : `${targetText} opportunities`;
-  const reason = context.trim() || "your experience in the space";
+  const reason = context.trim() || "my resume has relevant experience that connects to your work";
   const signature = senderName.trim() || "JobPA user";
 
   return `Hi ${recipient},
@@ -347,11 +294,13 @@ export default function CareerOps() {
   const [manualTitle, setManualTitle] = useState("");
   const [manualCompany, setManualCompany] = useState("");
   const [manualJd, setManualJd] = useState("");
-  const [selectedModules, setSelectedModules] = useState<string[]>(["resume-analysis", "job-recommendations", "coffee-chat"]);
+  const [selectedModules, setSelectedModules] = useState<string[]>(["job-recommendations", "linkedin-coffee-chat"]);
   const [coffeeName, setCoffeeName] = useState("");
   const [coffeeRole, setCoffeeRole] = useState("business strategy / consulting roles in Singapore");
-  const [coffeeContext, setCoffeeContext] = useState("your Singapore consulting and business transformation experience");
+  const [coffeeContext, setCoffeeContext] = useState("");
   const utils = trpc.useUtils();
+  const { data: profile } = trpc.profile.get.useQuery();
+  const { data: latestAnalysis } = trpc.resumeAnalysis.latest.useQuery();
 
   const scan = trpc.careerOps.scan.useMutation({
     onSuccess: (data) => {
@@ -389,9 +338,15 @@ export default function CareerOps() {
   const evaluations: CareerOpsItem[] = useMemo(() => scanResult?.evaluations ?? [], [scanResult]);
   const priorityCount = evaluations.filter(item => ["A", "A-", "B+"].includes(item.grade)).length;
   const senderName = user?.name?.trim() || "JobPA user";
+  const resumeSignal = useMemo(() => {
+    const strengths = Array.isArray(latestAnalysis?.strengths) ? latestAnalysis.strengths.slice(0, 2).join(", ") : "";
+    const role = (profile as any)?.targetRole || latestAnalysis?.targetRole || "my target role";
+    if (strengths) return `my resume shows ${strengths}, and I am targeting ${role}`;
+    return `my resume and background are aligned with ${role}`;
+  }, [latestAnalysis, profile]);
   const coffeeMessage = useMemo(
-    () => buildCoffeeChatMessage(coffeeName, coffeeRole, coffeeContext, senderName),
-    [coffeeName, coffeeRole, coffeeContext, senderName],
+    () => buildCoffeeChatMessage(coffeeName, coffeeRole, coffeeContext || resumeSignal, senderName),
+    [coffeeName, coffeeRole, coffeeContext, resumeSignal, senderName],
   );
   const selectedModuleLabels = careerModules
     .filter((module) => selectedModules.includes(module.id))
@@ -436,9 +391,9 @@ export default function CareerOps() {
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
           <Badge className="mb-3 bg-primary/10 text-primary hover:bg-primary/10">Agentic AI Career Ops</Badge>
-          <h1 className="break-words text-2xl font-bold tracking-tight sm:text-3xl">Your AI career operator</h1>
+          <h1 className="break-words text-2xl font-bold tracking-tight sm:text-3xl">Career Ops workspace</h1>
           <p className="mt-1 text-muted-foreground">
-            JobPA agents scan roles, score fit, tailor resume drafts, and move selected opportunities into your job-search pipeline.
+            Focus on two workflows: shortlist relevant jobs, then use your resume to write better LinkedIn coffee chat messages.
           </p>
         </div>
         <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
@@ -499,10 +454,10 @@ export default function CareerOps() {
                     Whole Career Subscription
                   </Badge>
                   <h2 className="text-2xl font-black tracking-tight sm:text-3xl">
-                    Build your career journey flow like a Netflix queue.
+                    Pick the next useful action, not another tool.
                   </h2>
                   <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">
-                    Start with the flow, then choose the modules inside each stage. JobPA should feel like a guided Career Ops subscription, not a scattered list of tools.
+                    JobPA stays focused: job recommendations and resume-based LinkedIn outreach. Consulting is the paid path when a human needs to step in.
                   </p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
@@ -512,7 +467,7 @@ export default function CareerOps() {
               </div>
 
               <div className="overflow-x-auto pb-2">
-                <div className="flex min-w-[980px] items-stretch gap-3">
+                <div className="flex min-w-[620px] items-stretch gap-3">
                   {careerFlowStages.map((stage, index) => {
                     const stageModules = careerModules.filter((module) => stage.moduleIds.includes(module.id));
                     const stageSelected = stage.moduleIds.some((moduleId) => selectedModules.includes(moduleId));
@@ -631,7 +586,7 @@ export default function CareerOps() {
                   </div>
                   <div>
                     <p className="text-sm font-black">Career+ path</p>
-                    <p className="text-xs text-slate-400">Free AI tools first, paid consulting when needed.</p>
+            <p className="text-xs text-slate-400">Free focus tools first, paid consulting when needed.</p>
                   </div>
                 </div>
                 <div className="space-y-3">
@@ -662,7 +617,7 @@ export default function CareerOps() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Coffee className="h-5 w-5 text-amber-700" />
-            Coffee Chat Message Generator
+            Resume-Based LinkedIn Coffee Chat
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-5 lg:grid-cols-[360px_1fr]">
@@ -677,7 +632,7 @@ export default function CareerOps() {
               />
             </div>
             <div>
-              <Label className="text-sm">Target role / topic</Label>
+              <Label className="text-sm">Target LinkedIn topic</Label>
               <Input
                 value={coffeeRole}
                 onChange={(event) => setCoffeeRole(event.target.value)}
@@ -685,10 +640,11 @@ export default function CareerOps() {
               />
             </div>
             <div>
-              <Label className="text-sm">Why this person</Label>
+              <Label className="text-sm">Resume signal to mention</Label>
               <Textarea
                 value={coffeeContext}
                 onChange={(event) => setCoffeeContext(event.target.value)}
+                placeholder={resumeSignal}
                 rows={4}
                 className="mt-1.5"
               />

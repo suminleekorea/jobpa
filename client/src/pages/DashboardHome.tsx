@@ -9,7 +9,7 @@ import { useI18n } from "@/contexts/i18nContext";
 import {
   FileText, Briefcase, MessageCircle, Trophy, TrendingUp,
   ArrowRight, Sparkles, Target, CheckCircle2, Clock, Star,
-  ChevronRight, Bot, BarChart3, Zap, ArrowUpRight, Send, ClipboardCheck, Radar, Users
+  ChevronRight, Bot, BarChart3, Zap, ArrowUpRight, Send, ClipboardCheck, Radar, Users, Handshake, BadgeCheck
 } from "lucide-react";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -20,6 +20,135 @@ const STATUS_COLORS: Record<string, string> = {
   withdrawn: "bg-gray-100 text-gray-600",
   bookmarked: "bg-purple-100 text-purple-700",
 };
+
+function tagValues(tags: string[], prefix: string) {
+  return tags
+    .filter((tag) => tag.startsWith(prefix))
+    .map((tag) => tag.slice(prefix.length).replace(/_/g, " "));
+}
+
+function CoachDashboardHome({
+  userName,
+  survey,
+  setLocation,
+}: {
+  userName?: string | null;
+  survey: any;
+  setLocation: (path: string) => void;
+}) {
+  const lookingFor = (survey?.lookingFor as string[] | undefined) ?? [];
+  const modules = tagValues((survey?.preferredJobTypes as string[] | undefined) ?? [], "module:");
+  const supportNeeds = tagValues(lookingFor, "support:");
+  const niche = survey?.targetRole || "Resume / LinkedIn positioning";
+  const clientSegments = Array.isArray(survey?.interests) && survey.interests.length > 0
+    ? survey.interests
+    : ["International students", "Career switchers", "Non-tech business professionals"];
+  const locations = Array.isArray(survey?.preferredLocations) && survey.preferredLocations.length > 0
+    ? survey.preferredLocations
+    : ["singapore"];
+  const profileItems = [
+    ["Expertise", niche],
+    ["Client segment", clientSegments.slice(0, 2).join(", ")],
+    ["Market", locations.join(", ").replace(/_/g, " ")],
+    ["Offer", survey?.salaryExpectation || "US$30 beta support"],
+  ];
+
+  return (
+    <div className="mx-auto max-w-6xl space-y-5 overflow-hidden px-3 py-4 sm:px-4 md:px-6 md:py-6">
+      <section className="rounded-2xl border bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <Badge variant="secondary" className="mb-2">Consultant dashboard</Badge>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {userName ? `${userName.split(" ")[0]}'s consulting profile` : "Consulting profile"}
+            </h1>
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+              Set your expertise, choose who you help, and receive matched job seekers. Keep the product focused on matching and paid consultation.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button onClick={() => setLocation("/dashboard/profile")} variant="outline" className="gap-2">
+              <BadgeCheck className="h-4 w-4" />
+              Edit profile
+            </Button>
+            <Button onClick={() => setLocation("/dashboard/consulting")} className="gap-2">
+              <Handshake className="h-4 w-4" />
+              Build offer
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Public coach profile</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-xl border bg-slate-50 p-4">
+              <p className="text-sm font-semibold">{userName || "Coach name"}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{niche}</p>
+            </div>
+            <div className="space-y-3">
+              {profileItems.map(([label, value]) => (
+                <div key={label} className="border-b pb-3 last:border-0 last:pb-0">
+                  <p className="text-xs font-medium text-muted-foreground">{label}</p>
+                  <p className="mt-1 text-sm font-semibold capitalize">{value}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className="text-base">Matched job seekers</CardTitle>
+              <Badge variant="outline">Beta matching</Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              JobPA should show a short, practical list like a job board. No fake automation. Each match explains the blocker and next consultation action.
+            </p>
+            {[
+              [clientSegments[0] || "International student", "Resume positioning + Singapore targeting", "High", "Invite to discovery call"],
+              [clientSegments[1] || "Career switcher", "LinkedIn branding before outreach", "Medium", "Send profile review offer"],
+              ["DIY job seeker", "Needs resume-based coffee chat message", "Low", "Recommend free Career Ops tool"],
+            ].map(([segment, blocker, fit, action]) => (
+              <div key={segment} className="grid gap-3 rounded-xl border p-4 md:grid-cols-[1fr_130px_170px] md:items-center">
+                <div>
+                  <p className="font-semibold">{segment}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{blocker}</p>
+                </div>
+                <Badge variant={fit === "High" ? "default" : "secondary"} className="w-fit">{fit} fit</Badge>
+                <Button variant="outline" size="sm" onClick={() => setLocation("/dashboard/consulting")}>{action}</Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Simple paid offer</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
+          <div>
+            <p className="font-semibold">Beta Career Support - US$30/month</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Weekly consultation, curated job recommendations, and LinkedIn/resume positioning. No outcome guarantee.
+            </p>
+          </div>
+          <Button onClick={() => setLocation("/dashboard/consulting")} className="gap-2">
+            Prepare proposal
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export default function DashboardHome() {
   const [, setLocation] = useLocation();
@@ -129,6 +258,10 @@ export default function DashboardHome() {
     if (hour < 18) return t.dashboard.goodAfternoon;
     return t.dashboard.goodEvening;
   };
+
+  if (isCoach) {
+    return <CoachDashboardHome userName={user?.name} survey={survey} setLocation={setLocation} />;
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 overflow-hidden px-3 py-4 sm:px-4 md:px-6 md:py-6">

@@ -71,43 +71,39 @@ const TARGET_ROLE_SUGGESTIONS = [
 
 const COACH_LOOKING_FOR_OPTIONS = [
   {
-    id: "coach_candidate_readiness",
-    label: "Candidate readiness dashboard",
-    desc: "Track candidate profiles, gaps, and readiness signals before coaching sessions.",
+    id: "coach_client_matching",
+    label: "Match with the right job seekers",
+    desc: "Show your expertise and get matched with candidates who need that support.",
   },
   {
-    id: "coach_resume_linkedin_review",
-    label: "Resume / LinkedIn review workflow",
-    desc: "Structure review notes, positioning gaps, and profile improvement plans.",
-  },
-  {
-    id: "coach_discovery_proposals",
-    label: "Discovery call proposals",
-    desc: "Turn calls into simple weekly plans, beta packages, and client proposals.",
-  },
-  {
-    id: "coach_paid_consulting_funnel",
-    label: "Paid consulting funnel",
-    desc: "Prepare scoped services without promising employment outcomes.",
-  },
-  {
-    id: "coach_job_recommendations",
-    label: "Curated jobs for clients",
-    desc: "Recommend roles based on target market, visa context, and career direction.",
+    id: "coach_consulting_packages",
+    label: "Sell simple consulting packages",
+    desc: "Turn your experience into clear beta offers, discovery calls, and paid support.",
   },
 ];
 
 const COACH_TARGET_SUGGESTIONS = [
-  "International students in Singapore",
+  "Resume and LinkedIn branding",
+  "Singapore job-search strategy",
+  "Career pivot positioning",
+  "PMO / consulting positioning",
+  "Teaching to EdTech positioning",
+  "Business roles for international students",
+  "Interview storytelling",
+  "Visa-sensitive job-search strategy",
+];
+
+const COACH_CLIENT_SEGMENTS = [
+  "International students",
   "Career switchers",
-  "Teaching to EdTech / corporate training",
-  "PMO to consulting",
-  "Marketing / business graduates",
+  "Teachers moving into EdTech",
+  "PMO / operations professionals",
+  "Marketing graduates",
   "Customer success candidates",
   "Product marketing candidates",
-  "Non-tech professionals",
   "Early-career job seekers",
   "Visa-sensitive candidates",
+  "Non-tech business professionals",
 ];
 
 const APPLICATION_STAGES = [
@@ -154,15 +150,11 @@ const SUPPORT_NEEDS = [
 ];
 
 const COACH_SUPPORT_NEEDS = [
-  "Candidate intake questions",
+  "Client matching",
   "Resume / LinkedIn review",
-  "Discovery call script",
+  "Discovery call proposal",
   "Weekly consultation plan",
-  "Curated job recommendations",
-  "Proposal template",
-  "Paid package setup",
-  "Client progress tracking",
-  "Outcome-safe disclaimers",
+  "Outcome-safe paid package",
 ];
 
 const CAREER_MODULES = [
@@ -177,14 +169,8 @@ const CAREER_MODULES = [
 ];
 
 const COACH_CAREER_MODULES = [
-  "Client intake flow",
-  "Resume review workspace",
-  "LinkedIn branding review",
-  "Weekly consultation tracker",
-  "Job recommendation pack",
-  "Coffee chat generator",
-  "Discovery proposal builder",
-  "Paid consulting funnel",
+  "Client matching",
+  "Consulting proposal builder",
 ];
 
 export default function Onboarding() {
@@ -245,6 +231,7 @@ export default function Onboarding() {
   const workflowStages = isCoach ? COACH_WORKFLOW_STAGES : APPLICATION_STAGES;
   const supportNeedOptions = isCoach ? COACH_SUPPORT_NEEDS : SUPPORT_NEEDS;
   const careerModuleOptions = isCoach ? COACH_CAREER_MODULES : CAREER_MODULES;
+  const interestOptions = isCoach ? COACH_CLIENT_SEGMENTS : t.onboarding.interests;
   const canNext = step === 0 ? userType.length > 0 :
     step === 1 ? lookingFor.length > 0 :
     step === 2 ? targetRole.length > 0 :
@@ -335,11 +322,11 @@ export default function Onboarding() {
                   {selectedUserType.badge}
                 </p>
                 <h2 className="text-xl font-semibold">
-                  {isCoach ? "What do you want JobPA to support?" : t.onboarding.lookingForTitle}
+                  {isCoach ? "What should your coach profile do?" : t.onboarding.lookingForTitle}
                 </h2>
                 <p className="text-sm text-muted-foreground mt-2">
                   {isCoach
-                    ? "Choose the coach workflows you want to test first. This helps us separate candidate tools from paid consulting operations."
+                    ? "Keep this focused: get matched with the right candidates, then convert discovery calls into scoped consulting."
                     : t.onboarding.lookingForSubtitle}
                 </p>
               </div>
@@ -372,17 +359,17 @@ export default function Onboarding() {
           {step === 2 && (
             <div className="space-y-4 max-w-2xl mx-auto">
               <Label className="text-base font-semibold">
-                {isCoach ? "Primary coaching niche / candidate segment" : t.onboarding.step1}
+                {isCoach ? "Your strongest coaching expertise" : t.onboarding.step1}
               </Label>
               <Input
                 value={targetRole}
                 onChange={(e) => setTargetRole(e.target.value)}
-                placeholder={isCoach ? "e.g. International students in Singapore, PMO to consulting" : t.onboarding.jobRolePlaceholder}
+                placeholder={isCoach ? "e.g. Resume branding for international students in Singapore" : t.onboarding.jobRolePlaceholder}
                 className="h-12 text-base"
               />
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground">
-                  {isCoach ? "Popular coaching segments" : "Popular non-tech and business roles"}
+                  {isCoach ? "Popular coach expertise areas" : "Popular non-tech and business roles"}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {roleSuggestions.map((role) => (
@@ -407,7 +394,7 @@ export default function Onboarding() {
           {step === 3 && (
             <div className="space-y-4 max-w-md mx-auto">
               <Label className="text-base font-semibold">
-                {isCoach ? "Coaching / industry experience" : t.onboarding.step2}
+                {isCoach ? "Your credibility level" : t.onboarding.step2}
               </Label>
               <div className="grid gap-3">
                 {Object.entries(t.onboarding.experienceLevels).map(([key, label]) => (
@@ -431,10 +418,10 @@ export default function Onboarding() {
           {step === 4 && (
             <div className="space-y-4">
               <Label className="text-base font-semibold">
-                {isCoach ? "Candidate segments and service areas" : t.onboarding.step3}
+                {isCoach ? "Who do you want to help?" : t.onboarding.step3}
               </Label>
               <div className="flex flex-wrap gap-2">
-                {t.onboarding.interests.map((interest) => (
+                {interestOptions.map((interest) => (
                   <button
                     key={interest}
                     onClick={() => toggleItem(interests, setInterests, interest)}
