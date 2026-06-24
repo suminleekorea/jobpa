@@ -6,18 +6,25 @@ import { trpc } from "@/lib/trpc";
 import { useI18n } from "@/contexts/i18nContext";
 import { Target, X } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useLocation } from "wouter";
 
 const NUDGE_KEY = "jobpa_goal_nudge_last_shown";
 
 export default function DailyGoalNudge() {
-  const { language, t } = useI18n();
+  const { t } = useI18n();
   const { isAuthenticated } = useAuth();
+  const [location] = useLocation();
   const [open, setOpen] = useState(false);
   const [targetRole, setTargetRole] = useState("");
   const [dismissed, setDismissed] = useState(false);
+  const suppressNudge =
+    location === "/onboarding" ||
+    location === "/login" ||
+    location === "/register" ||
+    location.startsWith("/proposal");
 
   const { data: goal } = trpc.goal.get.useQuery(undefined, {
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && !suppressNudge,
   });
 
   const saveGoal = trpc.goal.save.useMutation({
@@ -29,7 +36,7 @@ export default function DailyGoalNudge() {
   });
 
   useEffect(() => {
-    if (!isAuthenticated || dismissed) return;
+    if (!isAuthenticated || dismissed || suppressNudge) return;
 
     // Check if we already showed today
     const lastShown = localStorage.getItem(NUDGE_KEY);
@@ -43,7 +50,7 @@ export default function DailyGoalNudge() {
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [isAuthenticated, goal, dismissed]);
+  }, [isAuthenticated, goal, dismissed, suppressNudge]);
 
   const handleDismiss = () => {
     setOpen(false);
@@ -56,7 +63,7 @@ export default function DailyGoalNudge() {
     saveGoal.mutate({ targetRole: targetRole.trim() });
   };
 
-  if (!isAuthenticated) return null;
+  if (!isAuthenticated || suppressNudge) return null;
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleDismiss(); }}>

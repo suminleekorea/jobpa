@@ -20,6 +20,14 @@ const LOCATIONS = [
   { id: "remote", flag: "Remote" },
 ];
 
+const LOCATION_LABELS: Record<string, string> = {
+  singapore: "Singapore",
+  hongkong: "Hong Kong",
+  dubai: "Dubai / UAE",
+  korea: "Korea",
+  remote: "Remote / Global",
+};
+
 const USER_TYPE_OPTIONS = [
   {
     id: "job_seeker",
@@ -61,12 +69,61 @@ const TARGET_ROLE_SUGGESTIONS = [
   "People Operations",
 ];
 
+const COACH_LOOKING_FOR_OPTIONS = [
+  {
+    id: "coach_candidate_readiness",
+    label: "Candidate readiness dashboard",
+    desc: "Track candidate profiles, gaps, and readiness signals before coaching sessions.",
+  },
+  {
+    id: "coach_resume_linkedin_review",
+    label: "Resume / LinkedIn review workflow",
+    desc: "Structure review notes, positioning gaps, and profile improvement plans.",
+  },
+  {
+    id: "coach_discovery_proposals",
+    label: "Discovery call proposals",
+    desc: "Turn calls into simple weekly plans, beta packages, and client proposals.",
+  },
+  {
+    id: "coach_paid_consulting_funnel",
+    label: "Paid consulting funnel",
+    desc: "Prepare scoped services without promising employment outcomes.",
+  },
+  {
+    id: "coach_job_recommendations",
+    label: "Curated jobs for clients",
+    desc: "Recommend roles based on target market, visa context, and career direction.",
+  },
+];
+
+const COACH_TARGET_SUGGESTIONS = [
+  "International students in Singapore",
+  "Career switchers",
+  "Teaching to EdTech / corporate training",
+  "PMO to consulting",
+  "Marketing / business graduates",
+  "Customer success candidates",
+  "Product marketing candidates",
+  "Non-tech professionals",
+  "Early-career job seekers",
+  "Visa-sensitive candidates",
+];
+
 const APPLICATION_STAGES = [
   { id: "exploring", label: "Exploring options", desc: "I am still deciding my target path." },
   { id: "actively_applying", label: "Actively applying", desc: "I am applying now and need better conversion." },
   { id: "interviewing", label: "Interviewing", desc: "I have interviews and need prep." },
   { id: "stuck", label: "Stuck / no response", desc: "I have applied but am not getting callbacks." },
   { id: "pivoting", label: "Career pivot", desc: "I want to move into a new function or industry." },
+];
+
+const COACH_WORKFLOW_STAGES = [
+  { id: "coach_beta_clients", label: "Beta clients", desc: "Testing the service with first users." },
+  { id: "coach_manual_delivery", label: "Manual delivery", desc: "Running calls, reviews, and follow-ups manually." },
+  { id: "coach_repeatable_packages", label: "Packaging services", desc: "Turning support into clear paid tiers." },
+  { id: "coach_scaling", label: "Scaling delivery", desc: "Need dashboards, templates, and client tracking." },
+  { id: "coach_b2b_partner", label: "B2B / partner support", desc: "Supporting schools, cohorts, or partner groups." },
 ];
 
 const URGENCY_OPTIONS = [
@@ -96,6 +153,18 @@ const SUPPORT_NEEDS = [
   "1:1 career consultation",
 ];
 
+const COACH_SUPPORT_NEEDS = [
+  "Candidate intake questions",
+  "Resume / LinkedIn review",
+  "Discovery call script",
+  "Weekly consultation plan",
+  "Curated job recommendations",
+  "Proposal template",
+  "Paid package setup",
+  "Client progress tracking",
+  "Outcome-safe disclaimers",
+];
+
 const CAREER_MODULES = [
   "Career Ops flow",
   "Job recommendations",
@@ -105,6 +174,17 @@ const CAREER_MODULES = [
   "Coffee chat outreach",
   "LinkedIn branding",
   "Human consulting",
+];
+
+const COACH_CAREER_MODULES = [
+  "Client intake flow",
+  "Resume review workspace",
+  "LinkedIn branding review",
+  "Weekly consultation tracker",
+  "Job recommendation pack",
+  "Coffee chat generator",
+  "Discovery proposal builder",
+  "Paid consulting funnel",
 ];
 
 export default function Onboarding() {
@@ -158,7 +238,13 @@ export default function Onboarding() {
   };
 
   const totalSteps = 7;
+  const isCoach = userType === "career_consultant";
   const selectedUserType = USER_TYPE_OPTIONS.find((option) => option.id === userType) ?? USER_TYPE_OPTIONS[0];
+  const lookingForOptions = isCoach ? COACH_LOOKING_FOR_OPTIONS : t.onboarding.lookingForOptions;
+  const roleSuggestions = isCoach ? COACH_TARGET_SUGGESTIONS : TARGET_ROLE_SUGGESTIONS;
+  const workflowStages = isCoach ? COACH_WORKFLOW_STAGES : APPLICATION_STAGES;
+  const supportNeedOptions = isCoach ? COACH_SUPPORT_NEEDS : SUPPORT_NEEDS;
+  const careerModuleOptions = isCoach ? COACH_CAREER_MODULES : CAREER_MODULES;
   const canNext = step === 0 ? userType.length > 0 :
     step === 1 ? lookingFor.length > 0 :
     step === 2 ? targetRole.length > 0 :
@@ -248,11 +334,17 @@ export default function Onboarding() {
                 <p className="mb-2 inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                   {selectedUserType.badge}
                 </p>
-                <h2 className="text-xl font-semibold">{t.onboarding.lookingForTitle}</h2>
-                <p className="text-sm text-muted-foreground mt-2">{t.onboarding.lookingForSubtitle}</p>
+                <h2 className="text-xl font-semibold">
+                  {isCoach ? "What do you want JobPA to support?" : t.onboarding.lookingForTitle}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-2">
+                  {isCoach
+                    ? "Choose the coach workflows you want to test first. This helps us separate candidate tools from paid consulting operations."
+                    : t.onboarding.lookingForSubtitle}
+                </p>
               </div>
               <div className="grid gap-3 mt-6">
-                {t.onboarding.lookingForOptions.map((opt) => (
+                {lookingForOptions.map((opt) => (
                   <button
                     key={opt.id}
                     onClick={() => toggleItem(lookingFor, setLookingFor, opt.id)}
@@ -279,17 +371,21 @@ export default function Onboarding() {
           {/* Step 2: Target Role */}
           {step === 2 && (
             <div className="space-y-4 max-w-2xl mx-auto">
-              <Label className="text-base font-semibold">{t.onboarding.step1}</Label>
+              <Label className="text-base font-semibold">
+                {isCoach ? "Primary coaching niche / candidate segment" : t.onboarding.step1}
+              </Label>
               <Input
                 value={targetRole}
                 onChange={(e) => setTargetRole(e.target.value)}
-                placeholder={t.onboarding.jobRolePlaceholder}
+                placeholder={isCoach ? "e.g. International students in Singapore, PMO to consulting" : t.onboarding.jobRolePlaceholder}
                 className="h-12 text-base"
               />
               <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">Popular non-tech and business roles</p>
+                <p className="text-xs text-muted-foreground">
+                  {isCoach ? "Popular coaching segments" : "Popular non-tech and business roles"}
+                </p>
                 <div className="flex flex-wrap gap-2">
-                  {TARGET_ROLE_SUGGESTIONS.map((role) => (
+                  {roleSuggestions.map((role) => (
                     <button
                       key={role}
                       onClick={() => setTargetRole(role)}
@@ -310,7 +406,9 @@ export default function Onboarding() {
           {/* Step 3: Experience Level */}
           {step === 3 && (
             <div className="space-y-4 max-w-md mx-auto">
-              <Label className="text-base font-semibold">{t.onboarding.step2}</Label>
+              <Label className="text-base font-semibold">
+                {isCoach ? "Coaching / industry experience" : t.onboarding.step2}
+              </Label>
               <div className="grid gap-3">
                 {Object.entries(t.onboarding.experienceLevels).map(([key, label]) => (
                   <button
@@ -332,7 +430,9 @@ export default function Onboarding() {
           {/* Step 4: Interests */}
           {step === 4 && (
             <div className="space-y-4">
-              <Label className="text-base font-semibold">{t.onboarding.step3}</Label>
+              <Label className="text-base font-semibold">
+                {isCoach ? "Candidate segments and service areas" : t.onboarding.step3}
+              </Label>
               <div className="flex flex-wrap gap-2">
                 {t.onboarding.interests.map((interest) => (
                   <button
@@ -358,16 +458,20 @@ export default function Onboarding() {
                 <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                   <Sparkles className="h-5 w-5" />
                 </div>
-                <h2 className="text-xl font-semibold">Help JobPA understand your career workflow</h2>
+                <h2 className="text-xl font-semibold">
+                  {isCoach ? "Help JobPA understand your coaching workflow" : "Help JobPA understand your career workflow"}
+                </h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  These structured answers make job recommendations, resume analysis, and AI guidance more accurate.
+                  {isCoach
+                    ? "These structured answers make client intake, proposal generation, and future paid consulting workflows easier to personalize."
+                    : "These structured answers make job recommendations, resume analysis, and AI guidance more accurate."}
                 </p>
               </div>
 
               <div className="space-y-3">
-                <Label className="text-sm font-semibold">Current search stage</Label>
+                <Label className="text-sm font-semibold">{isCoach ? "Current coaching workflow stage" : "Current search stage"}</Label>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  {APPLICATION_STAGES.map((item) => (
+                  {workflowStages.map((item) => (
                     <button
                       key={item.id}
                       onClick={() => setApplicationStage(item.id)}
@@ -422,9 +526,11 @@ export default function Onboarding() {
               </div>
 
               <div className="space-y-3">
-                <Label className="text-sm font-semibold">What do you want JobPA to help with?</Label>
+                <Label className="text-sm font-semibold">
+                  {isCoach ? "What do you want JobPA to help you deliver?" : "What do you want JobPA to help with?"}
+                </Label>
                 <div className="flex flex-wrap gap-2">
-                  {SUPPORT_NEEDS.map((need) => (
+                  {supportNeedOptions.map((need) => (
                     <button
                       key={need}
                       onClick={() => toggleItem(supportNeeds, setSupportNeeds, need)}
@@ -441,9 +547,11 @@ export default function Onboarding() {
               </div>
 
               <div className="space-y-3">
-                <Label className="text-sm font-semibold">Choose your Career Ops modules</Label>
+                <Label className="text-sm font-semibold">
+                  {isCoach ? "Choose your Coach Ops modules" : "Choose your Career Ops modules"}
+                </Label>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  {CAREER_MODULES.map((module) => (
+                  {careerModuleOptions.map((module) => (
                     <button
                       key={module}
                       onClick={() => toggleItem(careerModules, setCareerModules, module)}
@@ -471,7 +579,7 @@ export default function Onboarding() {
                 <Label className="text-sm font-medium">{t.onboarding.step4}</Label>
               </div>
               <div>
-                <Label className="text-sm">{t.onboarding.locationPlaceholder}</Label>
+                <Label className="text-sm">Preferred markets / locations</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {LOCATIONS.map((loc) => (
                     <button
@@ -483,13 +591,13 @@ export default function Onboarding() {
                           : "border-border hover:border-primary/30"
                       }`}
                     >
-                      {loc.flag} {(t.locations as any)[loc.id]?.replace(/^.+\s/, "") || loc.id}
+                      {loc.flag} {LOCATION_LABELS[loc.id] ?? loc.id}
                     </button>
                   ))}
                 </div>
               </div>
               <div>
-                <Label className="text-sm">{t.onboarding.jobRolePlaceholder?.replace("e.g.", "").trim()}</Label>
+                <Label className="text-sm">{isCoach ? "Engagement type" : "Preferred job type"}</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {t.onboarding.jobTypes.map((jt) => (
                     <button
@@ -507,11 +615,11 @@ export default function Onboarding() {
                 </div>
               </div>
               <div>
-                <Label className="text-sm">{t.onboarding.salaryPlaceholder?.split(",")[0]}</Label>
+                <Label className="text-sm">{isCoach ? "Monthly target budget" : "Salary expectation"}</Label>
                 <Input
                   value={salaryExpectation}
                   onChange={(e) => setSalaryExpectation(e.target.value)}
-                  placeholder={t.onboarding.salaryPlaceholder}
+                  placeholder={isCoach ? "e.g. US$30 beta, US$99/month, custom" : t.onboarding.salaryPlaceholder}
                   className="mt-2"
                 />
               </div>
@@ -538,11 +646,11 @@ export default function Onboarding() {
                 </div>
               </div>
               <div>
-                <Label className="text-sm">{t.onboarding.targetCompaniesPlaceholder?.split(",")[0]}</Label>
+                <Label className="text-sm">{isCoach ? "Target client segments" : "Target companies"}</Label>
                 <Textarea
                   value={targetCompanies}
                   onChange={(e) => setTargetCompanies(e.target.value)}
-                  placeholder={t.onboarding.targetCompaniesPlaceholder}
+                  placeholder={isCoach ? "e.g. Vietnamese teachers in Singapore, SMU graduates, career switchers" : t.onboarding.targetCompaniesPlaceholder}
                   className="mt-2"
                   rows={2}
                 />

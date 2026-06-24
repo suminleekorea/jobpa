@@ -9,7 +9,7 @@ import { useI18n } from "@/contexts/i18nContext";
 import {
   FileText, Briefcase, MessageCircle, Trophy, TrendingUp,
   ArrowRight, Sparkles, Target, CheckCircle2, Clock, Star,
-  ChevronRight, Bot, BarChart3, Zap, ArrowUpRight, Send, ClipboardCheck, Radar
+  ChevronRight, Bot, BarChart3, Zap, ArrowUpRight, Send, ClipboardCheck, Radar, Users
 } from "lucide-react";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -24,7 +24,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function DashboardHome() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
-  const { language, t } = useI18n();
+  const { t } = useI18n();
 
 
   const { data: applications } = trpc.application.list.useQuery();
@@ -33,6 +33,7 @@ export default function DashboardHome() {
   const { data: xpProfile } = trpc.gamification.profile.useQuery();
   const { data: savedResume } = trpc.resume.get.useQuery();
   const { data: profile } = trpc.profile.get.useQuery();
+  const { data: survey } = trpc.survey.get.useQuery();
 
   const totalApps = applications?.length ?? 0;
   const activeApps = applications?.filter(a => ["applied", "interview"].includes(a.status)).length ?? 0;
@@ -51,6 +52,8 @@ export default function DashboardHome() {
   const xpTotal = xpProfile?.totalXP ?? 0;
   const xpBadges = (xpProfile?.badges as string[] | undefined) ?? [];
   const savedJobs = applications?.filter(a => a.status === "bookmarked").length ?? 0;
+  const surveyLookingFor = (survey?.lookingFor as string[] | undefined) ?? [];
+  const isCoach = surveyLookingFor.includes("audience:career_consultant");
 
   const journeySteps = [
     { label: "Build profile", done: Boolean((profile as any)?.targetRole || (profile as any)?.fullName), path: "/dashboard/profile" },
@@ -148,6 +151,45 @@ export default function DashboardHome() {
           {t.dashboard.browseJobs}
         </Button>
       </div>
+
+      {isCoach && (
+        <Card className="overflow-hidden border-cyan-200 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 text-white shadow-lg">
+          <CardContent className="p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="min-w-0">
+                <Badge className="mb-3 bg-cyan-300 text-slate-950 hover:bg-cyan-300">Coach workspace beta</Badge>
+                <h2 className="text-xl font-black tracking-tight">Support candidates with JobPA Career Ops</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">
+                  This account is marked as a career consultant. Use JobPA to structure intake, resume and LinkedIn reviews,
+                  weekly consultation plans, and future paid service delivery without promising employment outcomes.
+                </p>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2 lg:w-[360px]">
+                <Button onClick={() => setLocation("/dashboard/consulting")} className="gap-2 bg-cyan-300 text-slate-950 hover:bg-cyan-200">
+                  <Users className="h-4 w-4" />
+                  Consulting workspace
+                </Button>
+                <Button onClick={() => setLocation("/dashboard/career-ops")} variant="outline" className="gap-2 border-white/20 bg-white/10 text-white hover:bg-white/15">
+                  <Radar className="h-4 w-4" />
+                  Career Ops flow
+                </Button>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              {[
+                ["Candidate intake", "Collect structured context before AI analysis."],
+                ["Review workflow", "Package resume, LinkedIn, and weekly check-ins."],
+                ["Paid funnel", "Separate free tools from scoped consulting support."],
+              ].map(([title, body]) => (
+                <div key={title} className="rounded-2xl border border-white/10 bg-white/[0.06] p-3">
+                  <p className="text-sm font-bold text-cyan-100">{title}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-400">{body}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-primary/20 bg-primary/5">
         <CardContent className="p-4">

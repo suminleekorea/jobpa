@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { getExternalHref } from "@/lib/externalLinks";
 import { trpc } from "@/lib/trpc";
 import {
@@ -165,19 +166,23 @@ const careerFlowStages = [
   },
 ];
 
-function buildCoffeeChatMessage(name: string, role: string, context: string) {
+function buildCoffeeChatMessage(name: string, role: string, context: string, senderName: string) {
   const recipient = name.trim() || "there";
-  const targetRole = role.trim() || "your career path";
+  const targetText = role.trim() || "your career path";
+  const opportunityText = /\b(opportunit|roles?|jobs?|positions?)\b/i.test(targetText)
+    ? targetText
+    : `${targetText} opportunities`;
   const reason = context.trim() || "your experience in the space";
+  const signature = senderName.trim() || "JobPA user";
 
   return `Hi ${recipient},
 
-I came across your profile and noticed ${reason}. I am currently exploring ${targetRole} opportunities and trying to understand the market from people who have actually been close to the work.
+I came across your profile and noticed ${reason}. I am currently exploring ${opportunityText} and trying to understand the market from people who have actually been close to the work.
 
 Would you be open to a short 15-minute coffee chat sometime this or next week? I am not asking for a referral right away. I would really value your perspective on what skills matter, how teams evaluate candidates, and what mistakes to avoid when applying.
 
 Thank you,
-Sumin`;
+${signature}`;
 }
 
 function safeFileName(value: string) {
@@ -333,6 +338,7 @@ function ResultCard({
 
 export default function CareerOps() {
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [location, setTargetLocation] = useState("all");
   const [limit, setLimit] = useState("10");
@@ -382,9 +388,10 @@ export default function CareerOps() {
 
   const evaluations: CareerOpsItem[] = useMemo(() => scanResult?.evaluations ?? [], [scanResult]);
   const priorityCount = evaluations.filter(item => ["A", "A-", "B+"].includes(item.grade)).length;
+  const senderName = user?.name?.trim() || "JobPA user";
   const coffeeMessage = useMemo(
-    () => buildCoffeeChatMessage(coffeeName, coffeeRole, coffeeContext),
-    [coffeeName, coffeeRole, coffeeContext],
+    () => buildCoffeeChatMessage(coffeeName, coffeeRole, coffeeContext, senderName),
+    [coffeeName, coffeeRole, coffeeContext, senderName],
   );
   const selectedModuleLabels = careerModules
     .filter((module) => selectedModules.includes(module.id))
