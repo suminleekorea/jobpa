@@ -72,8 +72,8 @@ const TARGET_ROLE_SUGGESTIONS = [
 const COACH_LOOKING_FOR_OPTIONS = [
   {
     id: "coach_client_matching",
-    label: "Match with the right job seekers",
-    desc: "Show your expertise and get matched with candidates who need that support.",
+    label: "Support the right job seekers",
+    desc: "Show your expertise and define which candidate-side blockers you can mentor on.",
   },
   {
     id: "coach_consulting_packages",
@@ -326,7 +326,7 @@ export default function Onboarding() {
                 </h2>
                 <p className="text-sm text-muted-foreground mt-2">
                   {isCoach
-                    ? "Keep this focused: get matched with the right candidates, then convert discovery calls into scoped consulting."
+                    ? "Keep this focused: mentor candidates on profile, positioning, and application organization. JobPA is not an employment agency."
                     : t.onboarding.lookingForSubtitle}
                 </p>
               </div>

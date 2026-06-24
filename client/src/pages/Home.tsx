@@ -63,7 +63,7 @@ function HeroSection() {
   ];
 
   const proof = [
-    "Candidate-side AI, not recruiter software",
+    "Candidate-side AI, not employer software",
     "Role fit, resume gaps, applications, and follow-ups in one loop",
     "Paid consulting path when users need human strategy",
   ];
@@ -289,7 +289,7 @@ function AIAssistantLayerSection() {
     },
     {
       title: "Escalate to human consulting",
-      desc: "When stakes are high, route from AI guidance into paid expert help for resume, interview, visa, or strategy review.",
+      desc: "When stakes are high, route from AI guidance into paid mentoring for resume, interview, visa context, or strategy review.",
     },
   ];
 
@@ -668,9 +668,9 @@ export default function Home() {
     <div className="min-h-screen flex flex-col">
       <PublicSeo
         title="JobPA - Agentic AI Career Ops for Job Seekers"
-        description="JobPA is AI Career Ops with an AI Career Assistant that tracks, tailors, and improves every application with fit scoring, resume tailoring, application tracking, and consulting paths."
+        description="JobPA is AI Career Ops with an AI Career Assistant that tracks, tailors, and improves every application with fit scoring, resume tailoring, application tracking, and mentoring paths."
         path="/"
-        keywords={["agentic AI career ops", "AI career assistant", "AI job search", "application tracker", "resume tailoring", "career consulting", "Singapore jobs"]}
+        keywords={["agentic AI career ops", "AI career assistant", "AI job search", "application tracker", "resume tailoring", "career mentoring", "Singapore jobs"]}
       />
       <Navbar />
       <main>

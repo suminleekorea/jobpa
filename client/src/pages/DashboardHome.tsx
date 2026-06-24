@@ -63,7 +63,7 @@ function CoachDashboardHome({
               {userName ? `${userName.split(" ")[0]}'s consulting profile` : "Consulting profile"}
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-              Set your expertise, choose who you help, and receive matched job seekers. Keep the product focused on matching and paid consultation.
+              Set your expertise, choose who you can mentor, and organize candidate-side support. JobPA does not act as an employment agency or employer representative.
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -103,17 +103,17 @@ function CoachDashboardHome({
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
-              <CardTitle className="text-base">Matched job seekers</CardTitle>
-              <Badge variant="outline">Beta matching</Badge>
+              <CardTitle className="text-base">Candidate support queue</CardTitle>
+              <Badge variant="outline">Mentoring beta</Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              JobPA should show a short, practical list like a job board. No fake automation. Each match explains the blocker and next consultation action.
+              JobPA should show a short, practical support queue. Each row explains the candidate-side blocker and the next mentoring action.
             </p>
             {[
-              [clientSegments[0] || "International student", "Resume positioning + Singapore targeting", "High", "Invite to discovery call"],
-              [clientSegments[1] || "Career switcher", "LinkedIn branding before outreach", "Medium", "Send profile review offer"],
+              [clientSegments[0] || "International student", "Resume positioning + Singapore targeting", "High", "Invite to mentoring call"],
+              [clientSegments[1] || "Career switcher", "LinkedIn branding before outreach", "Medium", "Suggest profile review"],
               ["DIY job seeker", "Needs resume-based coffee chat message", "Low", "Recommend free Career Ops tool"],
             ].map(([segment, blocker, fit, action]) => (
               <div key={segment} className="grid gap-3 rounded-xl border p-4 md:grid-cols-[1fr_130px_170px] md:items-center">
@@ -137,7 +137,7 @@ function CoachDashboardHome({
           <div>
             <p className="font-semibold">Beta Career Support - US$30/month</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Weekly consultation, curated job recommendations, and LinkedIn/resume positioning. No outcome guarantee.
+              Weekly mentoring, application organization, and LinkedIn/resume positioning. No employment-agency service or outcome guarantee.
             </p>
           </div>
           <Button onClick={() => setLocation("/dashboard/consulting")} className="gap-2">

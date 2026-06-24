@@ -19,7 +19,7 @@ function MarketingNav() {
             <Link href="/dashboard-preview">Preview</Link>
           </Button>
           <Button asChild variant="ghost" size="sm" className="hidden text-white hover:bg-white/10 hover:text-white md:inline-flex">
-            <Link href="/companies">Companies</Link>
+            <Link href="/partners">Partners</Link>
           </Button>
           <Button asChild size="sm" className="bg-cyan-400 text-slate-950 hover:bg-cyan-300">
             <Link href="/login">Start free</Link>
@@ -50,7 +50,7 @@ function DashboardPreviewPage() {
             JobPA gives job seekers one operating view for discovery, fit scoring, resume gaps, applications, and interview prep.
           </p>
           <p className="mx-auto mt-4 max-w-2xl rounded-2xl border border-cyan-300/30 bg-cyan-300/10 px-5 py-3 text-sm font-semibold text-cyan-100">
-            Public proof for job-pa.com: a candidate-side Career Ops console, not a recruiter CRM.
+            Public proof for job-pa.com: a candidate-side Career Ops console, not an employer CRM.
           </p>
         </div>
         <DashboardPreviewMockup />
@@ -87,10 +87,10 @@ function CompaniesPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <PublicSeo
-        title="JobPA for Companies - Candidate Success Infrastructure"
-        description="JobPA helps companies, universities, and career communities make candidates application-ready with Career Ops dashboards, AI career assistance, and consulting workflows."
-        path="/companies"
-        keywords={["candidate success infrastructure", "career readiness platform", "AI career assistant", "career ops for companies", "job seeker support"]}
+        title="JobPA for Partners - Candidate Readiness Infrastructure"
+        description="JobPA helps universities, bootcamps, and career communities support candidate readiness with Career Ops dashboards, AI career assistance, and mentoring workflows."
+        path="/partners"
+        keywords={["candidate readiness infrastructure", "career readiness platform", "AI career assistant", "career ops for communities", "job seeker support"]}
       />
       <MarketingNav />
       <main>
@@ -100,16 +100,16 @@ function CompaniesPage() {
             <div>
               <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-sm text-cyan-100">
                 <Handshake className="h-3.5 w-3.5" />
-                JobPA for companies
+                JobPA for partners
               </p>
               <h1 className="max-w-3xl text-4xl font-black leading-tight tracking-tight sm:text-6xl">
                 Help job seekers become application-ready before the interview.
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-relaxed text-slate-300">
-                JobPA is candidate-side Career Ops infrastructure for companies, universities, bootcamps, and communities that want stronger resumes, clearer fit, better interview prep, and a path to expert consulting.
+                JobPA is candidate-side Career Ops infrastructure for universities, bootcamps, career communities, and candidate-support partners that want stronger resumes, clearer fit, better interview prep, and a path to expert mentoring.
               </p>
               <div className="mt-5 rounded-2xl border border-cyan-300/30 bg-cyan-300/10 p-5 text-sm font-semibold text-cyan-100">
-                Not a recruiter CRM. Not auto-apply software. JobPA helps candidates run a better job-search pipeline.
+                Not an employment agency. Not employer-side selection. Not auto-apply software. JobPA helps candidates organize applications and prepare themselves.
               </div>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Button asChild size="lg" className="bg-cyan-400 text-slate-950 hover:bg-cyan-300">
@@ -128,9 +128,9 @@ function CompaniesPage() {
           <div className="container">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-sm font-medium text-cyan-300">Who it is for</p>
-              <h2 className="mt-2 text-3xl font-black tracking-tight">One B2B page, focused on candidate outcomes.</h2>
+              <h2 className="mt-2 text-3xl font-black tracking-tight">One partner page, focused on candidate readiness.</h2>
               <p className="mt-4 text-slate-400">
-                The company page exists for partnerships and pilots. The core product remains B2C Career Ops.
+                The partner page exists for pilots with schools and communities. The core product remains candidate-side Career Ops.
               </p>
             </div>
             <div className="mx-auto mt-10 grid max-w-5xl gap-4 md:grid-cols-3">
@@ -153,7 +153,7 @@ function CompaniesPage() {
               <p className="text-sm font-medium text-cyan-300">Pilot offer</p>
               <h2 className="mt-2 text-3xl font-black tracking-tight">A lightweight Career Ops pilot, not a heavy HR platform rollout.</h2>
               <p className="mt-4 text-slate-400">
-                Start with a small candidate cohort. Use the dashboard and AI Assistant to find readiness gaps, then convert high-stakes needs into consulting.
+                Start with a small candidate cohort. Use the dashboard and AI Assistant to find readiness gaps, then convert high-stakes needs into mentoring.
               </p>
             </div>
             <div className="grid gap-4">
@@ -173,7 +173,7 @@ function CompaniesPage() {
           <div className="container flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.2em]">Revenue path</p>
-              <h2 className="mt-2 text-3xl font-black">Free product adoption, paid consulting conversion.</h2>
+              <h2 className="mt-2 text-3xl font-black">Free product adoption, paid mentoring conversion.</h2>
             </div>
             <Button asChild size="lg" variant="secondary">
               <Link href="/career-ops">See Career Ops positioning</Link>
@@ -198,7 +198,7 @@ function PilotFlowSection() {
     },
     {
       title: "Convert to consulting",
-      body: "When users need deeper help, route them to paid resume review, interview prep, visa strategy, or 1:1 consulting.",
+      body: "When users need deeper help, route them to paid resume review, interview prep, visa context, or 1:1 mentoring.",
     },
   ];
 
@@ -209,7 +209,7 @@ function PilotFlowSection() {
           <p className="text-sm font-medium text-cyan-300">Pilot flow</p>
           <h2 className="mt-2 text-3xl font-black tracking-tight">From free Career Ops to paid expert support</h2>
           <p className="mt-4 text-slate-400">
-            JobPA should acquire candidates through search and product proof, then monetize through high-trust consulting moments.
+            JobPA should acquire candidates through search and product proof, then monetize through high-trust mentoring moments.
           </p>
         </div>
         <div className="mx-auto mt-10 grid max-w-5xl gap-4 md:grid-cols-3">
@@ -248,7 +248,7 @@ function AIAssistantBridgeSection() {
           {[
             { icon: MessageCircle, title: "Ask", body: "Ask what to target, how to position, and how to explain your background." },
             { icon: CheckCircle2, title: "Act", body: "Convert advice into resume edits, follow-ups, prep tasks, and pipeline moves." },
-            { icon: Sparkles, title: "Escalate", body: "Push complex moments into paid consulting when human judgment matters." },
+            { icon: Sparkles, title: "Escalate", body: "Push complex moments into paid mentoring when human judgment matters." },
           ].map((item) => (
             <div key={item.title} className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
               <item.icon className="mb-4 h-6 w-6 text-cyan-300" />
@@ -397,6 +397,6 @@ export function MarketingLanding() {
 export default function MarketingRoute() {
   const [location] = useLocation();
   if (location === "/dashboard-preview") return <DashboardPreviewPage />;
-  if (location === "/companies") return <CompaniesPage />;
+  if (location === "/companies" || location === "/partners") return <CompaniesPage />;
   return <MarketingLanding />;
 }
